@@ -359,7 +359,7 @@ def parse_txt_survey(content_str, filename="survey.txt"):
                     pass
     
     if not metadata['Survey ID']:
-        metadata['Survey ID'] = f"TRG-{datetime.now().year}-SRV-{uuid.uuid4().hex[:4].upper()}"
+        metadata['Survey ID'] = str(uuid.uuid4())
     if not metadata['Survey Name']:
         metadata['Survey Name'] = f"Survey Log ({filename})"
     if pings:
@@ -377,7 +377,7 @@ def associate_or_create_detection(conn, det_data):
     If a detection of the same class exists within ~0.003 degrees (~300m) in the same survey or area,
     we associate and increment observations_count rather than creating duplicates.
     """
-    survey_id = det_data.get('survey_id') or 'TRG-SRV-GENERAL'
+    survey_id = det_data.get('survey_id') or '00000000-0000-0000-0000-000000000001'
     cls_name = det_data.get('class_name') or 'unknown'
     lat = det_data.get('latitude')
     lon = det_data.get('longitude')
@@ -495,7 +495,7 @@ def detect():
                 parsed_res = parse_txt_survey(content_str, filename)
                 meta = parsed_res['metadata']
                 req_survey_id = request.form.get('survey_id')
-                survey_id = req_survey_id if req_survey_id and req_survey_id != 'TRG-SRV-DEMO' else meta['Survey ID']
+                survey_id = req_survey_id if req_survey_id and req_survey_id != '00000000-0000-0000-0000-000000000002' else meta['Survey ID']
                 meta['Survey ID'] = survey_id
                 
                 # Persist survey in database
@@ -561,7 +561,7 @@ def detect():
 
     # Real inference execution
     req_survey_id = request.form.get('survey_id')
-    survey_id = req_survey_id if req_survey_id and req_survey_id != 'TRG-SRV-DEMO' else f"TRG-{datetime.now().year}-SRV-{uuid.uuid4().hex[:4].upper()}"
+    survey_id = req_survey_id if req_survey_id and req_survey_id != '00000000-0000-0000-0000-000000000002' else str(uuid.uuid4())
 
     # Extract any real coordinates passed in form or metadata (never invent fake ones)
     form_lat = request.form.get('latitude')
@@ -906,7 +906,7 @@ def get_admin_users():
 @app.route('/api/v1/surveys', methods=['POST'])
 def create_survey():
     data = request.json or request.form
-    survey_id = data.get('survey_id') or f"TRG-{datetime.now().year}-SRV-{uuid.uuid4().hex[:4].upper()}"
+    survey_id = data.get('survey_id') or str(uuid.uuid4())
     survey_name = data.get('survey_name') or 'Unnamed Survey'
     region = data.get('region') or data.get('location_name') or 'Indian Ocean'
     specific_area = data.get('specific_area') or 'Coastal Sector 1'
@@ -1073,7 +1073,7 @@ def handle_analyst_reviews():
     conn = get_db()
     if request.method == 'POST':
         data = request.json or request.form
-        survey_id = data.get('survey_id') or 'TRG-SRV-DEMO'
+        survey_id = data.get('survey_id') or '00000000-0000-0000-0000-000000000002'
         survey_name = data.get('survey_name') or 'Survey Mission'
         sent_to = data.get('sent_to') or 'Marine Analyst'
         notes = data.get('notes') or 'Submitted from Survey Operator portal.'
@@ -1267,11 +1267,11 @@ def xtf_upload():
             return jsonify({'error': 'Invalid or unsupported XTF file.'}), 400
             
         req_survey_id = request.form.get('survey_id')
-        if req_survey_id and req_survey_id != 'TRG-SRV-DEMO':
+        if req_survey_id and req_survey_id != '00000000-0000-0000-0000-000000000002':
             survey_id = req_survey_id
             parsed_data['metadata']['Survey ID'] = survey_id
         else:
-            survey_id = parsed_data['metadata'].get('Survey ID') or f"TRG-{datetime.now().year}-SRV-{uuid.uuid4().hex[:4].upper()}"
+            survey_id = parsed_data['metadata'].get('Survey ID') or str(uuid.uuid4())
             parsed_data['metadata']['Survey ID'] = survey_id
             
         XTF_SURVEYS[survey_id] = parsed_data
@@ -1776,7 +1776,7 @@ def upload_txt_metadata():
     parsed = parse_txt_metadata(file_bytes, uploaded_file.filename)
     
     req_survey_id = request.form.get('survey_id')
-    survey_id = req_survey_id or parsed.get('survey_id') or f"TRG-{datetime.now().year}-SRV-{uuid.uuid4().hex[:4].upper()}"
+    survey_id = req_survey_id or parsed.get('survey_id') or str(uuid.uuid4())
     parsed['survey_id'] = survey_id
     
     conn = get_db()
