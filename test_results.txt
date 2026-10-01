@@ -1,0 +1,143 @@
+
+=== System Status (no auth) ===
+  PASS  GET /api/v1/system/status → 200
+  PASS  overall field present
+  PASS  database.supabase.connected
+
+=== Demo Access — all six portals ===
+  PASS  demo-access survey_operator
+  PASS  demo-access sonar_analyst
+  PASS  demo-access marine_portal
+  PASS  demo-access government_portal
+  PASS  demo-access admin
+  PASS  demo-access public
+
+=== Core Data Endpoints ===
+  PASS  GET /api/v1/surveys [survey_operator]
+  PASS  GET /api/v1/hotspots [survey_operator]
+  PASS  GET /api/v1/notifications [survey_operator]
+  PASS  GET /api/v1/detections [survey_operator]
+  PASS  GET /api/v1/clusters [survey_operator]
+  PASS  GET /api/v1/surveys [marine_portal]
+  PASS  GET /api/v1/hotspots [marine_portal]
+  PASS  GET /api/v1/notifications [marine_portal]
+  PASS  GET /api/v1/detections [marine_portal]
+  PASS  GET /api/v1/clusters [marine_portal]
+  PASS  GET /api/v1/surveys [government_portal]
+  PASS  GET /api/v1/hotspots [government_portal]
+  PASS  GET /api/v1/notifications [government_portal]
+  PASS  GET /api/v1/detections [government_portal]
+  PASS  GET /api/v1/clusters [government_portal]
+  PASS  GET /api/v1/surveys [admin]
+  PASS  GET /api/v1/hotspots [admin]
+  PASS  GET /api/v1/notifications [admin]
+  PASS  GET /api/v1/detections [admin]
+  PASS  GET /api/v1/clusters [admin]
+
+=== Sonar Analyst Routes ===
+  PASS  GET /api/v1/surveys [sonar_analyst]
+  PASS  GET /api/v1/detections [sonar_analyst]
+
+=== Marine Portal Routes ===
+  PASS  GET /api/v1/cleanup/operations [marine_portal]
+  PASS  GET /api/v1/clearance [marine_portal]
+  PASS  GET /api/v1/routes [marine_portal]
+  PASS  GET /api/v1/hotspot-route [marine_portal]
+
+=== Government Portal Routes ===
+Traceback (most recent call last):
+
+  File [35m"C:\Users\KAVIYA\anaconda3\Lib\site-packages\urllib3\connectionpool.py"[0m, line [35m534[0m, in [35m_make_request[0m
+    response = conn.getresponse()
+
+  File [35m"C:\Users\KAVIYA\anaconda3\Lib\site-packages\urllib3\connection.py"[0m, line [35m565[0m, in [35mgetresponse[0m
+    httplib_response = super().getresponse()
+
+  File [35m"C:\Users\KAVIYA\anaconda3\Lib\http\client.py"[0m, line [35m1430[0m, in [35mgetresponse[0m
+    [31mresponse.begin[0m[1;31m()[0m
+    [31m~~~~~~~~~~~~~~[0m[1;31m^^[0m
+
+  File [35m"C:\Users\KAVIYA\anaconda3\Lib\http\client.py"[0m, line [35m331[0m, in [35mbegin[0m
+    version, status, reason = [31mself._read_status[0m[1;31m()[0m
+                              [31m~~~~~~~~~~~~~~~~~[0m[1;31m^^[0m
+
+  File [35m"C:\Users\KAVIYA\anaconda3\Lib\http\client.py"[0m, line [35m292[0m, in [35m_read_status[0m
+    line = str([31mself.fp.readline[0m[1;31m(_MAXLINE + 1)[0m, "iso-8859-1")
+               [31m~~~~~~~~~~~~~~~~[0m[1;31m^^^^^^^^^^^^^^[0m
+
+  File [35m"C:\Users\KAVIYA\anaconda3\Lib\socket.py"[0m, line [35m719[0m, in [35mreadinto[0m
+    return [31mself._sock.recv_into[0m[1;31m(b)[0m
+           [31m~~~~~~~~~~~~~~~~~~~~[0m[1;31m^^^[0m
+
+[1;35mTimeoutError[0m: [35mtimed out[0m
+
+
+The above exception was the direct cause of the following exception:
+
+
+Traceback (most recent call last):
+
+  File [35m"C:\Users\KAVIYA\anaconda3\Lib\site-packages\requests\adapters.py"[0m, line [35m644[0m, in [35msend[0m
+    resp = conn.urlopen(
+        method=request.method,
+    ...<9 lines>...
+        chunked=chunked,
+    )
+
+  File [35m"C:\Users\KAVIYA\anaconda3\Lib\site-packages\urllib3\connectionpool.py"[0m, line [35m841[0m, in [35murlopen[0m
+    retries = retries.increment(
+        method, url, error=new_e, _pool=self, _stacktrace=sys.exc_info()[2]
+    )
+
+  File [35m"C:\Users\KAVIYA\anaconda3\Lib\site-packages\urllib3\util\retry.py"[0m, line [35m474[0m, in [35mincrement[0m
+    raise [31mreraise[0m[1;31m(type(error), error, _stacktrace)[0m
+          [31m~~~~~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+
+  File [35m"C:\Users\KAVIYA\anaconda3\Lib\site-packages\urllib3\util\util.py"[0m, line [35m39[0m, in [35mreraise[0m
+    raise value
+
+  File [35m"C:\Users\KAVIYA\anaconda3\Lib\site-packages\urllib3\connectionpool.py"[0m, line [35m787[0m, in [35murlopen[0m
+    response = self._make_request(
+        conn,
+    ...<10 lines>...
+        **response_kw,
+    )
+
+  File [35m"C:\Users\KAVIYA\anaconda3\Lib\site-packages\urllib3\connectionpool.py"[0m, line [35m536[0m, in [35m_make_request[0m
+    [31mself._raise_timeout[0m[1;31m(err=e, url=url, timeout_value=read_timeout)[0m
+    [31m~~~~~~~~~~~~~~~~~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+
+  File [35m"C:\Users\KAVIYA\anaconda3\Lib\site-packages\urllib3\connectionpool.py"[0m, line [35m367[0m, in [35m_raise_timeout[0m
+    raise ReadTimeoutError(
+        self, url, f"Read timed out. (read timeout={timeout_value})"
+    ) from err
+
+[1;35murllib3.exceptions.ReadTimeoutError[0m: [35mHTTPConnectionPool(host='localhost', port=3000): Read timed out. (read timeout=15)[0m
+
+
+During handling of the above exception, another exception occurred:
+
+
+Traceback (most recent call last):
+
+  File [35m"C:\Users\KAVIYA\Downloads\Latest_Proj_File\Smart India Hacathon 2026 new\run_tests.py"[0m, line [35m101[0m, in [35m<module>[0m
+    r = requests.get(f"{BASE}/api/v1/stats/government", headers=h, timeout=15)
+
+  File [35m"C:\Users\KAVIYA\anaconda3\Lib\site-packages\requests\api.py"[0m, line [35m73[0m, in [35mget[0m
+    return request("get", url, params=params, **kwargs)
+
+  File [35m"C:\Users\KAVIYA\anaconda3\Lib\site-packages\requests\api.py"[0m, line [35m59[0m, in [35mrequest[0m
+    return [31msession.request[0m[1;31m(method=method, url=url, **kwargs)[0m
+           [31m~~~~~~~~~~~~~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+
+  File [35m"C:\Users\KAVIYA\anaconda3\Lib\site-packages\requests\sessions.py"[0m, line [35m589[0m, in [35mrequest[0m
+    resp = self.send(prep, **send_kwargs)
+
+  File [35m"C:\Users\KAVIYA\anaconda3\Lib\site-packages\requests\sessions.py"[0m, line [35m703[0m, in [35msend[0m
+    r = adapter.send(request, **kwargs)
+
+  File [35m"C:\Users\KAVIYA\anaconda3\Lib\site-packages\requests\adapters.py"[0m, line [35m690[0m, in [35msend[0m
+    raise ReadTimeout(e, request=request)
+
+[1;35mrequests.exceptions.ReadTimeout[0m: [35mHTTPConnectionPool(host='localhost', port=3000): Read timed out. (read timeout=15)[0m
+

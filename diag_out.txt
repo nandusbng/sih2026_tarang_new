@@ -1,0 +1,44 @@
+Survey_002 records: 5
+  00000000-0000-0000-0000-141d89d204f3 - status=completed - det_count=10
+  Detections: 183
+  Geotagged: 174
+  Lat range: 12.90050 to 19.38580
+  Lon range: 71.33530 to 80.51200
+    DET-CFAEEBD9FAF5 | unknown conf=20.6 lat=13.08270 lon=80.29900
+    DET-5240A2C45CF1 | unknown conf=47.3 lat=13.08270 lon=80.30430
+    DET-63FD55D61DB3 | shipwreck conf=95.0 lat=13.08270 lon=80.30320
+    DET-0A02F60F1C27 | ghost_net conf=92.3 lat=13.08270 lon=80.29450
+    DET-4D672590F605 | shipwreck conf=94.9 lat=13.08270 lon=80.29740
+  Images: 12
+    seq=1 url=https://cryfgdedvnyczhausidk.supabase.co/storage/v1/object/public/surv
+    seq=2 url=https://cryfgdedvnyczhausidk.supabase.co/storage/v1/object/public/surv
+    seq=3 url=https://cryfgdedvnyczhausidk.supabase.co/storage/v1/object/public/surv
+  3cdf7e86-3393-53d7-9ac8-edced059578f - status=completed - det_count=10
+  Detections: 183
+  Geotagged: 174
+  Lat range: 12.90050 to 19.38580
+  Lon range: 71.33530 to 80.51200
+    DET-CFAEEBD9FAF5 | unknown conf=20.6 lat=13.08270 lon=80.29900
+    DET-5240A2C45CF1 | unknown conf=47.3 lat=13.08270 lon=80.30430
+    DET-63FD55D61DB3 | shipwreck conf=95.0 lat=13.08270 lon=80.30320
+    DET-0A02F60F1C27 | ghost_net conf=92.3 lat=13.08270 lon=80.29450
+    DET-4D672590F605 | shipwreck conf=94.9 lat=13.08270 lon=80.29740
+  Images: 12
+    seq=1 url=https://cryfgdedvnyczhausidk.supabase.co/storage/v1/object/public/surv
+    seq=2 url=https://cryfgdedvnyczhausidk.supabase.co/storage/v1/object/public/surv
+    seq=3 url=https://cryfgdedvnyczhausidk.supabase.co/storage/v1/object/public/surv
+  21454390-4012-5847-929b-bf8f879d4a57 - status=completed - det_count=10
+  Detections: 183
+  Geotagged: 174
+  Lat range: 12.90050 to 19.38580
+  Lon range: 71.33530 to 80.51200
+    DET-CFAEEBD9FAF5 | unknown conf=20.6 lat=13.08270 lon=80.29900
+    DET-5240A2C45CF1 | unknown conf=47.3 lat=13.08270 lon=80.30430
+    DET-63FD55D61DB3 | shipwreck conf=95.0 lat=13.08270 lon=80.30320
+    DET-0A02F60F1C27 | ghost_net conf=92.3 lat=13.08270 lon=80.29450
+    DET-4D672590F605 | shipwreck conf=94.9 lat=13.08270 lon=80.29740
+  Images: 12
+    seq=1 url=https://cryfgdedvnyczhausidk.supabase.co/storage/v1/object/public/surv
+    seq=2 url=https://cryfgdedvnyczhausidk.supabase.co/storage/v1/object/public/surv
+    seq=3 url=https://cryfgdedvnyczhausidk.supabase.co/storage/v1/object/public/surv
+  8a28ba28-da5a-5c28-960b-4a6c262ac2cc - status=completed - det_count=10

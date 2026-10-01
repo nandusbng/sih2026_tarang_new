@@ -11,8 +11,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="js/tarang-map.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
+  <script src="js/tarang-map.js" defer></script>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -41,7 +41,7 @@
     .dl-row .dl-value { font-weight: 500; color: #0f172a; text-align: right; max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   </style>
 
-  <script src="js/auth.js"></script>
+  <script src="js/auth.js" defer></script>
   <script>
     (function() {
       const user = getCurrentUser();
@@ -58,7 +58,7 @@
   <header class="h-16 w-full bg-white border-b border-slate-200 z-40 flex items-center justify-between px-6 shrink-0 shadow-sm">
     <div class="flex items-center gap-4">
       <div class="w-10 h-10 rounded-full overflow-hidden border border-slate-200 bg-slate-50 p-1 flex items-center justify-center shrink-0">
-        <img src="logoimage.jpg" class="w-full h-full object-contain rounded-full" alt="TARANG" />
+        <img src="logoimage.jpg" class="w-full h-full object-contain rounded-full" alt="TARANG" / loading="lazy">
       </div>
       <div class="flex items-center gap-2">
         <span class="font-headline font-black text-lg text-slate-900 tracking-wider leading-none">TARANG</span>
@@ -203,7 +203,7 @@
             <div class="lg:col-span-3 relative rounded-lg border border-slate-200 overflow-hidden bg-slate-100" style="height:380px">
               <div id="gov-cleanup-route-map" class="absolute inset-0"></div>
             </div>
-            <div class="lg:col-span-2 rounded-lg border border-slate-200 bg-slate-950 p-4 text-xs font-mono text-teal-200 overflow-auto" style="max-height:380px">
+            <div class="lg:col-span-2 rounded-lg border border-slate-200 bg-slate-50 p-4 text-xs font-mono text-slate-700 overflow-auto" style="max-height:380px">
               <div id="gov-cleanup-route-sequence">No cleanup route generated yet.</div>
             </div>
           </div>
@@ -413,9 +413,13 @@
           status.textContent = payload.message || ('Cleanup route request failed (HTTP ' + response.status + ').');
           return;
         }
+        if (!govRouteMap) {
+          govRouteMap = new TarangMap('gov-cleanup-route-map', { center: MAP_CONFIG.defaultCenter.slice(), zoom: 6 });
+        }
         if (payload.status === 'none' || !payload.route) {
           status.className = 'text-xs font-mono text-slate-500';
           status.textContent = payload.message || 'No cleanup route has been generated yet. Use “Optimize Route”.';
+          setTimeout(function() { if (govRouteMap && govRouteMap.map) govRouteMap.map.invalidateSize(); }, 150);
           return;
         }
         const route = payload.route;
@@ -423,9 +427,6 @@
         status.textContent = 'Cleanup Route ' + route.route_id + ' · ' + route.hotspot_count +
           ' hotspot(s) · TOTAL: ' + TarangUnits.formatDistance(route.total_distance_nm, route.total_distance_km);
         document.getElementById('gov-cleanup-route-sequence').innerHTML = TarangRouteUI.sequenceHtml(route);
-        if (!govRouteMap) {
-          govRouteMap = new TarangMap('gov-cleanup-route-map', { center: MAP_CONFIG.defaultCenter.slice(), zoom: 6 });
-        }
         govRouteMap.setCleanupRoute(route);
         setTimeout(function() { if (govRouteMap && govRouteMap.map) govRouteMap.map.invalidateSize(); }, 150);
       } catch (error) {
@@ -573,25 +574,30 @@
 
       if (!Array.isArray(gHotspots) || gHotspots.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-slate-500">No verified hotspot regions available.</td></tr>';
-        mapEmpty.textContent = 'No verified hotspot regions available.';
-        return;
+        gHotspots = [];
+      } else {
+        tbody.innerHTML = gHotspots.map(function(h) {
+          return '<tr class="hover:bg-slate-50 transition-colors">' +
+            '<td class="p-4 font-bold text-slate-900">' + (h.region || h.name || '–') + '</td>' +
+            '<td class="p-4 text-slate-600">' + (h.total_targets != null ? h.total_targets : '–') + '</td>' +
+            '<td class="p-4 font-semibold text-teal-700">' + (h.priority || '–') + '</td>' +
+            '<td class="p-4 text-slate-600">' + (h.major_targets || h.target_types || '–') + '</td>' +
+            '<td class="p-4 text-slate-600" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + ((h.target_types || []).join ? (h.target_types || []).join(', ') : (h.target_types || '–')) + '">' + ((h.target_types || []).join ? (h.target_types || []).join(', ') : (h.target_types || '–')) + '</td>' +
+            '<td class="p-4 text-slate-600">' + (h.status || '–') + '</td>' +
+          '</tr>';
+        }).join('');
       }
-
-      tbody.innerHTML = gHotspots.map(function(h) {
-        return '<tr class="hover:bg-slate-50 transition-colors">' +
-          '<td class="p-4 font-bold text-slate-900">' + (h.region || h.name || '–') + '</td>' +
-          '<td class="p-4 text-slate-600">' + (h.total_targets != null ? h.total_targets : '–') + '</td>' +
-          '<td class="p-4 font-semibold text-teal-700">' + (h.priority || '–') + '</td>' +
-          '<td class="p-4 text-slate-600">' + (h.major_targets || h.target_types || '–') + '</td>' +
-          '<td class="p-4 text-slate-600" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + ((h.target_types || []).join ? (h.target_types || []).join(', ') : (h.target_types || '–')) + '">' + ((h.target_types || []).join ? (h.target_types || []).join(', ') : (h.target_types || '–')) + '</td>' +
-          '<td class="p-4 text-slate-600">' + (h.status || '–') + '</td>' +
-        '</tr>';
-      }).join('');
 
       // Map — tiles come from the shared MAP_CONFIG provider chain (js/tarang-map.js)
       mapEmpty.classList.add('hidden');
-      mapHotspot = L.map('hotspot-map').setView([12.905, 80.495], 5);
-      TarangTiles.attach(mapHotspot);
+      if (!mapHotspot) {
+        mapHotspot = L.map('hotspot-map').setView([15.00, 74.00], 5);
+        TarangTiles.attach(mapHotspot);
+      } else {
+        mapHotspot.eachLayer(function (layer) {
+          if (layer instanceof L.CircleMarker) mapHotspot.removeLayer(layer);
+        });
+      }
 
       var bounds = L.latLngBounds();
       var hasCoords = false;
@@ -692,7 +698,7 @@
           dlRow('Start Date', cr.started_at || cr.start_date) +
           dlRow('Completion Date', cr.completed_at || cr.completion_date);
         if (cr.evidence_url || cr.photo_url) {
-          evidenceEl.innerHTML = '<span class="block text-slate-500 mb-1 text-xs font-mono">Cleanup Evidence:</span><img src="' + (cr.evidence_url || cr.photo_url) + '" class="h-40 object-cover rounded border border-slate-200" alt="Cleanup evidence">';
+          evidenceEl.innerHTML = '<span class="block text-slate-500 mb-1 text-xs font-mono">Cleanup Evidence:</span><img src="' + (cr.evidence_url || cr.photo_url) + '" class="h-40 object-cover rounded border border-slate-200" alt="Cleanup evidence" loading="lazy">';
         } else {
           evidenceEl.innerHTML = '<span class="block text-slate-400 text-xs font-mono mt-2">No cleanup evidence available.</span>';
         }
@@ -721,5 +727,6 @@
       }
     }
   </script>
+<script src="/js/chatbot.js" defer></script>
 </body>
 </html>

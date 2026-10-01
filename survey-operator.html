@@ -12,7 +12,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <script src="https://unpkg.com/@dotlottie/player-component@2.7.12/dist/dotlottie-player.mjs" type="module"></script>
-<script src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js" type="module"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js" defer></script>
 <!-- Tailwind CSS via CDN -->
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <!-- Tailwind Config verbatim -->
@@ -154,7 +154,7 @@
       background: linear-gradient(180deg, rgba(20, 184, 166, 0.2) 0%, rgba(91, 184, 254, 0.7) 50%, rgba(20, 184, 166, 0.2) 100%);
     }
   </style>
-  <script src="js/auth.js"></script>
+  <script src="js/auth.js" defer></script>
   <script>protectRoute();</script>
 </head>
 <body class="bg-canvas-base text-on-surface h-full flex flex-col antialiased selection:bg-secondary selection:text-surface-container-lowest font-body-md overflow-x-hidden">
@@ -167,7 +167,7 @@
 <span class="material-symbols-outlined text-[18px]">arrow_back</span> Back
 </button>
 <div class="flex items-center gap-2">
-<img alt="TARANG Logo" class="h-8 w-auto object-contain rounded-lg" src="logoimage.jpg"/>
+<img alt="TARANG Logo" class="h-8 w-auto object-contain rounded-lg" src="logoimage.jpg"/ loading="lazy">
 <div class="flex flex-col">
 <span class="text-headline-sm font-headline-sm font-bold tracking-tight text-primary-container">TARANG // तरंग</span>
 </div>
@@ -196,7 +196,7 @@
 <!-- Clean Centered Upload Dropzone -->
 <div class="absolute inset-0 z-20 flex flex-col items-center justify-center cursor-pointer hover:bg-white/[0.02] transition-all bg-gradient-to-b from-[#030d1a] to-[#010811] p-6 text-center" id="upload-zone">
 <div class="max-w-md w-full p-8 rounded-2xl bg-[#07192c]/80 border border-teal-500/20 shadow-2xl backdrop-blur-md flex flex-col items-center gap-4 group/card hover:border-teal-400/40 transition-all">
-<img alt="TARANG Logo" class="h-16 w-16 object-contain rounded-xl" src="logoimage.jpg"/>
+<img alt="TARANG Logo" class="h-16 w-16 object-contain rounded-xl" src="logoimage.jpg"/ loading="lazy">
 <div class="flex flex-col gap-1">
 <h3 class="font-headline-lg text-2xl text-white font-bold tracking-tight">Upload Sonar Data</h3>
 <p class="text-slate-400 font-label-code text-xs">Drop TXT, PNG, JPG, or JPEG sonar data here to start the shared workflow</p>
@@ -226,7 +226,7 @@
 <div class="hidden absolute inset-0 z-30 bg-[#020b15]/90 backdrop-blur-md flex flex-col items-center justify-center text-center p-6" id="loading-overlay">
 <div class="relative w-20 h-20 mb-4 flex items-center justify-center">
 <div class="absolute inset-0 rounded-full border-2 border-seafoam-glow/20 animate-ping"></div>
-<img alt="TARANG Logo" class="h-16 w-16 object-contain rounded-xl" src="logoimage.jpg"/>
+<img alt="TARANG Logo" class="h-16 w-16 object-contain rounded-xl" src="logoimage.jpg"/ loading="lazy">
 </div>
 <h3 class="font-headline-sm text-[18px] text-white font-bold">Neural Model Running (best.pt)</h3>
 <p class="font-label-code text-[12px] text-slate-400 mt-1 max-w-sm" id="loading-status-text">
@@ -997,7 +997,7 @@ document.addEventListener("DOMContentLoaded", function() {
         container.id = 'workflow-container';
         container.className = 'absolute inset-0 z-10 bg-[#020b15] overflow-y-auto p-4 flex flex-col gap-4 text-white';
         const imageHtml = browserSafeImageUrl
-            ? `<img src="${browserSafeImageUrl}" alt="Persistent sonar preview" class="w-full max-h-72 object-contain rounded-xl border border-teal-500/30 bg-black" onerror="console.error('TARANG workflow evidence image failed to load.', { surveyId: '${data.survey_id || ''}', imageId: '${(image && image.image_id) || ''}', url: this.currentSrc || this.src })" />`
+            ? `<img src="${browserSafeImageUrl}" alt="Persistent sonar preview" class="w-full max-h-72 object-contain rounded-xl border border-teal-500/30 bg-black" onerror="console.error('TARANG workflow evidence image failed to load.', { surveyId: '${data.survey_id || ''}', imageId: '${(image && image.image_id) || ''}', url: this.currentSrc || this.src })" / loading="lazy">`
             : '<div class="rounded-xl border border-amber-500/30 bg-amber-950/20 p-6 text-amber-200">No sonar preview was returned for this survey.</div>';
         container.innerHTML = `
           <div class="rounded-xl border border-teal-500/20 bg-[#07192c] p-4">
@@ -1123,7 +1123,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
                 <!-- Acoustic Screenshot Crop -->
                 <div class="relative h-28 w-full rounded-lg overflow-hidden bg-abyssal-navy border border-slate-200 group/crop">
-                    <img class="w-full h-full object-contain bg-black/50 group-hover/crop:scale-105 transition-transform" src="${det.crop_url || det.image_url || ''}" alt="Sonar target" />
+                    <img class="w-full h-full object-contain bg-black/50 group-hover/crop:scale-105 transition-transform" src="${det.crop_url || det.image_url || ''}" alt="Sonar target" / loading="lazy">
                     <div class="absolute top-1.5 left-1.5 bg-primary/90 text-seafoam-glow font-label-code text-[8px] px-1.5 py-0.5 rounded backdrop-blur-xs flex items-center gap-1">
                         <span class="material-symbols-outlined text-[10px]">crop</span>
                         <span>DETECTION CROP</span>
@@ -1424,5 +1424,6 @@ function showToast(message, isError=false) {
     }, 3000);
 }
 </script>
+<script src="/js/chatbot.js" defer></script>
 </body>
 </html>

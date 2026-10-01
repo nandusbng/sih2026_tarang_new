@@ -13,7 +13,7 @@
 // MAP_CONFIG — one frozen place where the tile provider chain is configured.
 // ─────────────────────────────────────────────────────────────────────────────
 const MAP_CONFIG = Object.freeze({
-  defaultCenter: Object.freeze([13.0827, 80.2707]), // Chennai offshore (Bay of Bengal)
+  defaultCenter: Object.freeze([8.50, 72.50]), // Indian Ocean / Arabian Sea (TARANG demo survey region)
   defaultZoom: 11,
   minZoom: 3,
   maxZoom: 18,
@@ -374,7 +374,7 @@ class TarangMap {
   constructor(containerId, options = {}) {
     this.containerId = containerId;
     this.options = Object.assign({
-      center: MAP_CONFIG.defaultCenter.slice(), // Default Indian Coast (Bay of Bengal / Chennai offshore)
+      center: MAP_CONFIG.defaultCenter.slice(), // Default: Indian Ocean / Arabian Sea (8.50N 72.50E) — auto-pans to data when loaded
       zoom: MAP_CONFIG.defaultZoom,
       minZoom: MAP_CONFIG.minZoom,
       maxZoom: MAP_CONFIG.maxZoom,

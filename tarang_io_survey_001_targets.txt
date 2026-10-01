@@ -1,0 +1,15 @@
+# TARANG Indian Ocean Survey — Target CSV (4 geographic clusters)
+# Survey center: 8.50N 72.50E  |  Generated: 2026-09-21T09:00:00Z
+target_id,latitude,longitude,depth_m,target_type,confidence
+T01_ghostnet_A,8.513475,72.498183,12.0,ghost_net,0.88
+T02_ghostnet_B,8.514373,72.500000,14.0,ghost_net,0.82
+T03_crabpot_A,8.513026,72.501817,10.0,crab_pot,0.79
+T04_mine_A,8.504492,72.498183,20.0,mine_cylinder,0.93
+T05_mine_B,8.505390,72.500000,22.0,mine_cylinder,0.91
+T06_crabpot_B,8.504312,72.501817,10.0,crab_pot,0.77
+T07_pipeline_A,8.495508,72.498183,25.0,submarine_pipeline,0.85
+T08_shipwreck_A,8.495059,72.500908,30.0,shipwreck,0.90
+T09_ghostnet_C,8.495688,72.502725,12.0,ghost_net,0.76
+T10_mine_C,8.486525,72.498183,20.0,mine_cylinder,0.86
+T11_ghostnet_D,8.485627,72.500000,12.0,ghost_net,0.78
+T12_crabpot_C,8.486974,72.501817,10.0,crab_pot,0.75

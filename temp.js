@@ -1,352 +1,764 @@
-    (function() {
-      const simBtn = document.getElementById('simulateBtn');
-      const rovMarker = document.getElementById('simulatedROV');
-      const waypointContainer = document.getElementById('waypointContainer');
-      
-      // Initialize Supabase Client
-      const supabaseUrl = '' + process.env.SUPABASE_URL + '';
-      const supabaseKey = '' + process.env.SUPABASE_SERVICE_KEY + '';
-      const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
-      async function fetchLatestDispatch() {
-          const { data, error } = await supabaseClient
-              .from('dispatches')
-              .select('payload')
-              .eq('payload->>destination', 'MARINE_ANALYST')
-              .order('created_at', { ascending: false });
-          
-          if (error) {
-              console.error('Error fetching latest dispatch:', error);
-          } else if (data && data.length > 0) {
-              let allDetections = [];
-              data.forEach(d => {
-                  if (d.payload && d.payload.detections) {
-                      allDetections = allDetections.concat(d.payload.detections);
-                  }
-              });
-              populateDashboard({ detections: allDetections });
-          }
-      }
+        // --- Toast Notification ---
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast');
+            toast.className = `fixed bottom-6 right-6 z-50 transform translate-y-0 opacity-100 transition-all duration-300 px-4 py-2.5 rounded-xl border font-mono text-xs font-bold shadow-2xl flex items-center gap-2 ${
+        isError ? 'bg-rose-950/90 text-rose-200 border-rose-500/50' : 'bg-teal-950/90 text-teal-200 border-teal-500/50'
+      }`;
+            toast.innerHTML = `<span class="material-symbols-outlined text-[18px]">${isError ? 'error' : 'check_circle'}</span><span>${message}</span>`;
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3500);
+        }
 
-      // Initial fetch
-      fetchLatestDispatch();
+        // --- State Storage ---
+        let allSurveys = [];
+        let globalDetections = [];
+        let currentSurveyId = null;
+        let mapInstance = null;
+        let mapMarkers = [];
+        let cleanupTarangMap = null;
+        let latestRoute = null;
 
-      // Subscribe to real-time inserts
-      supabaseClient
-          .channel('dispatches_channel')
-          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'dispatches' }, payload => {
-              console.log('New dispatch received via Supabase Realtime!', payload);
-              if (payload.new && payload.new.payload && payload.new.payload.destination === 'MARINE_ANALYST') {
-                  showToast("New Data Received Successfully from Sonar AI");
-                  fetchLatestDispatch();
-              }
-          })
-          .subscribe();
+        // --- Tab Switching ---
+        function switchTab(tabId) {
+            document.querySelectorAll('.marine-view-panel').forEach(panel => panel.classList.add('hidden'));
+            const activePanel = document.getElementById(`tab-${tabId}`);
+            if (activePanel) activePanel.classList.remove('hidden');
 
-      // Fallback local storage sync just in case
-      function loadFromStorage() {
-          const storedData = localStorage.getItem('marineAnalystData');
-          if (storedData && window.lastLoadedData !== storedData) {
-              try {
-                  const data = JSON.parse(storedData);
-                  window.lastLoadedData = storedData;
-                  showToast("New Data Received Successfully from Sonar AI");
-                  populateDashboard(data);
-              } catch (e) {
-                  console.error("Failed to parse stored dispatch data", e);
-              }
-          }
-      }
-      window.addEventListener('storage', loadFromStorage);
+            document.querySelectorAll('.marine-nav-btn').forEach(btn => {
+                if (btn.getAttribute('data-tab') === tabId) {
+                    btn.className = 'marine-nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-mono font-bold tracking-wide transition-all bg-seafoam text-ocean-navy shadow-sm';
+                } else {
+                    btn.className = 'marine-nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-mono font-medium tracking-wide transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100';
+                }
+            });
 
-      function populateDashboard(data) {
-          const detections = data.detections || [];
-          if (detections.length === 0) {
-              alert("No detections found in this payload.");
-              return;
-          }
-          
-          document.getElementById('waypointStatus').innerText = "OPTIMIZED BY A* KINEMATICS ENGINE";
-          
-          // 1. Populate Waypoints
-          waypointContainer.innerHTML = '';
-          const markersContainer = document.getElementById('mapMarkersContainer');
-          if (markersContainer) markersContainer.innerHTML = '';
-          
-          let totalMass = 0;
-          
-          const classColors = {
-              'shipwreck': 'bg-sonar-alert',
-              'ghost_net': 'bg-secondary',
-              'other': 'bg-seafoam-glow'
-          };
-          const textColors = {
-              'shipwreck': 'text-sonar-alert',
-              'ghost_net': 'text-secondary',
-              'other': 'text-seafoam-glow'
-          };
+            if (tabId === 'hotspots' || tabId === 'cleanup-missions' || tabId === 'clearance-updates') {
+                syncSurveySelectors(tabId);
+            }
 
-          const compositionMap = {};
-          // (Simulated waypoints logic removed as it's now handled by the real map)
-          detections.forEach((det, idx) => {
-              const cat = det.class_name || 'other';
-              
-              const priority = det.classification_tier === 'A' ? 'PRIORITY 1' : 'PRIORITY 2';
-              const colorCls = classColors[cat] || 'bg-primary';
-              const textColorCls = textColors[cat] || 'text-primary';
+            if (tabId === 'hotspots' && mapInstance) {
+                setTimeout(() => mapInstance.invalidateSize(), 200);
+            }
+            if (tabId === 'cleanup-missions') {
+                setTimeout(() => {
+                    if (cleanupTarangMap && cleanupTarangMap.map) cleanupTarangMap.map.invalidateSize();
+                    if (optimizedRouteMap && optimizedRouteMap.map) {
+                        optimizedRouteMap.map.invalidateSize();
+                        optimizedRouteMap.fitBounds();
+                    }
+                }, 200);
+            }
+        }
 
-              let telemetryHtml = '';
-              if (det.telemetry) {
-                  telemetryHtml = `
-                  <div class="mt-2 bg-surface-container/50 p-2 rounded border border-outline-variant/30 text-[9px] font-label-code text-on-surface">
-                      <div class="text-secondary font-bold mb-1 uppercase tracking-wider flex items-center gap-1">
-                          <span class="material-symbols-outlined text-[12px]">my_location</span>
-                          Exact Telemetry
-                      </div>
-                      <div class="grid grid-cols-2 gap-y-1">
-                          <div class="truncate"><span class="text-slate-500">LAT:</span> ${det.telemetry.Latitude || 'N/A'}</div>
-                          <div class="truncate"><span class="text-slate-500">LON:</span> ${det.telemetry.Longitude || 'N/A'}</div>
-                          <div class="truncate"><span class="text-slate-500">PING:</span> ${det.telemetry['Ping Number'] || 'N/A'}</div>
-                          <div class="truncate"><span class="text-slate-500">HDG:</span> ${det.telemetry.Heading || 'N/A'}</div>
-                          <div class="truncate"><span class="text-slate-500">DPTH:</span> ${det.telemetry.Depth || '0'}m</div>
-                          <div class="truncate"><span class="text-slate-500">ALT:</span> ${det.telemetry.Altitude || '0'}m</div>
-                      </div>
-                  </div>
-                  `;
-              }
+        function syncSurveySelectors(tabId) {
+            if (currentSurveyId) {
+                if (tabId === 'hotspots') {
+                    const sel = document.getElementById('hotspot-survey-selector');
+                    if (sel) {
+                        sel.value = currentSurveyId;
+                        loadHotspotMapForSurvey(currentSurveyId);
+                    }
+                } else if (tabId === 'cleanup-missions') {
+                    const sel = document.getElementById('cleanup-survey-selector');
+                    if (sel) {
+                        sel.value = currentSurveyId;
+                        loadCleanupMissionForSurvey(currentSurveyId);
+                    }
+                } else if (tabId === 'clearance-updates') {
+                    const sel = document.getElementById('clearance-survey-selector');
+                    if (sel) {
+                        sel.value = currentSurveyId;
+                        loadClearanceForSurvey(currentSurveyId);
+                    }
+                }
+            }
+        }
 
-              const wpCard = `
-              <div class="p-3 rounded-xl bg-surface-container-low/60 flex flex-col gap-1.5 hover:bg-surface-container-high transition-colors shadow-sm">
-                <div class="flex items-center justify-between">
-                    <span class="font-label-code text-label-code font-bold ${textColorCls}">WP-${(idx+1).toString().padStart(2, '0')} · ${det.id}</span>
-                    <span class="font-label-code text-[10px] px-1.5 py-0.5 rounded bg-surface-container-highest text-primary">${priority}</span>
+        function setGlobalSurvey(surveyId, targetTab) {
+            currentSurveyId = surveyId;
+            if (targetTab) switchTab(targetTab);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const uName = sessionStorage.getItem('currentUserName');
+            if (uName) {
+                const elem = document.getElementById('marine-user-display-name');
+                if (elem) elem.textContent = uName;
+            }
+            const dateInput = document.getElementById('clearance-date');
+            if (dateInput) {
+                dateInput.value = new Date().toISOString().split('T')[0];
+            }
+            initData();
+        });
+
+        async function initData() {
+            try {
+                const [surveysRes, detsRes] = await Promise.all([
+                    fetch('/api/v1/surveys'),
+                    fetch('/api/v1/surveys/all/detections')
+                ]);
+
+                if (surveysRes.ok) allSurveys = await surveysRes.json();
+                if (detsRes.ok) {
+                    const data = await detsRes.json();
+                    globalDetections = Array.isArray(data) ? data : (data.detections || []);
+                }
+
+                populateSurveySelectors();
+                renderOverviewSurveys();
+                renderReportsTable();
+
+            } catch (err) {
+                console.error('Failed to init data:', err);
+                showToast('Error loading backend data', true);
+            }
+        }
+
+        function populateSurveySelectors() {
+            const selects = ['hotspot-survey-selector', 'cleanup-survey-selector', 'clearance-survey-selector'];
+            selects.forEach(id => {
+                const sel = document.getElementById(id);
+                if (!sel) return;
+                sel.innerHTML = `<option value="">— Select a survey —</option>` + allSurveys.map(s => `<option value="${s.survey_id}">${s.survey_name} (${s.survey_id})</option>`).join('');
+            });
+        }
+
+        // --- Overview Tab ---
+        function renderOverviewSurveys() {
+            const tbody = document.getElementById('overview-survey-tbody');
+            if (!tbody) return;
+
+            if (allSurveys.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-slate-500 font-mono text-sm">No surveys found.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = allSurveys.map(survey => {
+                const sDets = globalDetections.filter(d => d.survey_id === survey.survey_id);
+                const verifiedCount = sDets.filter(d => (d.verification_status || '').toLowerCase() === 'verified').length;
+                const cleanupReq = sDets.filter(d => (d.clearance_status || '').toLowerCase() !== 'no_cleanup_required' && (d.verification_status || '').toLowerCase() === 'verified');
+                const cleared = cleanupReq.filter(d => (d.clearance_status || '').toLowerCase() === 'cleared');
+
+                const cleanupStatus = cleanupReq.length === 0 ? '<span class="text-slate-400">N/A</span>' :
+                    (cleared.length === cleanupReq.length ? '<span class="text-teal-600 font-bold">Cleared</span>' :
+                        `<span class="text-amber-500 font-bold">${cleared.length} / ${cleanupReq.length} Cleared</span>`);
+
+                return `
+          <tr class="hover:bg-slate-50 transition-colors">
+            <td class="py-3 px-4 font-bold text-slate-900">${survey.survey_name}</td>
+            <td class="py-3 px-4 text-slate-500">${survey.survey_id}</td>
+            <td class="py-3 px-4">
+                <span class="px-2 py-1 rounded bg-teal-50 text-teal-700 text-xs font-bold border border-teal-200">${verifiedCount} Verified</span>
+            </td>
+            <td class="py-3 px-4 font-bold text-slate-700">${cleanupReq.length}</td>
+            <td class="py-3 px-4">${cleanupStatus}</td>
+            <td class="py-3 px-4 text-right">
+                <button onclick="setGlobalSurvey('${survey.survey_id}', 'hotspots')" class="text-teal-600 hover:text-teal-800 font-bold text-xs underline">Analyze Spatial Data</button>
+            </td>
+          </tr>
+        `;
+            }).join('');
+        }
+
+        // --- Hotspots (Spatial) Tab ---
+        function loadHotspotMapForSurvey(surveyId) {
+            currentSurveyId = surveyId;
+            const overlay = document.getElementById('hotspot-map-overlay');
+
+            if (!surveyId) {
+                overlay.classList.remove('opacity-0', 'pointer-events-none');
+                return;
+            }
+
+            overlay.classList.add('opacity-0', 'pointer-events-none');
+
+            if (!mapInstance) {
+                mapInstance = L.map('hotspot-map').setView([8.50, 72.50], 10);
+                TarangTiles.attach(mapInstance); // tiles + fallback chain from MAP_CONFIG (js/tarang-map.js)
+            }
+
+            // Clear old markers
+            mapMarkers.forEach(m => mapInstance.removeLayer(m));
+            mapMarkers = [];
+            if (window.tspPolyline) {
+                mapInstance.removeLayer(window.tspPolyline);
+                window.tspPolyline = null;
+            }
+
+            const sDets = globalDetections.filter(d => d.survey_id === surveyId && d.latitude && d.longitude && d.is_offshore && (d.verification_status || '').toLowerCase() === 'verified');
+            if (sDets.length === 0) {
+                showToast('No verified coordinates found for this survey', true);
+                return;
+            }
+
+            const cleanupTargets = sDets.filter(d => ['cleanup approved', 'cleanup scheduled', 'cleanup dispatched', 'cleanup in progress', 'cleanup completed'].includes((d.cleanup_status || d.clearance_status || '').toLowerCase()));
+
+            const bounds = [];
+
+            sDets.forEach(d => {
+                const isCleanup = cleanupTargets.includes(d);
+                const color = isCleanup ? '#ef4444' : '#14b8a6'; // red for cleanup, teal for ok/cleared
+                const marker = L.circleMarker([d.latitude, d.longitude], {
+                    radius: isCleanup ? 8 : 5,
+                    fillColor: color,
+                    color: '#ffffff',
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0.8
+                }).addTo(mapInstance);
+
+                marker.bindPopup(`<b>${d.class_name}</b><br>Tier: ${d.classification_tier}<br>Status: ${d.clearance_status}`);
+                mapMarkers.push(marker);
+                bounds.push([d.latitude, d.longitude]);
+            });
+
+            if (bounds.length > 0) {
+                mapInstance.fitBounds(bounds, {
+                    padding: [50, 50]
+                });
+            }
+
+            // Route geometry is rendered only from the persisted server-side TSP result.
+        }
+
+        // Basic TSP heuristic
+        function nearestNeighborTSP(points) {
+            if (points.length <= 1) return points;
+            let unvisited = [...points];
+            let current = unvisited.shift();
+            let path = [current];
+
+            while (unvisited.length > 0) {
+                let nearestIdx = 0;
+                let minDist = Infinity;
+
+                for (let i = 0; i < unvisited.length; i++) {
+                    const dist = Math.pow(current.latitude - unvisited[i].latitude, 2) + Math.pow(current.longitude - unvisited[i].longitude, 2);
+                    if (dist < minDist) {
+                        minDist = dist;
+                        nearestIdx = i;
+                    }
+                }
+
+                current = unvisited.splice(nearestIdx, 1)[0];
+                path.push(current);
+            }
+            return path;
+        }
+
+        // --- Cleanup Missions Tab ---
+        function loadCleanupMissionForSurvey(surveyId) {
+            currentSurveyId = surveyId;
+            const details = document.getElementById('cleanup-mission-details');
+            if (!surveyId) {
+                details.classList.add('hidden');
+                return;
+            }
+            details.classList.remove('hidden');
+
+            const sDets = globalDetections.filter(d => d.survey_id === surveyId && (d.verification_status || '').toLowerCase() === 'verified');
+            const cleanupTargets = sDets.filter(d => ['cleanup approved', 'cleanup scheduled', 'cleanup dispatched', 'cleanup in progress', 'cleanup completed'].includes((d.cleanup_status || d.clearance_status || '').toLowerCase()));
+            const pendingTargets = cleanupTargets.filter(d => (d.clearance_status || '').toLowerCase() !== 'cleared');
+            renderCleanupMap(cleanupTargets);
+            latestRoute = null;
+            fetch('/api/v1/routes/optimize', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    survey_id: surveyId
+                })
+            }).then(async response => response.ok ? response.json() : null).then(data => {
+                latestRoute = data && data.route;
+                const routeLabel = document.getElementById('cleanup-route-text');
+                if (routeLabel) routeLabel.textContent = latestRoute ? `${latestRoute.target_count} stops · ${TarangUnits.formatDistance(TarangUnits.kmToNm(latestRoute.distance_km), latestRoute.distance_km)}` : 'Awaiting approved targets';
+                if (latestRoute && cleanupTarangMap && cleanupTarangMap.map) {
+                    cleanupTarangMap.setTrack((latestRoute.target_sequence || []).map(point => [point.latitude, point.longitude]));
+                }
+            }).catch(() => {});
+
+            document.getElementById('cleanup-targets-text').textContent = pendingTargets.length;
+
+            const statusEl = document.getElementById('cleanup-status-text');
+            if (cleanupTargets.length === 0) {
+                statusEl.textContent = 'No Cleanup Required';
+                statusEl.className = 'text-xl font-bold font-mono text-slate-500 mt-1';
+            } else if (pendingTargets.length === 0) {
+                statusEl.textContent = 'Mission Accomplished';
+                statusEl.className = 'text-xl font-bold font-mono text-emerald-600 mt-1';
+            } else {
+                statusEl.textContent = 'Active / Pending';
+                statusEl.className = 'text-xl font-bold font-mono text-teal-700 mt-1';
+            }
+
+            const tbody = document.getElementById('cleanup-locations-tbody');
+            if (cleanupTargets.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-500">No cleanup targets for this survey.</td></tr>`;
+                return;
+            }
+
+            const sequenced = pendingTargets.length > 1 ? nearestNeighborTSP(pendingTargets) : pendingTargets;
+
+            tbody.innerHTML = cleanupTargets.map(d => {
+                const seqIndex = sequenced.indexOf(d);
+                const isCleared = (d.clearance_status || '').toLowerCase() === 'cleared';
+                const seqText = isCleared ? '<span class="text-slate-400">—</span>' : `<span class="font-bold text-sky-600">Stop #${seqIndex + 1}</span>`;
+                const statusClass = isCleared ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700';
+
+                return `
+                <tr class="hover:bg-slate-50">
+                    <td class="p-3 font-bold text-slate-700">${d.id.substring(0,8)}</td>
+                    <td class="p-3">${d.class_name || 'Unknown'}</td>
+                    <td class="p-3 text-slate-500">${d.latitude ? d.latitude.toFixed(4) : 'N/A'}, ${d.longitude ? d.longitude.toFixed(4) : 'N/A'}</td>
+                    <td class="p-3">${seqText}</td>
+                    <td class="p-3"><span class="px-2 py-1 rounded text-xs font-bold ${statusClass}">${d.clearance_status || 'Pending'}</span></td>
+                </tr>
+            `;
+            }).join('');
+        }
+
+        function renderCleanupMap(targets) {
+            if (!cleanupTarangMap) {
+                // Use MAP_CONFIG default center, will be auto-centered on actual targets
+                cleanupTarangMap = new TarangMap('marineMap', {
+                    center: MAP_CONFIG.defaultCenter,
+                    zoom: 11
+                });
+            }
+            if (!cleanupTarangMap || !cleanupTarangMap.map) return;
+
+            cleanupTarangMap.clear();
+            const mappedTargets = (targets || []).filter(d => d.latitude != null && d.longitude != null);
+            cleanupTarangMap.setDetections(mappedTargets);
+            if (mappedTargets.length > 1) {
+                const route = nearestNeighborTSP(mappedTargets).map(d => [Number(d.latitude), Number(d.longitude)]);
+                cleanupTarangMap.setTrack(route);
+            }
+            cleanupTarangMap.fitBounds();
+            setTimeout(() => cleanupTarangMap.map.invalidateSize(), 100);
+        }
+
+        // The persisted operation projection is the only source for the cleanup
+        // table and route.  This override deliberately replaces the legacy
+        // client-side mock/TSP preview above.
+        async function loadCleanupMissionForSurvey(surveyId) {
+            currentSurveyId = surveyId;
+            const details = document.getElementById('cleanup-mission-details');
+            if (!surveyId) {
+                details.classList.add('hidden');
+                return;
+            }
+            details.classList.remove('hidden');
+            const [operationsResponse, routeResponse] = await Promise.all([
+                fetch(`/api/v1/cleanup/operations?survey_id=${encodeURIComponent(surveyId)}`),
+                fetch('/api/v1/routes')
+            ]);
+            const cleanupTargets = operationsResponse.ok ? await operationsResponse.json() : [];
+            const candidateRoute = routeResponse.ok ? await routeResponse.json() : null;
+            latestRoute = candidateRoute && candidateRoute.survey_id === surveyId && candidateRoute.route_id ? candidateRoute : null;
+            const pendingTargets = cleanupTargets.filter(target => target.status !== 'Cleanup Completed');
+            document.getElementById('cleanup-targets-text').textContent = pendingTargets.length;
+            const routeLabel = document.getElementById('cleanup-route-text');
+            if (routeLabel) routeLabel.textContent = latestRoute ?
+                `${latestRoute.status} · ${latestRoute.target_count} stops · Cleanup Route ${TarangUnits.formatDistance(TarangUnits.kmToNm(latestRoute.distance_km), latestRoute.distance_km)} · ~${latestRoute.estimated_operation_hours} h` :
+                'No route generated';
+            const statusEl = document.getElementById('cleanup-status-text');
+            if (!cleanupTargets.length) {
+                statusEl.textContent = 'Awaiting Decision';
+                statusEl.className = 'text-xl font-bold font-mono text-slate-500 mt-1';
+            } else if (!pendingTargets.length) {
+                statusEl.textContent = 'Mission Accomplished';
+                statusEl.className = 'text-xl font-bold font-mono text-emerald-600 mt-1';
+            } else {
+                statusEl.textContent = 'Active / Pending';
+                statusEl.className = 'text-xl font-bold font-mono text-teal-700 mt-1';
+            }
+            const tbody = document.getElementById('cleanup-locations-tbody');
+            if (!cleanupTargets.length) {
+                tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-slate-500">No approved cleanup targets for this survey.</td></tr>';
+                renderCleanupMap([], null);
+                return;
+            }
+            const stopNumbers = new Map((latestRoute?.target_sequence || []).map(stop => [stop.target_id, stop.sequence]));
+            const orderedTargets = [...cleanupTargets].sort((a, b) => (stopNumbers.get(a.target_id) || 9999) - (stopNumbers.get(b.target_id) || 9999));
+            tbody.innerHTML = orderedTargets.map(target => {
+                const stop = stopNumbers.get(target.target_id);
+                const completed = target.status === 'Cleanup Completed';
+                return `<tr class="hover:bg-slate-50"><td class="p-3 font-bold text-slate-700">${target.target_id.substring(0, 8)}</td><td class="p-3">${target.target_type || 'Unknown'}</td><td class="p-3 text-slate-500">${Number(target.latitude).toFixed(4)}, ${Number(target.longitude).toFixed(4)}</td><td class="p-3">${stop ? `<span class="font-bold text-sky-600">Stop #${stop}</span>` : '<span class="text-slate-400">Generate route</span>'}</td><td class="p-3"><span class="px-2 py-1 rounded text-xs font-bold ${completed ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">${target.status}</span></td></tr>`;
+            }).join('');
+            renderCleanupMap(cleanupTargets, latestRoute);
+            loadLatestOptimizedRoute(surveyId);
+        }
+
+        // --- Optimized Cleanup Route (POST /api/v1/hotspot-route, NM primary) ---
+        let optimizedRouteMap = null;
+
+        async function loadLatestOptimizedRoute(surveyId) {
+            try {
+                const response = await fetch('/api/v1/hotspot-route/latest');
+                if (!response.ok) return;
+                const payload = await response.json().catch(() => ({}));
+                if (payload.status !== 'success' || !payload.route) return;
+                const route = payload.route;
+                if (route.survey_id && surveyId && route.survey_id !== surveyId) return;
+                renderOptimizedCleanupRoute(route);
+            } catch (error) {
+                /* latest route is optional context */
+            }
+        }
+
+        function renderOptimizedCleanupRoute(route) {
+            const status = document.getElementById('marine-route-status');
+            if (!route) {
+                if (status) status.textContent = 'No cleanup route generated yet.';
+                return;
+            }
+            status.className = 'px-4 pt-3 text-xs font-mono text-slate-500';
+            status.textContent = `Cleanup Route ${route.route_id} · ${route.hotspot_count} hotspot(s) · TOTAL: ${TarangUnits.formatDistance(route.total_distance_nm, route.total_distance_km)}`;
+            document.getElementById('cleanup-route-sequence').innerHTML = TarangRouteUI.sequenceHtml(route);
+            if (!optimizedRouteMap) {
+                optimizedRouteMap = new TarangMap('cleanupRouteMap', {
+                    center: MAP_CONFIG.defaultCenter.slice(),
+                    zoom: 6
+                });
+            }
+            optimizedRouteMap.setCleanupRoute(route);
+            setTimeout(() => {
+                if (optimizedRouteMap && optimizedRouteMap.map) optimizedRouteMap.map.invalidateSize();
+            }, 150);
+        }
+
+        async function generateOptimizedCleanupRoute() {
+            const surveyId = document.getElementById('cleanup-survey-selector').value;
+            const status = document.getElementById('marine-route-status');
+            status.className = 'px-4 pt-3 text-xs font-mono text-slate-500';
+            status.textContent = surveyId ?
+                `Optimizing cleanup route for survey ${surveyId}…` :
+                'Optimizing cleanup route from all persisted hotspots…';
+            try {
+                const response = await fetch('/api/v1/hotspot-route', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(surveyId ? {
+                        survey_id: surveyId
+                    } : {})
+                });
+                const payload = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    // Real server error (e.g. HTTP 409) — never a fake success.
+                    status.className = 'px-4 pt-3 text-xs font-mono text-rose-600';
+                    status.textContent = payload.message || `Cleanup route request failed (HTTP ${response.status}).`;
+                    showToast(payload.message || 'Cleanup route could not be generated.', true);
+                    return;
+                }
+                renderOptimizedCleanupRoute(payload.route);
+                showToast(`Optimized cleanup route ${payload.route.route_id} generated — ${payload.route.hotspot_count} hotspot(s), ${TarangUnits.formatDistance(payload.route.total_distance_nm, payload.route.total_distance_km)}.`);
+            } catch (error) {
+                status.className = 'px-4 pt-3 text-xs font-mono text-rose-600';
+                status.textContent = `Cleanup route request failed: ${error.message || error}`;
+                showToast('Network error while optimizing the cleanup route.', true);
+            }
+        }
+
+        // --- JSON downloads (authenticated fetch + Blob via TarangExport) ---
+        async function marineDownloadJson(url, filename) {
+            const result = await TarangExport.downloadJson(url, filename);
+            if (result.ok) showToast(`Downloaded ${filename} from the Supabase-backed export endpoint.`);
+            else showToast(`Download could not be authenticated: ${result.error}`, true);
+        }
+
+        function downloadHotspotJson() {
+            const surveyId = document.getElementById('hotspot-survey-selector').value;
+            const url = surveyId ? `/api/v1/export/hotspots.json?survey_id=${encodeURIComponent(surveyId)}` : '/api/v1/export/hotspots.json';
+            marineDownloadJson(url, 'tarang_hotspots.json');
+        }
+
+        function downloadCleanupRouteJson() {
+            const surveyId = document.getElementById('cleanup-survey-selector').value;
+            const url = surveyId ? `/api/v1/export/cleanup-route.json?survey_id=${encodeURIComponent(surveyId)}` : '/api/v1/export/cleanup-route.json';
+            marineDownloadJson(url, 'tarang_cleanup_route.json');
+        }
+
+        async function generateCleanupRoute() {
+            const surveyId = document.getElementById('cleanup-survey-selector').value;
+            if (!surveyId) return showToast('Select a survey before generating a route.', true);
+            const response = await fetch('/api/v1/routes/optimize', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    survey_id: surveyId
+                })
+            });
+            const payload = await response.json().catch(() => ({}));
+            if (!response.ok) return showToast(payload.message || 'No approved offshore cleanup targets are ready for routing.', true);
+            showToast(`TSP route ${payload.route.route_id} generated from persisted offshore targets.`);
+            await loadCleanupMissionForSurvey(surveyId);
+        }
+
+        function renderCleanupMap(targets, route) {
+            if (!cleanupTarangMap) cleanupTarangMap = new TarangMap('marineMap', {
+                center: MAP_CONFIG.defaultCenter,
+                zoom: 11
+            });
+            if (!cleanupTarangMap || !cleanupTarangMap.map) return;
+            cleanupTarangMap.clear();
+            const mappedTargets = (targets || []).filter(target => target.latitude != null && target.longitude != null)
+                .map(target => ({
+                    ...target,
+                    id: target.target_id,
+                    title: target.target_type,
+                    class_name: target.target_type,
+                    verification_status: 'Verified'
+                }));
+            cleanupTarangMap.setDetections(mappedTargets);
+            if (route && (route.target_sequence || []).length) {
+                cleanupTarangMap.setTrack(route.target_sequence.map(stop => [Number(stop.latitude), Number(stop.longitude)]));
+            }
+            cleanupTarangMap.fitBounds();
+            setTimeout(() => cleanupTarangMap.map.invalidateSize(), 100);
+        }
+
+        // --- Clearance Updates Tab ---
+        function loadClearanceForSurvey(surveyId) {
+            currentSurveyId = surveyId;
+            const container = document.getElementById('clearance-content');
+
+            if (!surveyId) {
+                container.innerHTML = `<div class="text-center p-8 text-slate-500 font-mono text-xs"><span class="material-symbols-outlined text-slate-300 text-[48px] mb-3 block">inventory_2</span>Please select a survey above to load actionable cleanup targets.</div>`;
+                return;
+            }
+
+            const sDets = globalDetections.filter(d => d.survey_id === surveyId && (d.verification_status || '').toLowerCase() === 'verified' && (d.detection_status || '') !== 'Rejected');
+            // Verified targets remain here until the Marine Analyst explicitly
+            // approves or declines cleanup.
+            const cleanupTargets = sDets;
+
+            if (cleanupTargets.length === 0) {
+                container.innerHTML = `<div class="text-center p-8 text-slate-500 font-mono text-xs">No cleanup targets exist for this survey.</div>`;
+                return;
+            }
+
+            let html = `
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start text-left">
+            <div class="lg:col-span-5 bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+              <h3 class="font-bold text-slate-900 mb-4 border-b border-slate-100 pb-2">Log Recovery Operation</h3>
+              <form id="clearance-form" onsubmit="handleClearanceSubmit(event)" class="flex flex-col gap-4 text-xs font-mono">
+                <div>
+                  <label class="block text-slate-500 mb-1">Target to Clear *</label>
+                  <select id="clearance-target-id" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-slate-900 focus:border-emerald-500 focus:outline-none">
+                    <option value="">Select target...</option>
+                    ${cleanupTargets.map(d => `<option value="${d.id}">${d.id.substring(0,8)} - ${d.class_name} (${d.clearance_status})</option>`).join('')}
+                  </select>
                 </div>
-                <span class="font-body-sm text-body-sm font-semibold text-primary truncate">${det.title || det.class_name.toUpperCase()}</span>
-                <div class="flex items-center justify-between font-label-code text-[11px] text-on-surface-variant pt-1">
-                    <span>Depth: ${det.depth}</span>
+                <div>
+                  <label class="block text-slate-500 mb-1">Clearance Status *</label>
+                  <select id="clearance-status" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-slate-900 focus:border-emerald-500 focus:outline-none">
+                    <option value="Cleanup Approved">Accept Cleanup (Marine decision)</option>
+                    <option value="Cleanup Not Recommended">Do Not Recommend Cleanup</option>
+                    <option value="Cleanup Scheduled">Schedule Cleanup</option>
+                    <option value="Cleanup In Progress">Start / Update Operation</option>
+                    <option value="Cleanup Completed">Complete Cleanup</option>
+                  </select>
                 </div>
-                <div class="w-full bg-surface-container-highest rounded-full h-1.5 mt-1">
-                    <div class="${colorCls} h-1.5 rounded-full" style="width: ${det.confidence}%"></div>
+                <div>
+                  <label class="block text-slate-500 mb-1">Recovery Team</label>
+                  <input type="text" id="clearance-team" value="Marine Response Fleet A" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-slate-900 focus:border-emerald-500 focus:outline-none" />
                 </div>
-                ${telemetryHtml}
-                <div class="mt-2 rounded overflow-hidden h-24 w-full bg-black">
-                    <img src="${det.crop_url}" class="w-full h-full object-contain" />
+                <div>
+                  <label class="block text-slate-500 mb-1">Notes</label>
+                  <textarea id="clearance-notes" rows="2" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-slate-900 focus:border-emerald-500 focus:outline-none"></textarea>
                 </div>
-              </div>
-              `;
-              waypointContainer.innerHTML += wpCard;
-          });
-          
-          // Reinitialize Map with Synced Data
-          initMapData(detections);
-      }
+                <button type="submit" class="w-full py-3 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 font-mono font-bold text-xs shadow-md transition-all">
+                  Submit Recovery Record
+                </button>
+              </form>
+            </div>
+            
+            <div class="lg:col-span-7 bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-2 mb-4">
+                  <h3 class="font-bold text-slate-900">Survey Clearance History</h3>
+                  <button type="button" onclick="loadClearanceRecordsForSurvey('${surveyId}')" class="text-emerald-600 hover:text-emerald-800 underline font-mono text-xs">Refresh</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs font-mono">
+                      <thead class="text-slate-400 border-b border-slate-200 bg-slate-50">
+                        <tr>
+                          <th class="p-2">Target ID</th>
+                          <th class="p-2">Team</th>
+                          <th class="p-2">Status</th>
+                          <th class="p-2">Date</th>
+                        </tr>
+                      </thead>
+                      <tbody id="survey-clearance-history" class="divide-y divide-slate-100">
+                        <tr><td colspan="4" class="p-4 text-center text-slate-500">Loading history...</td></tr>
+                      </tbody>
+                    </table>
+                </div>
+            </div>
+          </div>
+        `;
+            container.innerHTML = html;
+            loadClearanceRecordsForSurvey(surveyId);
+        }
 
-      // --- MAP, K-MEANS & ROUTING SIMULATION ---
-      const map = L.map('gisMap').setView([-5, 70], 4);
-      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          maxZoom: 19,
-          attribution: '&copy; OpenStreetMap'
-      }).addTo(map);
+        async function loadClearanceRecordsForSurvey(surveyId) {
+            const tbody = document.getElementById('survey-clearance-history');
+            if (!tbody) return;
+            try {
+                const res = await fetch('/api/v1/clearance');
+                if (res.ok) {
+                    const records = await res.json();
+                    const sDets = globalDetections.filter(d => d.survey_id === surveyId).map(d => d.id);
+                    const sRecords = records.filter(r => sDets.includes(r.target_id));
 
-      // India EEZ and Land Boundary (Lat, Lon format for Leaflet)
-      const indiaEEZBoundary = [
-        [35.5, 76.78], [35.55, 77.15], [35.3, 78.1], [34.3, 78.9],
-        [33.1, 79.2], [32.5, 78.7], [32.0, 78.3], [31.0, 78.9],
-        [30.2, 80.1], [30.15, 80.15], [27.5, 83.1], [26.7, 85.1],
-        [26.4, 88.1], [27.3, 88.5], [27.8, 88.9], [27.3, 88.92],
-        [26.9, 91.5], [27.8, 92.0], [28.7, 93.5], [29.0, 95.0],
-        [28.4, 96.3], [28.2, 97.4], [26.0, 95.4], [24.0, 94.3],
-        [22.5, 93.2], [22.0, 92.4], [21.64, 89.15], [21.44, 89.18],
-        [21.12, 89.23], [20.93, 89.26], [20.52, 89.32], [18.07, 89.37],
-        [14.0, 93.42], [13.41, 96.03], [9.16, 95.58], [7.25, 94.66],
-        [6.0, 94.0], [6.75, 92.16], [11.83, 90.66], [12.25, 84.75],
-        [8.33, 83.16], [10.08, 80.05], [9.95, 79.58], [9.67, 79.38],
-        [9.36, 79.51], [9.21, 79.53], [9.1, 79.53], [5.66, 78.5],
-        [7.08, 72.83], [8.25, 71.33], [11.66, 69.25], [14.83, 70.2],
-        [19.36, 68.75], [21.75, 66.17], [23.96, 67.46], [23.8, 68.1],
-        [25.0, 70.5], [27.5, 72.0], [29.0, 73.5], [31.0, 74.5],
-        [32.5, 75.0], [34.0, 74.0], [34.8, 74.5], [34.5, 76.0],
-        [35.5, 76.78]
-      ];
+                    if (sRecords.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500">No clearance history found.</td></tr>`;
+                    } else {
+                        tbody.innerHTML = sRecords.map(r => `
+                        <tr>
+                            <td class="p-2 font-bold text-slate-700">${r.target_id ? r.target_id.substring(0,8) : 'N/A'}</td>
+                            <td class="p-2">${r.team}</td>
+                            <td class="p-2"><span class="px-2 py-1 rounded bg-slate-100 font-bold">${r.status}</span></td>
+                            <td class="p-2 text-slate-500">${(r.clearance_date||'').split('T')[0]}</td>
+                        </tr>
+                    `).join('');
+                    }
+                }
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-rose-500">Error loading history</td></tr>`;
+            }
+        }
 
-      L.polygon(indiaEEZBoundary, {
-          color: '#14B8A6',
-          weight: 2,
-          opacity: 0.8,
-          fillColor: '#14B8A6',
-          fillOpacity: 0.05,
-          dashArray: '5, 10'
-      }).addTo(map).bindPopup("<b>India's Maritime EEZ & Boundary</b>");
+        async function handleClearanceSubmit(e) {
+            e.preventDefault();
+            const targetId = document.getElementById('clearance-target-id').value;
+            if (!targetId) return;
 
-      let allMapPoints = [];
-      let markerGroup = L.featureGroup().addTo(map);
+            const payload = {
+                target_id: targetId,
+                hotspot_id: '',
+                team: document.getElementById('clearance-team').value,
+                status: document.getElementById('clearance-status').value,
+                notes: document.getElementById('clearance-notes').value,
+                clearance_date: new Date().toISOString().split('T')[0]
+            };
 
-      // Simple K-Means implementation
-      function kMeans(points, k, maxIterations = 50) {
-          if(points.length <= k) return points.map((p, i) => ({ centroid: p, points: [p], id: i }));
-          let centroids = points.slice(0, k).map(p => ({...p}));
-          let clusters = [];
-          
-          for(let iter=0; iter<maxIterations; iter++) {
-              clusters = centroids.map((c, i) => ({ centroid: c, points: [], id: i }));
-              // Assign points to closest centroid
-              points.forEach(p => {
-                  let minDist = Infinity;
-                  let closestIndex = 0;
-                  centroids.forEach((c, i) => {
-                      let dist = Math.pow(p.lat - c.lat, 2) + Math.pow(p.lon - c.lon, 2);
-                      if(dist < minDist) { minDist = dist; closestIndex = i; }
-                  });
-                  clusters[closestIndex].points.push(p);
-              });
-              // Update centroids
-              let changed = false;
-              clusters.forEach((cluster, i) => {
-                  if(cluster.points.length === 0) return;
-                  let sumLat = 0, sumLon = 0;
-                  cluster.points.forEach(p => { sumLat += p.lat; sumLon += p.lon; });
-                  let newLat = sumLat / cluster.points.length;
-                  let newLon = sumLon / cluster.points.length;
-                  if(centroids[i].lat !== newLat || centroids[i].lon !== newLon) changed = true;
-                  centroids[i].lat = newLat;
-                  centroids[i].lon = newLon;
-                  cluster.centroid = centroids[i];
-              });
-              if(!changed) break;
-          }
-          return clusters.filter(c => c.points.length > 0);
-      }
+            try {
+                const status = payload.status;
+                let endpoint = `/api/v1/cleanup/${encodeURIComponent(targetId)}/action`;
+                let action = status === 'Cleanup Approved' ? 'accept_cleanup' :
+                    status === 'Cleanup Scheduled' ? 'schedule_cleanup' :
+                    status === 'Cleanup In Progress' ? 'start_operation' :
+                    status === 'Cleanup Completed' ? 'complete_cleanup' : null;
+                let requestBody = action ? {
+                    ...payload,
+                    action
+                } : {
+                    cleanup_required: false,
+                    notes: payload.notes
+                };
+                if (!action && status === 'Cleanup Approved') requestBody = {
+                    cleanup_required: true,
+                    notes: payload.notes
+                };
+                if (!action && status !== 'Cleanup Not Recommended') requestBody = {
+                    ...payload,
+                    action: 'update_progress'
+                };
+                if (!action && status === 'Cleanup Not Recommended') endpoint = `/api/v1/detections/${encodeURIComponent(targetId)}/cleanup-decision`;
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestBody)
+                });
 
-      // Nearest Neighbor TSP
-      function nearestNeighborTSP(points) {
-          if(points.length === 0) return [];
-          let unvisited = [...points];
-          let path = [unvisited.shift()];
-          while(unvisited.length > 0) {
-              let last = path[path.length - 1];
-              let minDist = Infinity;
-              let nextIdx = -1;
-              unvisited.forEach((p, i) => {
-                  let dist = Math.pow(p.lat - last.lat, 2) + Math.pow(p.lon - last.lon, 2);
-                  if(dist < minDist) { minDist = dist; nextIdx = i; }
-              });
-              path.push(unvisited.splice(nextIdx, 1)[0]);
-          }
-          return path;
-      }
+                if (res.ok) {
+                    showToast('Clearance record submitted successfully');
+                    const d = globalDetections.find(x => x.id === targetId);
+                    if (d) {
+                        d.clearance_status = status;
+                        d.cleanup_status = status;
+                    }
 
-      let routeLine = null;
-      let clusterCircles = [];
-      let polylineCoords = [];
+                    document.getElementById('clearance-notes').value = '';
 
-      function initMapData(detections) {
-          if(!detections || detections.length === 0) return;
+                    if (currentSurveyId) {
+                        loadClearanceRecordsForSurvey(currentSurveyId);
+                        loadCleanupMissionForSurvey(currentSurveyId);
+                    }
+                    renderOverviewSurveys();
+                } else {
+                    showToast('Failed to submit clearance', true);
+                }
+            } catch (err) {
+                showToast('Network error on submission', true);
+            }
+        }
 
-          allMapPoints = [];
-          markerGroup.clearLayers();
-          if(routeLine) map.removeLayer(routeLine);
-          clusterCircles.forEach(c => map.removeLayer(c));
-          clusterCircles = [];
+        // --- Reports Tab ---
+        function renderReportsTable() {
+            const tbody = document.getElementById('reports-tbody');
+            if (!tbody) return;
 
-          detections.forEach((det, idx) => {
-              const markerIndex = (idx + 1).toString().padStart(2, '0');
-              const lat = det.telemetry ? parseFloat(det.telemetry.Latitude) : parseFloat(det.latitude);
-              const lon = det.telemetry ? parseFloat(det.telemetry.Longitude) : parseFloat(det.longitude);
-              if(!isNaN(lat) && !isNaN(lon)) {
-                  allMapPoints.push({ lat, lon, det, index: markerIndex });
-                  
-                  let color = (det.classification_tier === 'Tier A' || det.classification_tier === 'A') ? '#ff3b30' : 
-                             ((det.classification_tier === 'Tier B' || det.classification_tier === 'B') ? '#ff9f0a' : '#34c759');
-                  const markerHtml = `
-                  <div style="background-color:${color}; width:28px; height:28px; border-radius:50%; border:3px solid white; box-shadow: 0 0 10px ${color}; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:10px; font-family:sans-serif; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);">
-                      WP-${markerIndex}
-                  </div>
-                  <div style="width:0; height:0; border-left:6px solid transparent; border-right:6px solid transparent; border-top:8px solid ${color}; margin: 0 auto; margin-top:-2px;"></div>
-                  `;
-                          // Fallback placeholder image (Underwater / Sonar style)
-                          let defaultPlaceholder = "https://images.unsplash.com/photo-1682687982501-1e5898cb4f18?q=80&w=400&auto=format&fit=crop";
-                          let popupImg = `<img src="${defaultPlaceholder}" style="width:100%; height:80px; object-fit:cover; border-radius:4px; margin-bottom:6px; border:1px solid #ccc; filter: contrast(1.2) sepia(1) hue-rotate(180deg);" />`;
-                          
-                          if (det.crop_url) {
-                              let imgSrc = det.crop_url;
-                              if (!imgSrc.startsWith('data:image')) {
-                                  imgSrc = 'data:image/jpeg;base64,' + imgSrc;
-                              }
-                              popupImg = `<img src="${imgSrc}" onerror="this.onerror=null; this.src='${defaultPlaceholder}';" style="width:100%; height:80px; object-fit:cover; border-radius:4px; margin-bottom:6px; border:1px solid #ccc;" />`;
-                          }
-                          
-                          L.marker([lat, lon], {
-                              icon: L.divIcon({ html: markerHtml, className: '', iconSize: [36, 40], iconAnchor: [18, 40] })
-                          }).addTo(markerGroup).bindTooltip(`<div style="min-width:180px; text-align:center;">${popupImg}<b>WP-${markerIndex} - ${det.title || det.class_name}</b><br>Lat: ${lat}<br>Lon: ${lon}</div>`, {
-                              direction: 'top',
-                              offset: [0, -40],
-                              className: 'bg-white p-2 rounded-xl shadow-lg border-0'
-                          });
-                      }
-                  });
+            if (allSurveys.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-500">No survey data available for reports.</td></tr>`;
+                return;
+            }
 
-          if(allMapPoints.length > 0) {
-              map.fitBounds(markerGroup.getBounds(), { padding: [50, 50], maxZoom: 12 });
-              
-              // Run Clustering (K=min(3, points.length))
-              let k = Math.min(3, allMapPoints.length);
-              let clusters = kMeans(allMapPoints, k);
-              
-              const clusterColors = ['#ff3b30', '#ff9f0a', '#14B8A6', '#006398'];
-              clusters.forEach((c, idx) => {
-                  if(c.points.length > 0) {
-                      // Draw circle around cluster centroid
-                      // Radius based on furthest point in cluster
-                      let maxDist = 0;
-                      c.points.forEach(p => {
-                          let d = map.distance([c.centroid.lat, c.centroid.lon], [p.lat, p.lon]);
-                          if(d > maxDist) maxDist = d;
-                      });
-                      let circle = L.circle([c.centroid.lat, c.centroid.lon], {
-                          color: clusterColors[idx % clusterColors.length],
-                          fillColor: clusterColors[idx % clusterColors.length],
-                          fillOpacity: 0.1,
-                          radius: maxDist > 1000 ? maxDist * 1.5 : 15000 // Base 15km if single point
-                      }).addTo(map);
-                      clusterCircles.push(circle);
-                  }
-              });
+            tbody.innerHTML = allSurveys.map(survey => {
+                const sDets = globalDetections.filter(d => d.survey_id === survey.survey_id);
+                const withCoords = sDets.filter(d => d.latitude && d.longitude);
+                let centroid = "N/A";
+                if (withCoords.length > 0) {
+                    const avgLat = withCoords.reduce((sum, d) => sum + d.latitude, 0) / withCoords.length;
+                    const avgLon = withCoords.reduce((sum, d) => sum + d.longitude, 0) / withCoords.length;
+                    centroid = `${avgLat.toFixed(3)}&deg;, ${avgLon.toFixed(3)}&deg;`;
+                }
 
-              // TSP Route
-              let optimizedPath = nearestNeighborTSP(allMapPoints);
-              polylineCoords = optimizedPath.map(p => [p.lat, p.lon]);
-              routeLine = L.polyline(polylineCoords, {color: '#ffffff', dashArray: '10, 10', weight: 3}).addTo(map);
-          }
-      }
+                const cleanupReq = sDets.filter(d => (d.clearance_status || '').toLowerCase() !== 'no_cleanup_required' && (d.verification_status || '').toLowerCase() === 'verified');
+                const cleared = cleanupReq.filter(d => (d.clearance_status || '').toLowerCase() === 'cleared');
 
-      // Simulation Logic (Extracted from initMapData to avoid duplicate listeners)
-      let isSimulating = false;
-      let rovSimMarker = null;
+                return `
+                <tr class="hover:bg-slate-50">
+                    <td class="p-3 font-bold text-slate-900">${survey.survey_name}</td>
+                    <td class="p-3 text-slate-500">${survey.survey_id}</td>
+                    <td class="p-3 font-mono text-slate-500">${centroid}</td>
+                    <td class="p-3 font-bold">${sDets.length}</td>
+                    <td class="p-3 text-slate-600">${cleared.length} / ${cleanupReq.length} Cleared</td>
+                    <td class="p-3 text-right">
+                        <button onclick="downloadReport('${survey.survey_id}')" class="text-white bg-slate-800 hover:bg-slate-900 px-3 py-1 rounded text-xs font-bold transition-colors">Download PDF</button>
+                    </td>
+                </tr>
+            `;
+            }).join('');
+        }
 
-      if(simBtn) {
-          simBtn.addEventListener('click', () => {
-              if(isSimulating || polylineCoords.length === 0) return;
-              isSimulating = true;
-              simBtn.innerHTML = `<span class="material-symbols-outlined text-[20px] animate-spin">refresh</span><span>Simulating Optimal Kinematics...</span>`;
-              
-              const rovHtml = `<div style="background-color:#14B8A6; width:24px; height:24px; border-radius:50%; border:3px solid white; box-shadow: 0 0 15px #14B8A6; display:flex; align-items:center; justify-content:center;"><span class="material-symbols-outlined text-white text-[16px]">sailing</span></div>`;
-              rovSimMarker = L.marker(polylineCoords[0], {
-                  icon: L.divIcon({ html: rovHtml, className: '', iconSize: [24, 24], iconAnchor: [12, 12] }),
-                  zIndexOffset: 1000
-              }).addTo(map);
-
-              let currentStep = 0;
-              let moveInterval = setInterval(() => {
-                  currentStep++;
-                  if(currentStep < polylineCoords.length) {
-                      rovSimMarker.setLatLng(polylineCoords[currentStep]);
-                  } else {
-                      clearInterval(moveInterval);
-                      simBtn.innerHTML = `<span class="material-symbols-outlined text-[20px]">check_circle</span><span>Simulation Verified: 100% Efficiency</span>`;
-                      isSimulating = false;
-                      setTimeout(() => { if(rovSimMarker) map.removeLayer(rovSimMarker); }, 3000);
-                  }
-              }, 1000);
-          });
-      }
-    })();
+        async function downloadReport(surveyId) {
+            try {
+                const response = await fetch(`/api/v1/surveys/${encodeURIComponent(surveyId)}/report`);
+                if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message || 'Report generation failed.');
+                const report = await response.blob();
+                if (!report.size) throw new Error('Report generation returned no data.');
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(report);
+                link.download = `tarang_report_${surveyId}.pdf`;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                URL.revokeObjectURL(link.href);
+                showToast('Report download started.');
+            } catch (error) {
+                showToast(error.message || 'Unable to download the selected report.', true);
+            }
+        }
+    

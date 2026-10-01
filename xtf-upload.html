@@ -235,7 +235,7 @@
                     const card = document.createElement('div');
                     card.className = 'detection-card';
                     card.innerHTML = `
-                        <img src="${det.crop_url}" class="det-img" />
+                        <img src="${det.crop_url}" class="det-img" / loading="lazy">
                         <div class="det-info">
                             <div class="det-title">${det.title}</div>
                             <div style="font-size: 12px; color: #74777e; margin-top: 4px;">ID: ${det.detection_id} | Class: ${det.class_name} | Ping Range: ${det.ping_start} - ${det.ping_end}</div>
@@ -247,5 +247,6 @@
             }
         }
     </script>
+<script src="/js/chatbot.js" defer></script>
 </body>
 </html>

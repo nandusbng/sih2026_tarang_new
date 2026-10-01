@@ -13,14 +13,14 @@
   
   <!-- Leaflet CSS & JS for Tactical GIS Map -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
 
     <!-- Three.js & GLTFLoader for Local 3D Drone Survey Simulation -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js" defer></script>
   <!-- TARANG Shared Map Engine -->
-  <script src="js/tarang-map.js"></script>
+  <script src="js/tarang-map.js" defer></script>
   <!-- Tailwind CSS via CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -102,7 +102,7 @@
   </style>
 
   <!-- RBAC & Auth Engine -->
-  <script src="js/auth.js"></script>
+  <script src="js/auth.js" defer></script>
   <script>protectRoute();</script>
 </head>
 <body class="h-full flex flex-col antialiased selection:bg-seafoam selection:text-ocean-navy overflow-hidden">
@@ -118,7 +118,7 @@
       </button>
       <div class="flex items-center gap-3">
         <div class="w-12 h-12 rounded-full overflow-hidden border border-teal-500/30 bg-white p-1 flex items-center justify-center shrink-0 shadow-lg">
-          <img src="logoimage.jpg" class="w-full h-full object-contain rounded-full" alt="TARANG" />
+          <img src="logoimage.jpg" class="w-full h-full object-contain rounded-full" alt="TARANG" / loading="lazy">
         </div>
         <div class="flex flex-col">
           <div class="flex items-center gap-2">
@@ -498,11 +498,11 @@
                 </div>
                 <div class="flex justify-between py-1 border-b border-slate-100">
                   <span class="text-slate-500">Latitude:</span>
-                  <strong class="text-slate-900" id="telemetry-lat">13.0827°N</strong>
+                  <strong class="text-slate-900" id="telemetry-lat">8.5000°N</strong>
                 </div>
                 <div class="flex justify-between py-1 border-b border-slate-100">
                   <span class="text-slate-500">Longitude:</span>
-                  <strong class="text-slate-900" id="telemetry-lon">80.2707°E</strong>
+                  <strong class="text-slate-900" id="telemetry-lon">72.5000°E</strong>
                 </div>
                 <div class="flex justify-between py-1 border-b border-slate-100">
                   <span class="text-slate-500">Platform Heading:</span>
@@ -1446,18 +1446,18 @@
     let simTimer = null;
 
     const SURVEY_WAYPOINTS = [
-      { lat: 13.0827, lon: 80.2707, heading: 45, depth: 34.2, alt: 8.4, dist: 0.0, speed: 3.4 },
-      { lat: 13.0855, lon: 80.2735, heading: 45, depth: 35.1, alt: 8.2, dist: 0.42, speed: 3.5 },
-      { lat: 13.0880, lon: 80.2760, heading: 90, depth: 36.4, alt: 8.0, dist: 0.86, speed: 3.2 },
-      { lat: 13.0882, lon: 80.2800, heading: 135, depth: 37.0, alt: 7.9, dist: 1.30, speed: 3.4 },
-      { lat: 13.0850, lon: 80.2830, heading: 180, depth: 38.2, alt: 8.1, dist: 1.75, speed: 3.3 },
-      { lat: 13.0815, lon: 80.2832, heading: 225, depth: 39.0, alt: 8.3, dist: 2.20, speed: 3.5 },
-      { lat: 13.0780, lon: 80.2800, heading: 270, depth: 38.5, alt: 8.5, dist: 2.65, speed: 3.4 },
-      { lat: 13.0782, lon: 80.2750, heading: 315, depth: 37.1, alt: 8.2, dist: 3.10, speed: 3.3 },
-      { lat: 13.0820, lon: 80.2715, heading: 0, depth: 35.8, alt: 8.0, dist: 3.55, speed: 3.4 },
-      { lat: 13.0860, lon: 80.2718, heading: 45, depth: 36.2, alt: 8.1, dist: 4.00, speed: 3.5 },
-      { lat: 13.0890, lon: 80.2750, heading: 90, depth: 37.5, alt: 8.0, dist: 4.45, speed: 3.4 },
-      { lat: 13.0892, lon: 80.2820, heading: 120, depth: 38.0, alt: 8.2, dist: 5.00, speed: 3.4 }
+      { lat: 8.4865, lon: 72.4909, heading: 90,  depth: 30.2, alt: 5.4, dist: 0.00, speed: 2.1 },
+      { lat: 8.4880, lon: 72.4950, heading: 90,  depth: 30.8, alt: 5.2, dist: 0.37, speed: 2.0 },
+      { lat: 8.4910, lon: 72.5000, heading: 90,  depth: 31.2, alt: 5.1, dist: 0.82, speed: 2.1 },
+      { lat: 8.4965, lon: 72.5035, heading: 0,   depth: 31.5, alt: 5.0, dist: 1.28, speed: 2.0 },
+      { lat: 8.5000, lon: 72.5000, heading: 270, depth: 30.5, alt: 5.3, dist: 1.72, speed: 2.1 },
+      { lat: 8.5000, lon: 72.4950, heading: 270, depth: 30.2, alt: 5.2, dist: 2.15, speed: 2.0 },
+      { lat: 8.5035, lon: 72.4909, heading: 0,   depth: 31.0, alt: 5.4, dist: 2.58, speed: 2.1 },
+      { lat: 8.5070, lon: 72.4950, heading: 90,  depth: 31.4, alt: 5.1, dist: 3.00, speed: 2.0 },
+      { lat: 8.5098, lon: 72.5000, heading: 90,  depth: 31.8, alt: 5.0, dist: 3.45, speed: 2.1 },
+      { lat: 8.5110, lon: 72.5050, heading: 90,  depth: 32.0, alt: 5.2, dist: 3.89, speed: 2.0 },
+      { lat: 8.5098, lon: 72.5091, heading: 180, depth: 31.5, alt: 5.3, dist: 4.32, speed: 2.1 },
+      { lat: 8.5065, lon: 72.5091, heading: 180, depth: 31.0, alt: 5.4, dist: 4.75, speed: 2.0 }
     ];
 
     function init3DDroneSimulation() {
@@ -2433,7 +2433,7 @@
           <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors font-mono text-xs">
             <td class="py-2 px-3">
               <div class="w-12 h-12 rounded bg-slate-200 overflow-hidden border border-slate-300">
-                ${d.crop_url ? `<img src="${d.crop_url}" class="w-full h-full object-cover" />` : '<div class="flex items-center justify-center w-full h-full text-[8px] text-slate-400">No Img</div>'}
+                ${d.crop_url ? `<img src="${d.crop_url}" class="w-full h-full object-cover" / loading="lazy">` : '<div class="flex items-center justify-center w-full h-full text-[8px] text-slate-400">No Img</div>'}
               </div>
             </td>
             <td class="py-3 px-3 font-bold text-slate-900">${d.id}</td>
@@ -2533,7 +2533,7 @@
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-6">
             <div class="flex items-center gap-3">
               <div class="w-12 h-12 rounded-full overflow-hidden border border-teal-200 bg-white p-1 flex items-center justify-center shrink-0 shadow-sm">
-                <img src="logoimage.jpg" class="w-full h-full object-contain rounded-full" alt="TARANG Logo" />
+                <img src="logoimage.jpg" class="w-full h-full object-contain rounded-full" alt="TARANG Logo" / loading="lazy">
               </div>
               <div>
                 <h3 class="font-headline font-extrabold text-xl text-slate-900 tracking-tight">TARANG HYDROGRAPHIC SURVEY REPORT</h3>
@@ -2746,5 +2746,6 @@
       loadVerificationQueue();
     });
   </script>
+<script src="/js/chatbot.js" defer></script>
 </body>
 </html>

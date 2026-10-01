@@ -1,0 +1,47 @@
+
+=== System Status (no auth) ===
+  PASS  GET /api/v1/system/status → 200
+  PASS  overall field present
+  PASS  database.supabase.connected
+
+=== Demo Access — all six portals ===
+  PASS  demo-access survey_operator
+  PASS  demo-access sonar_analyst
+  PASS  demo-access marine_portal
+  PASS  demo-access government_portal
+  PASS  demo-access admin
+  PASS  demo-access public
+
+=== Core Data Endpoints ===
+  PASS  GET /api/v1/surveys [survey_operator]
+  PASS  GET /api/v1/hotspots [survey_operator]
+  PASS  GET /api/v1/notifications [survey_operator]
+  PASS  GET /api/v1/detections [survey_operator]
+  PASS  GET /api/v1/clusters [survey_operator]
+  PASS  GET /api/v1/surveys [marine_portal]
+  PASS  GET /api/v1/hotspots [marine_portal]
+  PASS  GET /api/v1/notifications [marine_portal]
+  PASS  GET /api/v1/detections [marine_portal]
+  PASS  GET /api/v1/clusters [marine_portal]
+  PASS  GET /api/v1/surveys [government_portal]
+  PASS  GET /api/v1/hotspots [government_portal]
+  PASS  GET /api/v1/notifications [government_portal]
+  PASS  GET /api/v1/detections [government_portal]
+  PASS  GET /api/v1/clusters [government_portal]
+  PASS  GET /api/v1/surveys [admin]
+  PASS  GET /api/v1/hotspots [admin]
+  PASS  GET /api/v1/notifications [admin]
+  PASS  GET /api/v1/detections [admin]
+  PASS  GET /api/v1/clusters [admin]
+
+=== Sonar Analyst Routes ===
+  PASS  GET /api/v1/surveys [sonar_analyst]
+  PASS  GET /api/v1/detections [sonar_analyst]
+
+=== Marine Portal Routes ===
+  PASS  GET /api/v1/cleanup/operations [marine_portal]
+  PASS  GET /api/v1/clearance [marine_portal]
+  PASS  GET /api/v1/routes [marine_portal]
+  PASS  GET /api/v1/hotspot-route [marine_portal]
+
+=== Government Portal Routes ===

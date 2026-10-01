@@ -285,6 +285,24 @@ def build_file_header():
     fh.NavUnits = 0                     # degrees (same as survey 001)
     fh.NumberOfSonarChannels = 2
     fh.NumberOfBathymetryChannels = 0
+    
+    # Initialize ALL channel slots to zero/empty to prevent garbage data
+    # pyxtf can misread uninitialized memory as additional channels
+    for i in range(6):  # XTFFileHeader has 6 channel slots
+        ci = fh.ChanInfo[i]
+        ci.TypeOfChannel = 0
+        ci.SubChannelNumber = 0
+        ci.BytesPerSample = 0
+        ci.SampleFormat = 0
+        ci.Reserved = 0
+        ci.ChannelName = b""
+        ci.VoltScale = 0.0
+        ci.Frequency = 0.0
+        ci.HorizBeamAngle = 0.0
+        ci.BeamWidth = 0.0
+        ci.TiltAngle = 0.0
+    
+    # Now set up the actual 2 channels we want
     for i, (ctype, name) in enumerate(
             [(XTFChannelType.port, b"PORT"), (XTFChannelType.stbd, b"STARBOARD")]):
         ci = fh.ChanInfo[i]

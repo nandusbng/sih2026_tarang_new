@@ -1,12 +1,84 @@
 import os
+import shutil
+import tempfile
 import uuid
 import datetime
 import logging
 import numpy as np
 import cv2
 import pyxtf
+from pyxtf import XTFFileHeader
 
 logger = logging.getLogger("tarang.evidence")
+
+
+def _patch_xtf_channel_counts(src_path: str) -> str:
+    """
+    pyxtf raises NotImplementedError when the XTF file header reports more than
+    6 total channels (sonar + bathy + snippet + forward + echo + interferometry).
+    Many real-world side-scan sonars (e.g. dual-frequency or combined SSS/MBES
+    units) set snippet or echo strength channel counts that push the total above 6
+    even though only 2 sonar channels carry actual data.
+
+    This function reads the 1024-byte file header, checks channel_count(), and
+    if it exceeds 6, zeros the non-sonar count fields (bytes 70-75 of the XTF
+    file header struct) in a temporary copy of the file.  The original is never
+    modified.  Returns the path that should be passed to pyxtf.xtf_read().
+
+    Offsets in XTFFileHeader (confirmed against pyxtf 1.x ctypes definition):
+      NumberOfSonarChannels        +62  (uint16)
+      NumberOfBathymetryChannels   +64  (uint16)
+      NumberOfSnippetChannels      +66  (uint16)
+      NumberOfForwardLookArrays    +68  (uint16)
+      NumberOfEchoStrengthChannels +70  (uint16)
+      NumberOfInterferometryChannels +72 (uint16)
+    """
+    import ctypes
+
+    with open(src_path, "rb") as f:
+        fh = XTFFileHeader.create_from_buffer(f)
+        total = fh.channel_count()
+
+    if total <= 6:
+        return src_path   # file is already compliant
+
+    logger.warning(
+        "XTF header reports %d total channels (>6 limit). "
+        "Zeroing non-sonar channel counts in a temporary working copy: %s",
+        total, os.path.basename(src_path)
+    )
+
+    # Re-read header into a patched ctypes struct
+    with open(src_path, "rb") as f:
+        patched_fh = XTFFileHeader.create_from_buffer(f)
+    patched_fh.NumberOfBathymetryChannels     = 0
+    patched_fh.NumberOfSnippetChannels        = 0
+    patched_fh.NumberOfForwardLookArrays      = 0
+    patched_fh.NumberOfEchoStrengthChannels   = 0
+    patched_fh.NumberOfInterferometryChannels = 0
+    if patched_fh.NumberOfSonarChannels > 6:
+        patched_fh.NumberOfSonarChannels = 2
+
+    patched_bytes = bytes(patched_fh)
+
+    # Write temp file: patched header + original body
+    tmp_fd, tmp_path = tempfile.mkstemp(suffix=".xtf", prefix="tarang_patched_")
+    try:
+        with os.fdopen(tmp_fd, "wb") as tmp:
+            tmp.write(patched_bytes)
+            with open(src_path, "rb") as orig:
+                orig.seek(len(patched_bytes))
+                shutil.copyfileobj(orig, tmp)
+    except Exception as exc:
+        logger.error("XTF channel-count patch failed: %s", exc)
+        try:
+            os.unlink(tmp_path)
+        except Exception:
+            pass
+        return src_path   # fall back to original; pyxtf may still raise
+
+    return tmp_path
+
 
 def normalize_samples(samples):
     # Convert arbitrary acoustic intensities to 8-bit grayscale
@@ -21,9 +93,28 @@ def normalize_samples(samples):
 
 def parse_xtf(filepath, output_dir):
     os.makedirs(output_dir, exist_ok=True)
-    
-    # Read XTF
-    (fh, p) = pyxtf.xtf_read(filepath)
+
+    # Pre-patch the XTF header so pyxtf does not reject files where non-sonar
+    # channel count fields (bathy, snippet, echo, etc.) push total above 6.
+    work_path = _patch_xtf_channel_counts(filepath)
+    _is_temp   = work_path != filepath
+
+    try:
+        (fh, p) = pyxtf.xtf_read(work_path)
+    except Exception:
+        if _is_temp:
+            try:
+                os.unlink(work_path)
+            except Exception:
+                pass
+        raise
+    finally:
+        # Clean up temp file after pyxtf has finished reading it
+        if _is_temp:
+            try:
+                os.unlink(work_path)
+            except Exception:
+                pass
     
     # Extract rich metadata
     metadata = {

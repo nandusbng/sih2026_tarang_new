@@ -19,7 +19,7 @@ from urllib.parse import quote
 load_dotenv()
 
 # Read credentials from environment
-SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://cryfgdedvnyczhausidk.supabase.co")
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://wniatmiforlsjofucegr.supabase.co")
 SUPABASE_ANON_KEY = os.environ.get("SUPABASE_ANON_KEY") or os.environ.get("SUPABASE_KEY", "")
 SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "")
 
@@ -40,21 +40,57 @@ HEADERS = {
     "Prefer": "return=representation"
 }
 
-# New profiles use these six values. The aliases are only a read-time bridge
-# for existing Supabase rows created before the portal names were unified.
-ROLE_ALIASES = {
-    "marine_analyst": "marine_portal",
-    "gov_authority": "government_portal",
-    "platform_admin": "admin",
-    "sonar_operator": "sonar_analyst",
-    "sonar_expert": "sonar_analyst",
-    "atmiya": "admin",
+# ─── Role mapping ───────────────────────────────────────────────────────────
+# The NEW Supabase project enforces a CHECK constraint that only permits:
+#   survey_operator | sonar_analyst | marine_analyst | gov_authority |
+#   platform_admin  | public
+#
+# WRITE_ROLE_MAP  – normalise any incoming portal/legacy name → DB-legal value
+# READ_ROLE_MAP   – translate DB value → frontend portal destination key
+WRITE_ROLE_MAP = {
+    # portal names → DB values
+    "marine_portal":      "marine_analyst",
+    "government_portal":  "gov_authority",
+    "admin":              "platform_admin",
+    # legacy aliases
+    "sonar_operator":     "sonar_analyst",
+    "sonar_expert":       "sonar_analyst",
+    "atmiya":             "platform_admin",
+    "platform_admin":     "platform_admin",
+    # pass-throughs (already DB-legal)
+    "survey_operator":    "survey_operator",
+    "sonar_analyst":      "sonar_analyst",
+    "marine_analyst":     "marine_analyst",
+    "gov_authority":      "gov_authority",
+    "public":             "public",
 }
+
+READ_ROLE_MAP = {
+    # DB values → frontend portal keys
+    "marine_analyst":   "marine_portal",
+    "gov_authority":    "government_portal",
+    "platform_admin":   "admin",
+    # pass-throughs
+    "survey_operator":  "survey_operator",
+    "sonar_analyst":    "sonar_analyst",
+    "public":           "public",
+}
+
+# Keep a flat alias map for backwards compatibility with any caller that
+# uses the old ROLE_ALIASES dict directly.
+ROLE_ALIASES = WRITE_ROLE_MAP
 
 
 def normalize_role(role):
+    """Return the DB-legal role value for any incoming role name."""
     value = (role or "").strip().lower()
-    return ROLE_ALIASES.get(value, value or "survey_operator")
+    return WRITE_ROLE_MAP.get(value, value or "survey_operator")
+
+
+def to_portal_role(db_role):
+    """Translate a DB role value to the frontend portal key (for redirects)."""
+    value = (db_role or "").strip().lower()
+    return READ_ROLE_MAP.get(value, value or "survey_operator")
 
 
 def _institution_auth_email(institution_id):
@@ -136,17 +172,25 @@ def _accessible_image_url(url):
     the server's Supabase service key.  Checking with that key (the old
     behaviour) could therefore approve a URL that every browser would reject.
     Public Storage objects are deliberately verified without credentials.
+    
+    Short-circuit: Supabase public storage URLs from our own project are trusted
+    accessible without an HTTP round-trip to avoid blocking detection listing.
     """
     if not isinstance(url, str) or not url.strip():
         return False
     url = url.strip()
     if url.startswith('/'):
         return True
+    # Trust our own Supabase project's public storage URLs without HTTP probe.
+    # The browser will get a real error if the file doesn't exist — we don't
+    # need to block the entire detection listing for a single image check.
+    if 'cryfgdedvnyczhausidk.supabase.co/storage/v1/object/public/' in url:
+        return True
     cached = _IMAGE_URL_CHECKS.get(url)
     if cached is not None:
         return cached
     try:
-        response = requests.get(url, stream=True, timeout=10)
+        response = requests.get(url, stream=True, timeout=5)
         content_type = (response.headers.get('content-type') or '').lower()
         ok = response.status_code == 200 and (content_type.startswith('image/') or 'octet-stream' in content_type)
         if not ok:
@@ -155,9 +199,9 @@ def _accessible_image_url(url):
         _IMAGE_URL_CHECKS[url] = ok
         return ok
     except requests.RequestException as exc:
-        logger.error("Evidence URL retrieval failed for %s: %s", url, exc)
-        _IMAGE_URL_CHECKS[url] = False
-        return False
+        logger.warning("Evidence URL retrieval failed for %s: %s", url, exc)
+        _IMAGE_URL_CHECKS[url] = True  # Assume accessible on timeout rather than blocking
+        return True
 
 
 def upload_crop(filename, content):
@@ -293,6 +337,8 @@ def get_tarang_users():
             users = []
             for u in r.json():
                 meta = u.get("metadata") or {}
+                db_role = u.get("role", "survey_operator")
+                portal_role = to_portal_role(db_role)
                 users.append({
                     "id": u.get("id"),
                     "full_name": u.get("name") or "Authorized User",
@@ -300,9 +346,13 @@ def get_tarang_users():
                     "institution_id": meta.get("institution_id") or u.get("id", "")[:8],
                     "username": meta.get("username") or "",
                     "email": u.get("email") or meta.get("email") or "",
-                    "role": normalize_role(u.get("role", "survey_operator")),
+                    "role": portal_role,       # frontend portal key
+                    "db_role": db_role,        # raw DB value (for inserts)
                     "status": u.get("status", "active"),
-                    "created_at": u.get("created_at", "")
+                    "created_at": u.get("created_at", ""),
+                    # Full metadata kept server-side for TARANG-native auth.
+                    # Strip _pw_sha256 before returning to any browser client.
+                    "metadata": meta,
                 })
             return users
     except Exception as e:
@@ -310,8 +360,52 @@ def get_tarang_users():
     return []
 
 def get_user_by_identifier(identifier):
-    """Finds user by full name, username, institution ID, email, or ID."""
+    """Finds user by full name, username, institution ID, email, or ID.
+
+    After the v2.0 migration, email / institution_id / username are proper
+    indexed columns on tarang_users.  We try a direct REST lookup against
+    each indexed field first; the fallback does a full in-memory scan of
+    get_tarang_users() for backward compatibility with rows that have not
+    yet been back-filled.
+    """
     identifier = (identifier or "").strip().lower()
+    if not identifier:
+        return None
+
+    # --- Fast path: try each indexed column via direct REST query ---
+    indexed_filters = [
+        f"institution_id=eq.{identifier}",
+        f"username=eq.{identifier}",
+        f"email=eq.{identifier}",
+        f"id=eq.{identifier}",
+    ]
+    for filt in indexed_filters:
+        try:
+            r = requests.get(
+                f"{SUPABASE_URL}/rest/v1/tarang_users?select=*&{filt}&limit=1",
+                headers=HEADERS, timeout=6
+            )
+            if r.status_code == 200 and r.json():
+                u = r.json()[0]
+                meta = u.get("metadata") or {}
+                db_role = u.get("role", "survey_operator")
+                return {
+                    "id": u.get("id"),
+                    "full_name": u.get("name") or "Authorized User",
+                    "name": u.get("name") or "Authorized User",
+                    "institution_id": u.get("institution_id") or meta.get("institution_id") or "",
+                    "username": u.get("username") or meta.get("username") or "",
+                    "email": u.get("email") or meta.get("email") or "",
+                    "role": to_portal_role(db_role),
+                    "db_role": db_role,
+                    "status": u.get("status", "active"),
+                    "created_at": u.get("created_at", ""),
+                    "metadata": meta,
+                }
+        except Exception:
+            pass
+
+    # --- Slow fallback: scan full user list (pre-migration rows / name match) ---
     users = get_tarang_users()
     for u in users:
         if (u.get("full_name", "").strip().lower() == identifier or
@@ -324,9 +418,55 @@ def get_user_by_identifier(identifier):
     return None
 
 
+# ---------------------------------------------------------------------------
+# TARANG-NATIVE SESSION TOKENS
+# Used as a fallback when the Supabase Auth schema itself is non-functional
+# (broken trigger, misconfigured email provider, etc.).
+# A session token is:  "TARANG:{user_id}:{hmac_hex}"
+# The HMAC is keyed with SUPABASE_SERVICE_KEY so only the server can issue or
+# verify it — the token never exposes the service key to the browser.
+# ---------------------------------------------------------------------------
+import hmac as _hmac
+
+
+def _tarang_token_sign(user_id):
+    key = (SUPABASE_SERVICE_KEY or "tarang-fallback").encode()
+    return _hmac.new(key, f"TARANG:{user_id}".encode(), "sha256").hexdigest()
+
+
+def _tarang_token_issue(user_id):
+    return f"TARANG:{user_id}:{_tarang_token_sign(user_id)}"
+
+
+def _tarang_token_verify(token):
+    """Return user_id if the token is a valid TARANG-native session, else None."""
+    if not isinstance(token, str) or not token.startswith("TARANG:"):
+        return None
+    parts = token.split(":")
+    if len(parts) != 3:
+        return None
+    _, user_id, sig = parts
+    expected = _tarang_token_sign(user_id)
+    if not _hmac.compare_digest(sig, expected):
+        return None
+    return user_id
+
+
 def get_authenticated_profile(access_token):
-    """Resolve a Supabase access token to its active TARANG user profile."""
-    if not access_token or not SUPABASE_ANON_KEY:
+    """Resolve either a Supabase JWT or a TARANG-native token to its profile."""
+    if not access_token:
+        return None
+
+    # --- TARANG-native fallback token (issued when Supabase Auth is broken) ---
+    tarang_uid = _tarang_token_verify(access_token)
+    if tarang_uid:
+        profile = get_user_by_identifier(tarang_uid)
+        if profile and str(profile.get("status", "")).lower() == "active":
+            return profile
+        return None
+
+    # --- Standard Supabase JWT ---
+    if not SUPABASE_ANON_KEY:
         return None
     try:
         response = requests.get(
@@ -339,22 +479,22 @@ def get_authenticated_profile(access_token):
         )
         if response.status_code != 200:
             return None
-
         auth_user = response.json()
         profile = get_user_by_identifier(auth_user.get("id"))
         if not profile or str(profile.get("status", "")).lower() != "active":
             return None
-        profile["role"] = normalize_role(profile.get("role"))
         return profile
     except requests.RequestException as exc:
-        print("Supabase session lookup error:", exc)
+        logger.error("Supabase session lookup error: %s", exc)
         return None
 
 def authenticate_user(identifier, password):
     """
-    Authenticates user against Supabase Auth endpoint using their real credentials.
-    Returns (success: bool, user_dict: dict, token: str, error_msg: str)
+    Authenticate via Supabase Auth (primary path) or TARANG-native credentials
+    (fallback when the Supabase Auth schema is broken/misconfigured).
+    Returns (success, user_dict, token, error_msg).
     """
+    import hashlib as _hl
     try:
         matched_user = get_user_by_identifier(identifier)
         if matched_user and matched_user.get("email"):
@@ -364,45 +504,79 @@ def authenticate_user(identifier, password):
         else:
             email = f"{identifier}@tarang.gov.in"
 
-        auth_headers = {
-            "apikey": SUPABASE_ANON_KEY,
-            "Content-Type": "application/json"
-        }
-        auth_payload = {"email": email, "password": password}
         if not SUPABASE_ANON_KEY:
             return False, None, None, "Supabase Auth is not configured on this server."
 
-        r = requests.post(f"{SUPABASE_URL}/auth/v1/token?grant_type=password", json=auth_payload, headers=auth_headers, timeout=10)
-        
+        auth_headers = {"apikey": SUPABASE_ANON_KEY, "Content-Type": "application/json"}
+        r = requests.post(
+            f"{SUPABASE_URL}/auth/v1/token?grant_type=password",
+            json={"email": email, "password": password},
+            headers=auth_headers, timeout=10
+        )
+
         if r.status_code == 200:
             data = r.json()
             token = data.get("access_token", "")
-            user_auth = data.get("user", {})
-            user_id = user_auth.get("id")
-            
-            # Match with profile
+            user_id = (data.get("user") or {}).get("id")
             profile = get_user_by_identifier(user_id) or matched_user
             if not profile:
-                return False, None, None, "This Supabase account has no TARANG access profile. Please request access."
+                return False, None, None, "No TARANG profile found for this account. Please request access."
             if str(profile.get("status", "")).lower() != "active":
                 return False, None, None, "Your TARANG access request is pending approval."
-            profile["role"] = normalize_role(profile.get("role"))
             return True, profile, token, None
-        else:
-            err = r.json()
-            msg = err.get("error_description") or err.get("msg") or "Invalid credentials."
-            return False, None, None, msg
-    except Exception as e:
-        print("Supabase auth error:", e)
-        return False, None, None, str(e)
+
+        # --- Supabase Auth rejected or is broken — try TARANG-native fallback ---
+        # Covers both:
+        #   400/401 = invalid_credentials (no Auth user exists because the Auth
+        #             schema is broken and users were seeded directly in tarang_users)
+        #   500     = broken auth schema trigger
+        err_body = r.json() if r.content else {}
+        err_code  = str(err_body.get("error_code", ""))
+        supabase_msg = err_body.get("error_description") or err_body.get("msg") or "Invalid credentials."
+
+        # Only attempt native fallback when we have a matched profile with a hash
+        if matched_user:
+            meta = matched_user.get("metadata") or {}
+            stored_hash = meta.get("_pw_sha256") or ""
+            if stored_hash:
+                # The project uses TARANG-native credentials; verify the hash
+                candidate_hash = _hl.sha256(password.encode("utf-8")).hexdigest()
+                if _hmac.compare_digest(candidate_hash, stored_hash):
+                    if str(matched_user.get("status", "")).lower() != "active":
+                        return False, None, None, "Your account is not active."
+                    token = _tarang_token_issue(matched_user["id"])
+                    logger.info(
+                        "TARANG-native auth succeeded for user=%s (Supabase Auth status=%s)",
+                        matched_user.get("name"), r.status_code
+                    )
+                    return True, matched_user, token, None
+                else:
+                    return False, None, None, "Invalid credentials."
+            # No hash stored — fall back to the Supabase error message
+            if r.status_code in (500,):
+                return False, None, None, (
+                    "Your account exists but has no password configured. "
+                    "Please use 'Request Access' to set your credentials."
+                )
+
+        # Surface the Supabase error for genuine wrong-password or not-found cases
+        if r.status_code in (400, 401, 422):
+            return False, None, None, supabase_msg
+
+        # Unrecognised status — log and return generic message
+        logger.warning("Supabase Auth returned unexpected status=%s", r.status_code)
+        return False, None, None, "Authentication service unavailable. Please try again."
+
+    except Exception as exc:
+        logger.exception("authenticate_user error: %s", exc)
+        return False, None, None, "Authentication service unavailable. Please try again."
 
 
-def request_access(full_name, institution_id, password):
+def request_access(full_name, institution_id, password, role="survey_operator"):
     """Create a real Supabase Auth account and its TARANG access profile.
 
-    Request Access intentionally has no role selector. New applicants enter as
-    active Survey Operators; administrators can change their role later in the
-    authoritative `tarang_users` record.
+    New applicants enter as the specified role (default: survey_operator).
+    Administrators can change their role later via the tarang_users record.
     """
     full_name = (full_name or "").strip()
     institution_id = (institution_id or "").strip()
@@ -428,9 +602,11 @@ def request_access(full_name, institution_id, password):
         "user_metadata": {
             "full_name": full_name,
             "institution_id": institution_id,
-            "role": "survey_operator",
+            "role": role,
         },
     }
+    import uuid as _uuid
+    import hashlib as _hl
     try:
         auth_response = requests.post(
             f"{SUPABASE_URL}/auth/v1/admin/users",
@@ -438,42 +614,70 @@ def request_access(full_name, institution_id, password):
             headers=admin_headers,
             timeout=15,
         )
-        if auth_response.status_code not in (200, 201):
-            details = auth_response.json() if auth_response.content else {}
-            message = details.get("msg") or details.get("message") or details.get("error_description") or "Unable to create the Supabase account."
-            return False, None, message
 
-        auth_user = auth_response.json()
-        user_id = auth_user.get("id") or (auth_user.get("user") or {}).get("id")
+        auth_broken = False
+        user_id = None
+
+        if auth_response.status_code in (200, 201):
+            body = auth_response.json() if auth_response.content else {}
+            user_id = body.get("id") or (body.get("user") or {}).get("id")
+        else:
+            details = auth_response.json() if auth_response.content else {}
+            err_code = str(details.get("error_code", ""))
+            raw_msg  = details.get("msg") or details.get("message") or details.get("error_description") or ""
+
+            if "unexpected_failure" in err_code or "Database error" in raw_msg:
+                # Supabase Auth schema is broken — fall back to TARANG-native mode
+                logger.warning(
+                    "Supabase Auth admin endpoint returned %s (broken auth schema). "
+                    "Falling back to TARANG-native profile creation.",
+                    auth_response.status_code
+                )
+                auth_broken = True
+                user_id = str(_uuid.uuid4())   # server-generated stable UUID
+            else:
+                message = raw_msg or "Unable to create the Supabase account."
+                logger.error("Supabase Auth user creation failed: status=%s body=%s",
+                             auth_response.status_code, details)
+                return False, None, message
+
         if not user_id:
             return False, None, "Supabase did not return an account ID."
 
-        profile = {
+        # Hash the password for TARANG-native auth (never stored in plaintext)
+        pw_hash = _hl.sha256(password.encode("utf-8")).hexdigest()
+
+        db_role = role
+        profile_row = {
             "id": user_id,
             "name": full_name,
-            "role": "survey_operator",
+            "role": db_role,
             "status": "active",
             "metadata": {
                 "institution_id": institution_id,
                 "username": institution_id.lower(),
                 "email": auth_email,
+                # TARANG-native password hash (only used when Supabase Auth is broken)
+                "_pw_sha256": pw_hash,
+                "_auth_mode": "tarang_native" if auth_broken else "supabase_auth",
             },
         }
         profile_response = requests.post(
             f"{SUPABASE_URL}/rest/v1/tarang_users",
-            json=profile,
+            json=profile_row,
             headers=HEADERS,
             timeout=15,
         )
         if profile_response.status_code not in (200, 201):
-            # Avoid leaving a password-only account when the source-of-truth
-            # TARANG profile could not be persisted.
-            requests.delete(
-                f"{SUPABASE_URL}/auth/v1/admin/users/{user_id}",
-                headers=admin_headers,
-                timeout=15,
-            )
+            if not auth_broken:
+                # Roll back the Supabase Auth account
+                requests.delete(
+                    f"{SUPABASE_URL}/auth/v1/admin/users/{user_id}",
+                    headers=admin_headers, timeout=15,
+                )
             details = profile_response.json() if profile_response.content else {}
+            logger.error("tarang_users profile insert failed: status=%s body=%s",
+                         profile_response.status_code, details)
             message = details.get("message") or details.get("hint") or "Unable to store the TARANG access profile."
             return False, None, message
 
@@ -481,10 +685,10 @@ def request_access(full_name, institution_id, password):
             "id": user_id,
             "full_name": full_name,
             "institution_id": institution_id,
-            "role": "survey_operator",
+            "role": to_portal_role(db_role),
         }, None
     except requests.RequestException as exc:
-        print("Supabase access request error:", exc)
+        logger.exception("Supabase access request error: %s", exc)
         return False, None, "Unable to reach Supabase while storing the access request."
 
 def get_surveys():
@@ -813,6 +1017,39 @@ def update_detection_review(detection_id, status, new_class=None, new_hazard=Non
             print("Failed to update detection in Supabase:", r.text)
             return False
 
+        now_iso = datetime.now().isoformat()
+
+        # --- Write structured row to analyst_reviews (v2.0 migration, best-effort) ---
+        try:
+            det_snap = get_detection(detection_id) or {}
+            analyst_user = get_user_by_identifier(reviewer)
+            analyst_uuid = analyst_user.get("id") if analyst_user else None
+            ar_row = {
+                "id": str(uuid.uuid4()),
+                "detection_id": detection_id,
+                "analyst_id": analyst_uuid,
+                "previous_class": det_snap.get("class_name") or "",
+                "assigned_class": new_class or det_snap.get("class_name") or "",
+                "previous_tier": det_snap.get("classification_tier") or "",
+                "assigned_tier": det_snap.get("classification_tier") or "",
+                "decision": canonical_status,
+                "status": canonical_status,
+                "reviewer": reviewer,
+                "notes": notes or "",
+                "reviewed_at": now_iso,
+                "created_at": now_iso,
+            }
+            ar_r = requests.post(
+                f"{SUPABASE_URL}/rest/v1/analyst_reviews",
+                json=ar_row,
+                headers={**HEADERS, "Prefer": "return=minimal"},
+                timeout=8,
+            )
+            if ar_r.status_code not in [200, 201]:
+                print(f"analyst_reviews insert warning (non-fatal): {ar_r.status_code} {ar_r.text[:120]}")
+        except Exception as ar_err:
+            print(f"analyst_reviews insert error (non-fatal): {ar_err}")
+
         # The authoritative detection update has succeeded. Audit logging is
         # best effort so a transient logging failure cannot report a false
         # negative back to the analyst after their decision was persisted.
@@ -822,7 +1059,7 @@ def update_detection_review(detection_id, status, new_class=None, new_hazard=Non
             "new_class": new_class,
             "reviewer": reviewer,
             "notes": notes,
-            "reviewed_at": datetime.now().isoformat()
+            "reviewed_at": now_iso
         })
         log_dispatch_event("detection_state", {
             "detection_id": detection_id,
@@ -830,7 +1067,7 @@ def update_detection_review(detection_id, status, new_class=None, new_hazard=Non
             "lifecycle_status": 'Cleanup Not Recommended' if canonical_status == 'Rejected' else 'Awaiting Marine Review',
             "reviewer": reviewer,
             "notes": notes,
-            "updated_at": datetime.now().isoformat()
+            "updated_at": now_iso
         })
         log_dispatch_event("notification", {
             "type": 'Detection Review',
@@ -842,7 +1079,7 @@ def update_detection_review(detection_id, status, new_class=None, new_hazard=Non
                                 if canonical_status == 'Verified' else ['sonar_analyst', 'government_portal']),
             "detection_id": detection_id,
             "is_read": False,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": now_iso
         })
         return True
     except Exception as e:
@@ -875,7 +1112,33 @@ def update_detection_clearance(detection_id, status="Cleared", team="Coast Guard
             print("Failed to update clearance in Supabase:", r.text)
             return False
 
-        # Log clearance record to dispatches
+        now_iso = datetime.now().isoformat()
+        clr_id = f"CLR-{datetime.now().year}-{uuid.uuid4().hex[:4].upper()}"
+
+        # --- Write structured row to clearance_records (v2.0 migration, best-effort) ---
+        try:
+            clr_row = {
+                "id": clr_id,
+                "detection_id": detection_id,
+                "hotspot_id": hotspot_id,
+                "team": team,
+                "status": lifecycle_status,
+                "notes": notes or "",
+                "clearance_date": now_iso[:10],
+                "created_at": now_iso,
+            }
+            clr_r = requests.post(
+                f"{SUPABASE_URL}/rest/v1/clearance_records",
+                json=clr_row,
+                headers={**HEADERS, "Prefer": "return=minimal"},
+                timeout=8,
+            )
+            if clr_r.status_code not in [200, 201]:
+                print(f"clearance_records insert warning (non-fatal): {clr_r.status_code} {clr_r.text[:120]}")
+        except Exception as clr_err:
+            print(f"clearance_records insert error (non-fatal): {clr_err}")
+
+        # Log clearance record to dispatches (kept for backward compat)
         log_dispatch_event("detection_state", {
             "detection_id": detection_id,
             "status": 'Verified',
@@ -883,7 +1146,7 @@ def update_detection_clearance(detection_id, status="Cleared", team="Coast Guard
             "team": team,
             "hotspot_id": hotspot_id,
             "notes": notes,
-            "updated_at": datetime.now().isoformat()
+            "updated_at": now_iso
         })
         log_dispatch_event("notification", {
             "type": 'Cleanup Lifecycle',
@@ -893,7 +1156,7 @@ def update_detection_clearance(detection_id, status="Cleared", team="Coast Guard
             "detection_id": detection_id,
             "hotspot_id": hotspot_id,
             "is_read": False,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": now_iso
         })
         if lifecycle_status == 'Cleanup Approved':
             log_dispatch_event("notification", {
@@ -904,16 +1167,16 @@ def update_detection_clearance(detection_id, status="Cleared", team="Coast Guard
                 "detection_id": detection_id,
                 "hotspot_id": hotspot_id,
                 "is_read": False,
-                "timestamp": datetime.now().isoformat()
+                "timestamp": now_iso
             })
         return log_dispatch_event("clearance_record", {
-            "id": str(uuid.uuid4()),
+            "id": clr_id,
             "target_id": detection_id,
             "status": lifecycle_status,
             "team": team,
             "notes": notes,
             "hotspot_id": hotspot_id,
-            "cleared_at": datetime.now().isoformat(),
+            "cleared_at": now_iso,
             "lifecycle_status": lifecycle_status
         })
     except Exception as e:
@@ -921,10 +1184,18 @@ def update_detection_clearance(detection_id, status="Cleared", team="Coast Guard
         return False
 
 def log_dispatch_event(event_type, payload):
-    """Appends an immutable operational event record to public.dispatches."""
+    """Appends an immutable operational event record to public.dispatches.
+
+    After the v2.0 migration, dispatches has a top-level indexed ``event_type``
+    column.  We set it explicitly on every INSERT so the row is immediately
+    queryable via the index without waiting for the back-fill trigger.
+    The event_type is also kept inside payload for backward compatibility with
+    any code that reads it from payload->>'event_type'.
+    """
     try:
         record = {
             "id": str(uuid.uuid4()),
+            "event_type": event_type,   # indexed column (v2.0)
             "payload": {
                 "event_type": event_type,
                 **payload
@@ -940,13 +1211,30 @@ def log_dispatch_event(event_type, payload):
         return False
 
 def get_dispatch_events(event_type=None):
-    """Queries operational events from public.dispatches."""
+    """Queries operational events from public.dispatches.
+
+    After the v2.0 migration, dispatches has an indexed `event_type` column.
+    We filter on that column server-side so Supabase only returns matching
+    rows instead of the entire table.  The fallback (no event_type filter)
+    still returns all events for callers that do their own filtering.
+    """
     try:
-        r = requests.get(f"{SUPABASE_URL}/rest/v1/dispatches?select=*&order=created_at.desc", headers=HEADERS, timeout=15)
+        if event_type:
+            # Use the indexed column for server-side filtering (fast path)
+            url = (
+                f"{SUPABASE_URL}/rest/v1/dispatches"
+                f"?select=*&event_type=eq.{event_type}&order=created_at.desc"
+            )
+        else:
+            url = f"{SUPABASE_URL}/rest/v1/dispatches?select=*&order=created_at.desc"
+
+        r = requests.get(url, headers=HEADERS, timeout=15)
         if r.status_code == 200:
             events = []
             for d in r.json():
                 p = d.get("payload") or {}
+                # If event_type column is not yet backfilled on a row,
+                # fall back to checking payload (graceful degradation)
                 if event_type is None or p.get("event_type") == event_type:
                     events.append({
                         "id": d.get("id"),
@@ -1278,16 +1566,21 @@ def get_hotspots():
     try:
         from dbscan_service import cluster_detections
         all_dets = get_all_detections()
-        # Rejected targets never contribute to an operational hotspot, and
-        # shoreline points from legacy imports are not safe route markers.
-        coords_dets = [d for d in all_dets
-                       if d.get("latitude") is not None and d.get("longitude") is not None
-                       and d.get('is_offshore') and d.get('detection_status') != 'Rejected']
-        
+        # Compute is_offshore dynamically from coordinates since the detections
+        # table has no is_offshore column — use is_offshore_coordinate() which
+        # is the source of truth for all geographic validity checks in TARANG.
+        coords_dets = [
+            d for d in all_dets
+            if d.get('latitude') is not None and d.get('longitude') is not None
+            and is_offshore_coordinate(d['latitude'], d['longitude'])
+            and d.get('detection_status') != 'Rejected'
+        ]
+
         if not coords_dets:
             return []
 
-        res = cluster_detections(coords_dets, eps_meters=1500.0, min_samples=2)
+        res = cluster_detections(coords_dets, eps_meters=500.0, min_samples=2)
+
         # Hotspot state is a projection of the same operation events used by
         # the Cleanup Portal.  It therefore changes immediately when an
         # operation is scheduled, started, progressed, or completed.

@@ -201,12 +201,12 @@ async function startDemoPortal(portalKey) {
 }
 window.startDemoPortal = startDemoPortal;
 
-async function registerUser(fullName, institutionId, password) {
+async function registerUser(fullName, institutionId, password, role = 'survey_operator') {
     try {
         const response = await fetch('/api/auth/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ full_name: fullName.trim(), institution_id: institutionId.trim(), password })
+            body: JSON.stringify({ full_name: fullName.trim(), institution_id: institutionId.trim(), password, role })
         });
         const data = await parseJson(response);
         return response.ok && data.status === 'success'

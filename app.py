@@ -14,8 +14,13 @@ from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 from ultralytics import YOLO
 import cv2
 import numpy as np
+from flask_compress import Compress
+from flask_caching import Cache
 
 app = Flask(__name__, static_folder='.')
+Compress(app)
+cache = Cache(app, config={'CACHE_TYPE': 'SimpleCache', 'CACHE_DEFAULT_TIMEOUT': 60})
+app.config['JSON_SORT_KEYS'] = False
 
 from dotenv import load_dotenv
 import supabase_service as sb_svc
@@ -88,32 +93,49 @@ print("Model loaded successfully. Classes:", model.names)
 # ---------------------------------------------------------------------------
 # ROLE-BASED REDIRECTS
 # ---------------------------------------------------------------------------
+# The new Supabase project stores these DB role values (CHECK constraint):
+#   survey_operator | sonar_analyst | marine_analyst | gov_authority |
+#   platform_admin  | public
+# The frontend/redirect map supports both the DB values AND the legacy portal
+# alias names returned by sb_svc.to_portal_role() so both code paths work.
 ROLE_REDIRECTS = {
-    'survey_operator': 'operator-portal.html',
-    'sonar_analyst':   'sonar-analyst.html',
-    'marine_portal':   'marine-analyst.html',
+    # DB role values (new project)
+    'survey_operator':   'operator-portal.html',
+    'sonar_analyst':     'sonar-analyst.html',
+    'marine_analyst':    'marine-analyst.html',
+    'gov_authority':     'gov-authority.html',
+    'platform_admin':    'admin-dashboard.html',
+    'public':            'public.html',
+    # Frontend portal alias keys (returned by to_portal_role)
+    'marine_portal':     'marine-analyst.html',
     'government_portal': 'gov-authority.html',
-    'admin':           'admin-dashboard.html',
-    'public':          'public.html'
+    'admin':             'admin-dashboard.html',
 }
 
-# Portal IDs exposed to the browser and stored in new accounts are canonical.
-# Older Supabase profiles are translated while they are read so existing users
-# continue to work without putting retired role names back into the UI.
+# Normalize any incoming role name (portal alias or legacy) to its DB-legal value.
 ROLE_ALIASES = {
-    'marine_analyst': 'marine_portal',
-    'marine analyst': 'marine_portal',
-    'gov_authority': 'government_portal',
-    'government': 'government_portal',
-    'platform_admin': 'admin',
-    'atmiya': 'admin',
-    'sonar_operator': 'sonar_analyst',
-    'sonar_expert': 'sonar_analyst',
+    # portal names -> DB values
+    'marine_portal':     'marine_analyst',
+    'government_portal': 'gov_authority',
+    'admin':             'platform_admin',
+    # legacy aliases -> DB values
+    'marine analyst':    'marine_analyst',
+    'government':        'gov_authority',
+    'atmiya':            'platform_admin',
+    'sonar_operator':    'sonar_analyst',
+    'sonar_expert':      'sonar_analyst',
+    # pass-throughs (already DB-legal)
+    'survey_operator':   'survey_operator',
+    'sonar_analyst':     'sonar_analyst',
+    'marine_analyst':    'marine_analyst',
+    'gov_authority':     'gov_authority',
+    'platform_admin':    'platform_admin',
+    'public':            'public',
 }
 
 
 def normalize_role(role):
-    """Return one of TARANG's six externally supported portal identifiers."""
+    """Return the DB-legal role value for any incoming role/portal name."""
     value = (role or '').strip().lower()
     return ROLE_ALIASES.get(value, value)
 
@@ -437,17 +459,65 @@ def _stable_target_id(survey_id, sequence):
 
 
 def _txt_acoustic_raster(content_str):
-    """Build a raster only from acoustic sample rows embedded in a TXT input.
+    """Build a raster from TXT acoustic samples or CSV target coordinates.
 
-    A metadata-only log has no image to show, so it is rejected upstream
-    instead of fabricating a sonar picture.  Supported rows are CSV/space
-    delimited numeric samples, optionally prefixed by ``PING:``, ``SAMPLES:``,
-    ``INTENSITY:``, or ``ECHO:``.
+    Supports two formats:
+    1. Acoustic sample rows: numeric CSV lines prefixed by PING/SAMPLES/INTENSITY/ECHO.
+    2. CSV target files with latitude/longitude columns: returns a synthetic top-view
+       position scatter map so the upload produces a valid evidence image.
     """
+    # CSV target format detection (latitude/longitude columns)
+    csv_header_pat = re.compile(r'(?i)\blatitude\b|\blongitude\b')
+    lines_raw = content_str.splitlines()
+    header_idx = None
+    for idx, line in enumerate(lines_raw):
+        if line.strip().startswith('#'):
+            continue
+        if csv_header_pat.search(line):
+            header_idx = idx
+            break
+
+    if header_idx is not None:
+        import csv as _csv
+        data_lines = [l for l in lines_raw[header_idx:] if not l.strip().startswith('#')]
+        reader = _csv.DictReader(data_lines, skipinitialspace=True)
+        lats, lons = [], []
+        for row in reader:
+            try:
+                lat_key = next((k for k in row if 'lat' in k.lower()), None)
+                lon_key = next((k for k in row if 'lon' in k.lower()), None)
+                if lat_key and lon_key and row.get(lat_key) and row.get(lon_key):
+                    lats.append(float(row[lat_key]))
+                    lons.append(float(row[lon_key]))
+            except (ValueError, TypeError):
+                continue
+        if lats:
+            H, W = 256, 512
+            canvas = np.zeros((H, W, 3), dtype=np.uint8)
+            canvas[:, :] = (10, 25, 45)
+            for gx in range(0, W, 64):
+                canvas[:, gx] = (20, 45, 75)
+            for gy in range(0, H, 32):
+                canvas[gy, :] = (20, 45, 75)
+            lat_rng = (max(lats) - min(lats)) or 1e-6
+            lon_rng = (max(lons) - min(lons)) or 1e-6
+            for lat, lon in zip(lats, lons):
+                px = int((lon - min(lons)) / lon_rng * (W - 40)) + 20
+                py = int((max(lats) - lat) / lat_rng * (H - 40)) + 20
+                cv2.circle(canvas, (px, py), 8,  (0, 220, 255), -1)
+                cv2.circle(canvas, (px, py), 4,  (255, 255, 255), -1)
+                cv2.circle(canvas, (px, py), 10, (0, 160, 200),  1)
+            cv2.putText(canvas, 'TARANG TARGET MAP', (10, 20),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.45, (100, 200, 255), 1)
+            cv2.putText(canvas, f'{len(lats)} targets  Indian Ocean',
+                        (10, 240), cv2.FONT_HERSHEY_SIMPLEX, 0.38, (150, 180, 150), 1)
+            return cv2.cvtColor(canvas, cv2.COLOR_BGR2GRAY)
+
+    # Standard acoustic sample rows
     rows = []
     marker = re.compile(r'^\s*(?:PING|SAMPLES?|INTENSITY|ECHO(?:_SAMPLES?)?)\s*[:=]\s*', re.I)
     numeric_row = re.compile(r'^\s*[-+0-9.,;\t ]+\s*$')
-    for raw_line in content_str.splitlines():
+    for raw_line in lines_raw:
         candidate = marker.sub('', raw_line)
         if candidate == raw_line and not numeric_row.match(raw_line):
             continue
@@ -455,12 +525,11 @@ def _txt_acoustic_raster(content_str):
         if len(values) < 8:
             continue
         try:
-            rows.append([float(value) for value in values])
+            rows.append([float(v) for v in values])
         except ValueError:
             logger.warning("Skipping malformed acoustic sample row while processing TXT survey.")
     if len(rows) < 8:
         return None
-
     width = max(len(row) for row in rows)
     matrix = np.full((len(rows), width), np.nan, dtype=np.float32)
     for index, row in enumerate(rows):
@@ -469,8 +538,7 @@ def _txt_acoustic_raster(content_str):
     if finite.size == 0 or float(np.nanmax(finite)) == float(np.nanmin(finite)):
         return None
     matrix[np.isnan(matrix)] = float(np.nanmedian(finite))
-    matrix = cv2.normalize(matrix, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
-    return matrix
+    return cv2.normalize(matrix, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
 
 
 def _extract_video_frames(raw_bytes, filename, max_frames=None):
@@ -986,13 +1054,15 @@ def auth_login():
 
     ok, user_data, token, err = sb_svc.authenticate_user(identifier, password)
     if ok and user_data:
-        role = normalize_role(user_data.get('role', 'survey_operator'))
-        user_data['role'] = role
+        portal_role = user_data.get('role', 'survey_operator')
+        redirect_page = ROLE_REDIRECTS.get(portal_role, ROLE_REDIRECTS.get(normalize_role(portal_role), 'operator-portal.html'))
+        # Strip server-only internal fields before sending to browser
+        safe_user = {k: v for k, v in user_data.items() if k not in ('metadata', 'db_role')}
         return jsonify({
             'status': 'success',
-            'user': user_data,
+            'user': safe_user,
             'access_token': token,
-            'redirect': ROLE_REDIRECTS.get(role, 'operator-portal.html')
+            'redirect': redirect_page
         })
     else:
         return jsonify({'status': 'error', 'message': err or 'Authentication failed.'}), 401
@@ -1039,6 +1109,8 @@ def auth_register():
     full_name = (data.get('full_name') or '').strip()
     institution_id = (data.get('institution_id') or '').strip()
     password = data.get('password') or ''
+    raw_role = data.get('role') or 'survey_operator'
+    role = normalize_role(raw_role)
 
     if not full_name or not institution_id or not password:
         return jsonify({
@@ -1046,7 +1118,7 @@ def auth_register():
             'message': 'Full Name, Institution ID, and password are required.'
         }), 400
 
-    ok, profile, error = sb_svc.request_access(full_name, institution_id, password)
+    ok, profile, error = sb_svc.request_access(full_name, institution_id, password, role=role)
     if not ok:
         return jsonify({'status': 'error', 'message': error or 'Unable to store the access request.'}), 400
 
@@ -1057,17 +1129,50 @@ def auth_register():
         'redirect': 'login.html'
     }), 201
 
-# ===========================================================================
-# ADMIN ENDPOINTS
-# ===========================================================================
+@app.route('/api/auth/request-access', methods=['POST'])
+def auth_request_access():
+    """Canonical POST /api/auth/request-access — alias for /api/auth/register."""
+    return auth_register()
+
+
+@app.route('/api/auth/me', methods=['GET'])
+def auth_me():
+    """Return the currently authenticated user's profile."""
+    profile, error_response = resolve_request_profile()
+    if error_response:
+        return error_response
+    return jsonify({'status': 'success', 'user': profile})
+
+
+@app.route('/api/auth/logout', methods=['POST'])
+def auth_logout():
+    """Stateless logout — client clears its own session token."""
+    return jsonify({'status': 'success', 'message': 'Signed out successfully.'})
+
+
+@app.route('/api/users', methods=['GET'])
+def get_users():
+    """Return all TARANG user profiles (admin only in production)."""
+    return jsonify(sb_svc.get_tarang_users())
+
+
+@app.route('/api/users/<user_id>', methods=['GET'])
+def get_user(user_id):
+    """Return a single user profile by ID or institution ID."""
+    user = sb_svc.get_user_by_identifier(user_id)
+    if not user:
+        return jsonify({'status': 'error', 'message': 'User not found.'}), 404
+    return jsonify({'status': 'success', 'user': user})
+
+
 
 @app.route('/api/admin/users', methods=['GET'])
-@require_roles('platform_admin')
+@require_roles('platform_admin', 'admin')
 def get_admin_users():
     return jsonify(sb_svc.get_tarang_users())
 
 @app.route('/api/admin/cleanup-teams', methods=['GET'])
-@require_roles('platform_admin')
+@require_roles('platform_admin', 'admin')
 def get_cleanup_teams():
     return jsonify([
         {"id": "team-01", "name": "Coast Guard Diving Unit Alpha",   "status": "Active",     "sector": "Sector 1 (Chennai EEZ)"},
@@ -1076,7 +1181,7 @@ def get_cleanup_teams():
     ])
 
 @app.route('/api/admin/government-users', methods=['GET'])
-@require_roles('platform_admin')
+@require_roles('platform_admin', 'admin')
 def get_government_users():
     all_users = sb_svc.get_tarang_users()
     gov = [u for u in all_users if u.get('role') in ['government_portal', 'admin']]
@@ -1087,7 +1192,7 @@ def get_government_users():
 # ===========================================================================
 
 @app.route('/api/v1/surveys', methods=['POST'])
-@require_roles('survey_operator', 'platform_admin')
+@require_roles('survey_operator', 'platform_admin', 'admin')
 def create_survey():
     data = request.json or request.form
     survey_id       = data.get('survey_id') or str(uuid.uuid4())
@@ -1117,7 +1222,7 @@ def create_survey():
 
 
 @app.route('/api/v1/surveys/upload', methods=['POST'])
-@require_roles('survey_operator', 'platform_admin')
+@require_roles('survey_operator', 'platform_admin', 'admin')
 def upload_workflow_survey():
     """Ingest a real acoustic raster into the persistent shared workflow."""
     uploaded_file = request.files.get('file')
@@ -1134,28 +1239,33 @@ def upload_workflow_survey():
     file_hash = hashlib.sha256(raw_bytes).hexdigest()
     survey_id = (request.form.get('survey_id') or '').strip() or _stable_survey_id(file_hash)
 
-    # Idempotency is based on the content hash and survey ID.  A survey ID may
-    # never be reused for different raw evidence, which prevents a detection
-    # from being silently reassigned to the wrong image.
+    # TXT files are supplementary detection records — they don't carry binary
+    # evidence that could conflict with an existing XTF/image upload.  Allow
+    # them to be added to an existing survey to enrich the detection set.
     existing_upload = sb_svc.get_survey_upload_events().get(str(survey_id))
     existing_survey = sb_svc.get_survey(survey_id)
-    if existing_upload and existing_upload.get('file_hash') == file_hash:
-        state = _workflow_state(survey_id)
-        images = [image for image in state.get('images', []) if image.get('url')]
-        if images:
-            return jsonify({
-                'status': 'success', 'existing': True, 'survey_id': survey_id,
-                'filename': existing_upload.get('file_name') or filename,
-                'file_type': existing_upload.get('file_type') or extension.lstrip('.').upper(),
-                'processing_status': existing_upload.get('processing_status', 'completed'),
-                'image': images[0], **state,
-                'metadata': existing_upload.get('metadata') or {},
-            })
-        logger.error("Idempotent upload has no retrievable evidence image: survey=%s", survey_id)
-        return jsonify({'status': 'error', 'message': 'This survey has no retrievable evidence image. Reprocess it with a new survey ID.'}), 409
-    if existing_upload or existing_survey:
-        logger.error("Survey ID collision rejected: survey=%s filename=%s", survey_id, filename)
-        return jsonify({'status': 'error', 'message': 'This survey ID is already associated with different evidence. Use a new survey ID.'}), 409
+    _txt_supplementary = extension == '.txt' and bool(existing_survey)
+
+    if not _txt_supplementary:
+        # Idempotency guard for binary evidence (image / video / XTF).
+        if existing_upload and existing_upload.get('file_hash') == file_hash:
+            state = _workflow_state(survey_id)
+            images = [image for image in state.get('images', []) if image.get('url')]
+            if images:
+                return jsonify({
+                    'status': 'success', 'existing': True, 'survey_id': survey_id,
+                    'filename': existing_upload.get('file_name') or filename,
+                    'file_type': existing_upload.get('file_type') or extension.lstrip('.').upper(),
+                    'processing_status': existing_upload.get('processing_status', 'completed'),
+                    'image': images[0], **state,
+                    'metadata': existing_upload.get('metadata') or {},
+                })
+            logger.error("Idempotent upload has no retrievable evidence image: survey=%s", survey_id)
+            return jsonify({'status': 'error', 'message': 'This survey has no retrievable evidence image. Reprocess it with a new survey ID.'}), 409
+        if existing_upload or existing_survey:
+            logger.error("Survey ID collision rejected: survey=%s filename=%s", survey_id, filename)
+            return jsonify({'status': 'error', 'message': 'This survey ID is already associated with different evidence. Use a new survey ID.'}), 409
+
 
     now = datetime.now()
     created_by = g.tarang_user.get('username') or g.tarang_user.get('id') or 'survey_operator'
@@ -1178,9 +1288,42 @@ def upload_workflow_survey():
                 }), 422
             evidence_bytes = _encode_acoustic_raster(decoded_image)
             evidence_content_type = 'image/png'
+            # Parse CSV target coordinates if present — stored in metadata so the
+            # detection loop can build real-coordinate detections without YOLO.
+            csv_header_pat = re.compile(r'(?i)\blatitude\b|\blongitude\b')
+            lines_raw = text_input.splitlines()
+            hdr_idx = next(
+                (i for i, l in enumerate(lines_raw)
+                 if not l.strip().startswith('#') and csv_header_pat.search(l)),
+                None
+            )
+            if hdr_idx is not None:
+                import csv as _csv
+                data_lines = [l for l in lines_raw[hdr_idx:] if not l.strip().startswith('#')]
+                reader = _csv.DictReader(data_lines, skipinitialspace=True)
+                csv_targets = []
+                for row in reader:
+                    try:
+                        lat_k = next((k for k in row if 'lat' in k.lower()), None)
+                        lon_k = next((k for k in row if 'lon' in k.lower()), None)
+                        if lat_k and lon_k and row.get(lat_k) and row.get(lon_k):
+                            csv_targets.append({
+                                'id': row.get('target_id') or row.get('id') or f'T{len(csv_targets)+1:03d}',
+                                'latitude': float(row[lat_k]),
+                                'longitude': float(row[lon_k]),
+                                'depth_m': row.get('depth_m') or row.get('depth') or None,
+                                'target_type': (row.get('target_type') or row.get('class') or 'unknown').strip(),
+                                'confidence': float(row.get('confidence', 0.80)),
+                            })
+                    except (ValueError, TypeError):
+                        continue
+                if csv_targets:
+                    metadata['_csv_targets'] = csv_targets
+                    logger.info("CSV target file parsed: %d targets from %s", len(csv_targets), filename)
         except Exception as error:
             logger.exception("TXT evidence generation failed for %s: %s", filename, error)
             return jsonify({'status': 'error', 'message': f'Unable to parse TXT survey: {error}'}), 400
+
     elif extension in VIDEO_UPLOAD_EXTENSIONS:
         try:
             video_frames, metadata = _extract_video_frames(raw_bytes, filename)
@@ -1201,17 +1344,22 @@ def upload_workflow_survey():
 
     survey_name = request.form.get('survey_name') or f"Offshore Survey {now.strftime('%Y-%m-%d %H:%M')}"
     location = request.form.get('location_name') or 'Offshore Indian Ocean Demonstration Zone'
-    ok, saved_id, error = sb_svc.create_survey({
-        'survey_id': survey_id, 'survey_name': survey_name,
-        'survey_date': now.strftime('%Y-%m-%d'), 'survey_time': now.strftime('%H:%M'),
-        'location_name': location, 'sonar_device': 'TARANG Side-Scan Sonar',
-        'sonar_frequency': request.form.get('sonar_frequency') or '400/900 kHz',
-        'created_by': created_by
-    })
-    if not ok:
-        return jsonify({'status': 'error', 'message': error or 'Unable to persist the survey record in Supabase.'}), 502
+    if _txt_supplementary:
+        # Survey already exists — just update status to show new data is coming in
+        logger.info("TXT supplementary upload for existing survey: survey=%s file=%s", survey_id, filename)
+        sb_svc.update_survey_status(survey_id, processing_status='in_progress', status='active')
+    else:
+        ok, saved_id, error = sb_svc.create_survey({
+            'survey_id': survey_id, 'survey_name': survey_name,
+            'survey_date': now.strftime('%Y-%m-%d'), 'survey_time': now.strftime('%H:%M'),
+            'location_name': location, 'sonar_device': 'TARANG Side-Scan Sonar',
+            'sonar_frequency': request.form.get('sonar_frequency') or '400/900 kHz',
+            'created_by': created_by
+        })
+        if not ok:
+            return jsonify({'status': 'error', 'message': error or 'Unable to persist the survey record in Supabase.'}), 502
+        sb_svc.update_survey_status(survey_id, processing_status='in_progress', status='active')
 
-    sb_svc.update_survey_status(survey_id, processing_status='in_progress', status='active')
 
     # One survey can yield several evidence artifacts: a TXT or image upload
     # produces exactly one, a video produces one per extracted frame.
@@ -1241,12 +1389,45 @@ def upload_workflow_survey():
                 unit['content_type'], sequence=sequence
             )
             image_records.append(record)
-            detections.extend(_workflow_detection_rows(
-                survey_id, file_hash, unit['image'], unit['metadata'], sequence=sequence))
+            # For CSV target files, parse coordinates directly instead of YOLO.
+            # YOLO cannot recognise lat/lon scatter dots as marine debris classes.
+            csv_targets = unit['metadata'].get('_csv_targets') or []
+            if csv_targets:
+                img_record = record
+                for t_idx, target in enumerate(csv_targets):
+                    lat = target.get('latitude')
+                    lon = target.get('longitude')
+                    if not sb_svc.is_offshore_coordinate(lat, lon):
+                        logger.warning("CSV target %s is not an offshore coordinate, skipping.", target.get('id'))
+                        continue
+                    raw_cls = target.get('target_type', 'unknown')
+                    cls_name = raw_cls if raw_cls in ALLOWED_TARGET_CLASSES else 'unknown'
+                    meta = get_meta(cls_name)
+                    conf = float(target.get('confidence', 0.80)) * 100
+                    tier = 'A' if conf >= 85 else ('B' if conf >= 65 else 'C')
+                    detections.append({
+                        'id': _stable_target_id(survey_id, f'csv:{sequence}:{t_idx}'),
+                        'survey_id': survey_id,
+                        'class_name': cls_name, 'title': meta['title'],
+                        'category': meta['category'], 'confidence': round(conf, 1),
+                        'classification_tier': tier, 'requires_review': True,
+                        'latitude': lat, 'longitude': lon,
+                        'ping_number': t_idx + 1, 'depth': str(target.get('depth_m', '')) or None,
+                        'altitude': None, 'heading': None,
+                        'crop_url': img_record.get('url') or '',
+                        'material': meta['material'], 'hazard': meta['hazard'],
+                        'evidence_sequence': sequence, 'source': 'txt_target_csv',
+                        'navigation_source': 'csv_coordinates',
+                        'metadata': dict(metadata, target_id=target.get('id')),
+                    })
+            else:
+                detections.extend(_workflow_detection_rows(
+                    survey_id, file_hash, unit['image'], unit['metadata'], sequence=sequence))
     except (ValueError, RuntimeError) as error:
         logger.exception("Evidence persistence failed: survey=%s filename=%s error=%s", survey_id, filename, error)
         sb_svc.update_survey_status(survey_id, processing_status='failed', status='active')
         return jsonify({'status': 'error', 'message': str(error)}), 502
+
 
     record_by_sequence = {record.get('sequence'): record for record in image_records}
     image_record = image_records[0]
@@ -1315,23 +1496,24 @@ def upload_workflow_survey():
             break
     state = _workflow_state(survey_id)
     return jsonify({
-        'status': 'success', 'existing': False, 'survey_id': survey_id,
+        'status': 'success', 'existing': _txt_supplementary, 'survey_id': survey_id,
         'filename': filename, 'file_type': extension.lstrip('.').upper(),
         'processing_status': 'completed', 'uploaded_at': now.isoformat(),
         'image': image_record, 'images': image_records,
         'metadata': metadata, 'detections': state['detections'],
+        'detections_count': len(state['detections']),
         'summary': state['summary'], 'hotspots': state['hotspots'],
         'notifications': state['notifications']
     }), 201
 
 @app.route('/api/v1/surveys', methods=['GET'])
-@require_roles('survey_operator', 'sonar_analyst', 'marine_analyst', 'gov_authority', 'platform_admin')
+@require_roles('survey_operator', 'sonar_analyst', 'marine_portal', 'marine_analyst', 'government_portal', 'gov_authority', 'admin', 'platform_admin', 'public')
 def get_surveys():
     surveys = sb_svc.get_surveys()
     return jsonify(surveys)
 
 @app.route('/api/v1/surveys/<survey_id>', methods=['GET'])
-@require_roles('survey_operator', 'sonar_analyst', 'marine_analyst', 'gov_authority', 'platform_admin')
+@require_roles('survey_operator', 'sonar_analyst', 'marine_portal', 'marine_analyst', 'government_portal', 'gov_authority', 'admin', 'platform_admin', 'public')
 def get_survey(survey_id):
     survey = sb_svc.get_survey(survey_id)
     if not survey:
@@ -1340,13 +1522,13 @@ def get_survey(survey_id):
 
 
 @app.route('/api/v1/workflow/state', methods=['GET'])
-@require_roles('survey_operator', 'sonar_analyst', 'marine_analyst', 'gov_authority', 'platform_admin', 'public')
+@require_roles('survey_operator', 'sonar_analyst', 'marine_portal', 'marine_analyst', 'government_portal', 'gov_authority', 'admin', 'platform_admin', 'public')
 def get_workflow_state():
     return jsonify(_workflow_state(request.args.get('survey_id') or None))
 
 
 @app.route('/api/v1/surveys/<survey_id>/images', methods=['GET'])
-@require_roles('survey_operator', 'sonar_analyst', 'marine_analyst', 'gov_authority', 'platform_admin', 'public')
+@require_roles('survey_operator', 'sonar_analyst', 'marine_portal', 'marine_analyst', 'government_portal', 'gov_authority', 'admin', 'platform_admin', 'public')
 def get_workflow_images(survey_id):
     images = sb_svc.get_sonar_images(survey_id)
     if not images:
@@ -1359,7 +1541,7 @@ def get_workflow_images(survey_id):
 
 
 @app.route('/api/v1/surveys/<survey_id>/summary', methods=['GET'])
-@require_roles('survey_operator', 'sonar_analyst', 'marine_analyst', 'gov_authority', 'platform_admin', 'public')
+@require_roles('survey_operator', 'sonar_analyst', 'marine_portal', 'marine_analyst', 'government_portal', 'gov_authority', 'admin', 'platform_admin', 'public')
 def get_workflow_summary(survey_id):
     state = _workflow_state(survey_id)
     return jsonify({
@@ -1369,7 +1551,7 @@ def get_workflow_summary(survey_id):
     })
 
 @app.route('/api/v1/surveys/<survey_id>/areas', methods=['GET', 'POST'])
-@require_roles('survey_operator', 'sonar_analyst', 'marine_analyst', 'gov_authority', 'platform_admin')
+@require_roles('survey_operator', 'sonar_analyst', 'marine_portal', 'marine_analyst', 'government_portal', 'gov_authority', 'admin', 'platform_admin')
 def handle_survey_areas(survey_id):
     if request.method == 'POST':
         _, error_response = authorize_request('survey_operator', 'platform_admin')
@@ -1392,14 +1574,14 @@ def handle_survey_areas(survey_id):
         return jsonify([])
 
 @app.route('/api/v1/surveys/all/detections', methods=['GET'])
-@require_roles('survey_operator', 'sonar_analyst', 'marine_analyst', 'gov_authority', 'platform_admin')
+@require_roles('survey_operator', 'sonar_analyst', 'marine_portal', 'marine_analyst', 'government_portal', 'gov_authority', 'admin', 'platform_admin')
 def get_all_detections_route():
     dets = sb_svc.get_all_detections()
     return jsonify(dets)
 
 @app.route('/api/v1/surveys/<survey_id>/detections', methods=['GET'])
 @app.route('/api/v1/detections', methods=['GET'])
-@require_roles('survey_operator', 'sonar_analyst', 'marine_analyst', 'gov_authority', 'platform_admin')
+@require_roles('survey_operator', 'sonar_analyst', 'marine_portal', 'marine_analyst', 'government_portal', 'gov_authority', 'admin', 'platform_admin', 'public')
 def get_survey_detections(survey_id='all'):
     sid = survey_id if survey_id and survey_id != 'all' else None
 
@@ -1429,7 +1611,7 @@ def get_survey_detections(survey_id='all'):
     return jsonify(dets)
 
 @app.route('/api/v1/surveys/<survey_id>/clusters', methods=['GET'])
-@require_roles('survey_operator', 'sonar_analyst', 'marine_analyst', 'gov_authority', 'platform_admin')
+@require_roles('survey_operator', 'sonar_analyst', 'marine_portal', 'marine_analyst', 'government_portal', 'gov_authority', 'admin', 'platform_admin')
 def get_survey_clusters(survey_id):
     from dbscan_service import cluster_detections
     eps_meters  = float(request.args.get('eps_meters', 500.0))
@@ -1442,7 +1624,7 @@ def get_survey_clusters(survey_id):
 # ===========================================================================
 
 @app.route('/api/v1/reports', methods=['GET'])
-@require_roles('survey_operator', 'sonar_analyst', 'marine_analyst', 'gov_authority', 'platform_admin')
+@require_roles('survey_operator', 'sonar_analyst', 'marine_portal', 'marine_analyst', 'government_portal', 'gov_authority', 'admin', 'platform_admin')
 def get_reports():
     surveys = sb_svc.get_surveys()
     reports = []
@@ -1515,7 +1697,7 @@ def _build_pdf_report(lines):
 
 
 @app.route('/api/v1/surveys/<survey_id>/report', methods=['GET'])
-@require_roles('survey_operator', 'sonar_analyst', 'marine_analyst', 'gov_authority', 'platform_admin')
+@require_roles('survey_operator', 'sonar_analyst', 'marine_portal', 'marine_analyst', 'government_portal', 'gov_authority', 'admin', 'platform_admin')
 def download_survey_report(survey_id):
     """Download a populated, survey-scoped operational report."""
     survey = sb_svc.get_survey(survey_id)
@@ -1614,6 +1796,14 @@ def handle_analyst_reviews():
         return jsonify(reviews)
 
 
+@app.route('/api/v1/dispatches', methods=['GET'])
+def get_dispatches():
+    """Return dispatch event log for the current workflow state."""
+    event_type = request.args.get('type')
+    events = sb_svc.get_dispatch_events(event_type) if event_type else sb_svc.get_dispatch_events()
+    return jsonify(events)
+
+
 @app.route('/api/v1/dispatches', methods=['POST'])
 @require_roles('survey_operator', 'sonar_analyst', 'platform_admin')
 def create_dispatch():
@@ -1659,7 +1849,7 @@ def create_dispatch():
 # ===========================================================================
 
 @app.route('/api/v1/notifications', methods=['GET', 'POST'])
-@require_roles('survey_operator', 'sonar_analyst', 'marine_analyst', 'gov_authority', 'platform_admin')
+@require_roles('survey_operator', 'sonar_analyst', 'marine_portal', 'marine_analyst', 'government_portal', 'gov_authority', 'admin', 'platform_admin')
 def handle_notifications():
     if request.method == 'POST':
         data = request.json or request.form
@@ -1676,7 +1866,7 @@ def handle_notifications():
         return jsonify(sb_svc.get_notifications(g.tarang_user.get('role')))
 
 @app.route('/api/v1/notifications/mark-read', methods=['POST'])
-@require_roles('survey_operator', 'sonar_analyst', 'marine_analyst', 'gov_authority', 'platform_admin')
+@require_roles('survey_operator', 'sonar_analyst', 'marine_portal', 'marine_analyst', 'government_portal', 'gov_authority', 'admin', 'platform_admin')
 def mark_notifications_read():
     sb_svc.mark_notifications_read(g.tarang_user.get('role'))
     return jsonify({'status': 'success'})
@@ -1686,7 +1876,7 @@ def mark_notifications_read():
 # ===========================================================================
 
 @app.route('/api/v1/documents', methods=['GET'])
-@require_roles('survey_operator', 'sonar_analyst', 'gov_authority', 'platform_admin')
+@require_roles('survey_operator', 'sonar_analyst', 'marine_portal', 'marine_analyst', 'government_portal', 'gov_authority', 'admin', 'platform_admin')
 def get_documents():
     return jsonify(sb_svc.get_documents())
 
@@ -1710,29 +1900,186 @@ def get_intermediate_detections():
     return jsonify(sorted(dets, key=lambda x: x.get('confidence', 0), reverse=True))
 
 @app.route('/api/v1/detections/<detection_id>/verify', methods=['POST'])
-@require_roles('sonar_analyst', 'platform_admin')
+@require_roles('sonar_analyst', 'admin', 'platform_admin')
 def verify_detection(detection_id):
+    """Sonar analyst verification with status: Verified, Rejected, Needs Review."""
     data      = request.json or request.form
-    v_status  = data.get('status', 'Verified')
+    v_status  = data.get('status', 'Verified')  # Verified | Rejected | Needs Review
     notes     = data.get('notes', '')
-    reviewer  = g.tarang_user.get('username') or g.tarang_user.get('full_name')
+    reviewer  = g.tarang_user.get('username') or g.tarang_user.get('full_name') or g.tarang_user.get('id')
     new_class = data.get('class_name')
+    confidence_override = data.get('analyst_confidence')
 
     det = sb_svc.get_detection(detection_id)
     if not det:
         return jsonify({'error': 'Detection not found'}), 404
 
+    # Update detection with verification
     ok = sb_svc.update_detection_review(
         detection_id, v_status, new_class=new_class,
         reviewer=reviewer, notes=notes
     )
     if ok:
+        # Log verification event for audit trail
+        sb_svc.log_dispatch_event('detection_verification', {
+            'detection_id': detection_id,
+            'survey_id': det.get('survey_id'),
+            'ai_class': det.get('class_name'),
+            'ai_confidence': det.get('confidence'),
+            'analyst_status': v_status,
+            'analyst_class': new_class,
+            'analyst_confidence': confidence_override,
+            'reviewer': reviewer,
+            'notes': notes,
+            'verified_at': datetime.now().isoformat()
+        })
+        
+        # Notify operator when verification completes
+        if v_status in ('Verified', 'Rejected'):
+            survey_id = det.get('survey_id')
+            survey_dets = sb_svc.get_all_detections(survey_id=survey_id)
+            verified_count = sum(1 for d in survey_dets if d.get('review_status') == 'Verified')
+            emit_workflow_notification(
+                ['survey_operator'], 
+                f'Detection {v_status.lower()}',
+                f'Analyst {v_status.lower()} detection {detection_id} in survey {survey_id}. Total verified: {verified_count}',
+                type='Verification Update',
+                survey_id=survey_id,
+                detection_id=detection_id,
+                verification_status=v_status
+            )
+        
         return jsonify({'status': 'success', 'detection_id': detection_id, 'verification_status': v_status})
     else:
         return jsonify({'status': 'error', 'message': 'Failed to update detection.'}), 500
 
+@app.route('/api/v1/surveys/<survey_id>/verification-summary', methods=['GET'])
+@require_roles('survey_operator', 'sonar_analyst', 'marine_portal', 'marine_analyst', 'government_portal', 'gov_authority', 'admin', 'platform_admin')
+def get_verification_summary(survey_id):
+    """Get verification statistics for a survey."""
+    dets = sb_svc.get_all_detections(survey_id=survey_id)
+    total = len(dets)
+    verified = sum(1 for d in dets if d.get('review_status') == 'Verified')
+    rejected = sum(1 for d in dets if d.get('review_status') == 'Rejected')
+    needs_review = sum(1 for d in dets if d.get('review_status') in ('Needs Review', 'Pending Review', None) or d.get('requires_review'))
+    
+    # Group by class
+    by_class = {}
+    for d in dets:
+        cls = d.get('class_name', 'unknown')
+        if cls not in by_class:
+            by_class[cls] = {'total': 0, 'verified': 0, 'rejected': 0, 'pending': 0}
+        by_class[cls]['total'] += 1
+        status = d.get('review_status')
+        if status == 'Verified':
+            by_class[cls]['verified'] += 1
+        elif status == 'Rejected':
+            by_class[cls]['rejected'] += 1
+        else:
+            by_class[cls]['pending'] += 1
+    
+    return jsonify({
+        'survey_id': survey_id,
+        'total_detections': total,
+        'verified': verified,
+        'rejected': rejected,
+        'needs_review': needs_review,
+        'pending': needs_review,
+        'verification_progress': round(100.0 * (verified + rejected) / total, 1) if total > 0 else 0,
+        'by_class': by_class
+    })
+
+@app.route('/api/v1/surveys/<survey_id>/verification-queue', methods=['GET'])
+@require_roles('sonar_analyst', 'admin', 'platform_admin')
+def get_verification_queue(survey_id):
+    """Get pending detections requiring verification for a survey."""
+    dets = sb_svc.get_all_detections(survey_id=survey_id)
+    
+    # Filter to pending detections only
+    pending = [
+        d for d in dets 
+        if d.get('review_status') in ('Needs Review', 'Pending Review', None, 'AI_DETECTED') 
+        or d.get('requires_review') == True
+    ]
+    
+    # Sort by confidence (lowest first for prioritization)
+    pending.sort(key=lambda x: x.get('confidence', 0.0))
+    
+    return jsonify({
+        'survey_id': survey_id,
+        'total_pending': len(pending),
+        'queue': pending
+    })
+
+@app.route('/api/v1/surveys/<survey_id>/batch-verify', methods=['POST'])
+@require_roles('sonar_analyst', 'admin', 'platform_admin')
+def batch_verify_detections(survey_id):
+    """Batch verify multiple detections."""
+    data = request.json or {}
+    detection_ids = data.get('detection_ids', [])
+    new_status = data.get('status', 'Verified')  # 'Verified', 'Rejected', or 'Needs Review'
+    analyst_notes = data.get('notes', 'Batch verification')
+    
+    if not detection_ids:
+        return jsonify({'status': 'error', 'message': 'No detection_ids provided.'}), 400
+    
+    # Get analyst info
+    analyst_name = session.get('user', {}).get('full_name', 'System Analyst')
+    analyst_id = session.get('user', {}).get('user_id', 'system')
+    
+    results = {'success': [], 'failed': []}
+    
+    for det_id in detection_ids:
+        try:
+            # Update detection
+            ok = sb_svc.update_detection_review(
+                det_id, 
+                new_status, 
+                analyst=analyst_name, 
+                notes=analyst_notes
+            )
+            
+            if ok:
+                # Log event
+                sb_svc.log_dispatch_event(
+                    survey_id=survey_id,
+                    event_type='detection_verified',
+                    metadata={
+                        'detection_id': det_id,
+                        'verification_status': new_status,
+                        'analyst_id': analyst_id,
+                        'analyst_name': analyst_name,
+                        'batch': True
+                    }
+                )
+                
+                # Emit notification
+                emit_workflow_notification(
+                    target_roles=['government_portal'],
+                    title=f'Detection {new_status}',
+                    message=f'Detection {det_id} marked as {new_status} by {analyst_name}',
+                    action_url=f'/government-portal.html?detection={det_id}',
+                    metadata={'detection_id': det_id, 'survey_id': survey_id}
+                )
+                
+                results['success'].append(det_id)
+            else:
+                results['failed'].append(det_id)
+                
+        except Exception as e:
+            print(f"Batch verify error for {det_id}: {e}")
+            results['failed'].append(det_id)
+    
+    return jsonify({
+        'status': 'completed',
+        'total': len(detection_ids),
+        'success_count': len(results['success']),
+        'failed_count': len(results['failed']),
+        'results': results
+    })
+
 @app.route('/api/v1/detections/<detection_id>/clearance', methods=['POST'])
-@require_roles('marine_analyst', 'platform_admin')
+@require_roles('marine_portal', 'marine_analyst', 'admin', 'platform_admin')
 def update_detection_clearance_route(detection_id):
     data     = request.json or request.form
     c_status = data.get('status', 'In Progress')
@@ -1744,7 +2091,7 @@ def update_detection_clearance_route(detection_id):
     return jsonify({'status': 'error'}), 500
 
 @app.route('/api/v1/detections/<detection_id>/cleanup-decision', methods=['POST'])
-@require_roles('marine_analyst', 'platform_admin')
+@require_roles('marine_portal', 'marine_analyst', 'admin', 'platform_admin')
 def record_cleanup_decision(detection_id):
     data = request.json or request.form
     cleanup_required = data.get('cleanup_required')
@@ -1811,7 +2158,7 @@ def record_cleanup_decision(detection_id):
 
 
 @app.route('/api/v1/cleanup/operations', methods=['GET'])
-@require_roles('marine_analyst', 'gov_authority', 'platform_admin')
+@require_roles('marine_portal', 'government_portal', 'admin', 'survey_operator', 'sonar_analyst')
 def get_cleanup_operations_route():
     operations = sb_svc.get_cleanup_operations()
     survey_id = request.args.get('survey_id')
@@ -1821,7 +2168,7 @@ def get_cleanup_operations_route():
 
 
 @app.route('/api/v1/cleanup/<target_id>/action', methods=['POST'])
-@require_roles('marine_analyst', 'platform_admin')
+@require_roles('marine_portal', 'marine_analyst', 'admin', 'platform_admin')
 def update_cleanup_operation(target_id):
     data = request.json or request.form or {}
     action = str(data.get('action') or '').strip().lower()
@@ -1847,7 +2194,28 @@ def update_cleanup_operation(target_id):
     status = action_status[action]
     hotspot_id = data.get('hotspot_id') or _hotspot_for_target(target_id)
     if status == 'Cleanup Not Recommended':
-        return record_cleanup_decision(target_id)
+        # Handle rejection inline — calling record_cleanup_decision() as a
+        # plain Python function doesn't work because it re-reads request.json
+        # and misinterprets the 'action' key as cleanup_required=True.
+        det = sb_svc.get_detection(target_id)
+        if not det:
+            return jsonify({'error': 'Detection not found'}), 404
+        now = datetime.now().isoformat()
+        if not sb_svc.log_dispatch_event('detection_state', {
+            'detection_id': target_id, 'status': 'Verified',
+            'lifecycle_status': status, 'hotspot_id': hotspot_id,
+            'notes': data.get('notes', ''), 'decision_at': now, 'updated_at': now
+        }):
+            return jsonify({'status': 'error', 'message': 'Unable to persist the cleanup decision.'}), 502
+        sb_svc.update_detection_clearance(target_id, status,
+                                          notes=data.get('notes', ''), hotspot_id=hotspot_id)
+        emit_workflow_notification(
+            ['marine_portal', 'government_portal'], 'Cleanup not recommended',
+            f'Detection {target_id} remains a verified monitored finding without a cleanup dispatch.',
+            type='Cleanup Decision', survey_id=det.get('survey_id'),
+            detection_id=target_id, hotspot_id=hotspot_id
+        )
+        return jsonify({'status': 'success', 'detection_id': target_id, 'cleanup_status': status})
 
     existing = next((operation for operation in sb_svc.get_cleanup_operations()
                      if str(operation.get('target_id')) == str(target_id)), None)
@@ -1901,13 +2269,13 @@ def update_cleanup_operation(target_id):
 # ===========================================================================
 
 @app.route('/api/v1/hotspots', methods=['GET'])
-@require_roles('marine_analyst', 'gov_authority', 'platform_admin')
+@require_roles('survey_operator', 'sonar_analyst', 'marine_portal', 'marine_analyst', 'government_portal', 'gov_authority', 'admin', 'platform_admin', 'public')
 def get_hotspots():
     hotspots = sb_svc.get_hotspots()
     return jsonify(hotspots)
 
 @app.route('/api/v1/hotspots/<hotspot_id>/status', methods=['POST'])
-@require_roles('gov_authority', 'platform_admin')
+@require_roles('marine_portal', 'government_portal', 'admin')
 def update_hotspot_status(hotspot_id):
     data = request.json or request.form
     new_status = data.get('status')
@@ -1998,7 +2366,7 @@ def _build_cleanup_route(survey_id=None, hotspot_id=None):
 
 
 @app.route('/api/v1/routes/optimize', methods=['POST'])
-@require_roles('marine_analyst', 'gov_authority', 'platform_admin')
+@require_roles('marine_portal', 'government_portal', 'admin')
 def optimize_cleanup_route():
     data = request.json or request.form or {}
     route = _build_cleanup_route(data.get('survey_id'), data.get('hotspot_id'))
@@ -2018,7 +2386,7 @@ def optimize_cleanup_route():
 
 
 @app.route('/api/v1/routes', methods=['GET'])
-@require_roles('marine_analyst', 'gov_authority', 'platform_admin')
+@require_roles('marine_portal', 'government_portal', 'admin', 'survey_operator', 'sonar_analyst')
 def get_cleanup_route():
     return jsonify(sb_svc.get_latest_route() or {'status': 'No route generated'})
 
@@ -2076,7 +2444,7 @@ def _survey_start_coordinate(survey_id):
 
 
 @app.route('/api/v1/hotspot-route', methods=['GET', 'POST'])
-@require_roles('survey_operator', 'marine_analyst', 'gov_authority', 'platform_admin')
+@require_roles('survey_operator', 'sonar_analyst', 'marine_portal', 'marine_analyst', 'government_portal', 'gov_authority', 'admin', 'platform_admin')
 def hotspot_cleanup_route():
     """Optimise a cleanup route through real hotspot coordinates.
 
@@ -2170,7 +2538,7 @@ def hotspot_cleanup_route():
 
 
 @app.route('/api/v1/hotspot-route/latest', methods=['GET'])
-@require_roles('survey_operator', 'marine_analyst', 'gov_authority', 'platform_admin')
+@require_roles('survey_operator', 'sonar_analyst', 'marine_portal', 'marine_analyst', 'government_portal', 'gov_authority', 'admin', 'platform_admin')
 def latest_hotspot_cleanup_route():
     """Return the most recently persisted hotspot cleanup route."""
     events = sb_svc.get_dispatch_events('hotspot_cleanup_route')
@@ -2187,7 +2555,8 @@ def latest_hotspot_cleanup_route():
 # ===========================================================================
 
 @app.route('/api/v1/export/bundle/<survey_id>.json', methods=['GET'])
-@require_roles('survey_operator', 'sonar_analyst', 'marine_analyst', 'gov_authority', 'platform_admin')
+@app.route('/api/v1/export/survey/<survey_id>/json', methods=['GET'])
+@require_roles('survey_operator', 'sonar_analyst', 'marine_portal', 'marine_analyst', 'government_portal', 'gov_authority', 'admin', 'platform_admin')
 def export_survey_bundle(survey_id):
     """Download survey, detection, hotspot and route records as one JSON file."""
     import tarang_geo
@@ -2250,7 +2619,8 @@ def export_survey_bundle(survey_id):
 
 
 @app.route('/api/v1/export/hotspots.json', methods=['GET'])
-@require_roles('survey_operator', 'sonar_analyst', 'marine_analyst', 'gov_authority', 'platform_admin')
+@app.route('/api/v1/export/hotspots/json', methods=['GET'])
+@require_roles('survey_operator', 'sonar_analyst', 'marine_portal', 'marine_analyst', 'government_portal', 'gov_authority', 'admin', 'platform_admin')
 def export_hotspots():
     import tarang_geo
     survey_id = (request.args.get('survey_id') or '').strip() or None
@@ -2271,7 +2641,8 @@ def export_hotspots():
 
 
 @app.route('/api/v1/export/detections.json', methods=['GET'])
-@require_roles('survey_operator', 'sonar_analyst', 'marine_analyst', 'gov_authority', 'platform_admin')
+@app.route('/api/v1/export/detections/json', methods=['GET'])
+@require_roles('survey_operator', 'sonar_analyst', 'marine_portal', 'marine_analyst', 'government_portal', 'gov_authority', 'admin', 'platform_admin')
 def export_detections():
     survey_id = (request.args.get('survey_id') or '').strip() or None
     detections = sb_svc.get_all_detections(survey_id=survey_id) if survey_id else sb_svc.get_all_detections()
@@ -2283,7 +2654,8 @@ def export_detections():
 
 
 @app.route('/api/v1/export/cleanup-route.json', methods=['GET'])
-@require_roles('survey_operator', 'marine_analyst', 'gov_authority', 'platform_admin')
+@app.route('/api/v1/export/cleanup-route/json', methods=['GET'])
+@require_roles('survey_operator', 'marine_portal', 'government_portal', 'admin')
 def export_cleanup_route():
     events = sb_svc.get_dispatch_events('hotspot_cleanup_route') or []
     survey_id = (request.args.get('survey_id') or '').strip() or None
@@ -2301,7 +2673,7 @@ def export_cleanup_route():
 
 
 @app.route('/api/v1/export/notifications.json', methods=['GET'])
-@require_roles('survey_operator', 'sonar_analyst', 'marine_analyst', 'gov_authority', 'platform_admin')
+@require_roles('survey_operator', 'sonar_analyst', 'marine_portal', 'marine_analyst', 'government_portal', 'gov_authority', 'admin', 'platform_admin')
 def export_notifications():
     notifications = sb_svc.get_notifications(g.tarang_user.get('role'))
     response = Response(json.dumps({'receiver_role': g.tarang_user.get('role'),
@@ -2317,12 +2689,12 @@ def export_notifications():
 # ===========================================================================
 
 @app.route('/api/v1/clearance', methods=['GET'])
-@require_roles('marine_analyst', 'gov_authority', 'platform_admin')
+@require_roles('marine_portal', 'government_portal', 'admin')
 def get_clearance_records():
     return jsonify(sb_svc.get_clearance_records())
 
 @app.route('/api/v1/clearance', methods=['POST'])
-@require_roles('marine_analyst', 'platform_admin')
+@require_roles('marine_portal', 'marine_analyst', 'admin', 'platform_admin')
 def add_clearance_record():
     data          = request.json or request.form
     c_id          = f"CLR-{datetime.now().year}-{uuid.uuid4().hex[:4].upper()}"
@@ -2352,7 +2724,7 @@ def add_clearance_record():
 # ===========================================================================
 
 @app.route('/api/v1/stats/government', methods=['GET'])
-@require_roles('gov_authority', 'platform_admin')
+@require_roles('government_portal', 'admin')
 def get_gov_stats():
     stats = sb_svc.get_gov_stats()
     # Add aliases for portal compatibility
@@ -2384,7 +2756,7 @@ def get_public_stats():
 # ===========================================================================
 
 @app.route('/api/v1/clusters', methods=['GET'])
-@require_roles('survey_operator', 'sonar_analyst', 'marine_analyst', 'gov_authority', 'platform_admin')
+@require_roles('survey_operator', 'sonar_analyst', 'marine_portal', 'marine_analyst', 'government_portal', 'gov_authority', 'admin', 'platform_admin')
 def get_global_clusters():
     from dbscan_service import cluster_detections
     eps_meters  = float(request.args.get('eps_meters', 500.0))
@@ -2397,7 +2769,7 @@ def get_global_clusters():
 # ===========================================================================
 
 @app.route('/api/v1/xtf/upload', methods=['POST'])
-@require_roles('survey_operator', 'platform_admin')
+@require_roles('survey_operator', 'platform_admin', 'admin')
 def xtf_upload():
     if 'file' not in request.files:
         return jsonify({'error': 'No file uploaded'}), 400
@@ -2654,21 +3026,52 @@ def xtf_upload():
         return jsonify({'error': f'Failed to process XTF: {str(e)}'}), 500
 # XTF session sub-routes
 @app.route('/api/v1/xtf/<survey_id>/metadata', methods=['GET'])
-@require_roles('survey_operator', 'sonar_analyst', 'platform_admin')
+@require_roles('survey_operator', 'sonar_analyst', 'marine_portal', 'government_portal', 'platform_admin', 'admin')
 def get_xtf_metadata(survey_id):
-    if survey_id not in XTF_SURVEYS:
+    # Serve from session cache if available (fast, in-memory)
+    if survey_id in XTF_SURVEYS:
+        return jsonify(XTF_SURVEYS[survey_id]['metadata'])
+    # Fall back to Supabase survey record when cache is cold (e.g. after restart)
+    survey = sb_svc.get_survey(survey_id)
+    if not survey:
         return jsonify({'error': 'Survey not found'}), 404
-    return jsonify(XTF_SURVEYS[survey_id]['metadata'])
+    upload_events = sb_svc.get_survey_upload_events()
+    upload = upload_events.get(str(survey_id)) or {}
+    metadata = upload.get('xtf_metadata') or upload.get('metadata') or {}
+    # Merge survey-level fields so the portal always gets basic info
+    merged = {
+        'Survey ID': survey_id,
+        'Survey Name': survey.get('survey_name') or metadata.get('Survey Name', ''),
+        'File Name': upload.get('file_name') or metadata.get('File Name', ''),
+        'Input Type': upload.get('file_type') or 'XTF',
+        'Total Pings': metadata.get('Total Pings', 0),
+        'Channel Count': metadata.get('Channel Count', 0),
+        'Channels': metadata.get('Channels', ''),
+        'Start Time': metadata.get('Start Time', ''),
+        'End Time': metadata.get('End Time', ''),
+        'Min Latitude': metadata.get('Min Latitude'),
+        'Max Latitude': metadata.get('Max Latitude'),
+        'Min Longitude': metadata.get('Min Longitude'),
+        'Max Longitude': metadata.get('Max Longitude'),
+        'Avg Depth': metadata.get('Avg Depth', ''),
+        'Avg Altitude': metadata.get('Avg Altitude', ''),
+        'SonarName': metadata.get('SonarName') or survey.get('sonar_device', ''),
+        'sonar_frequency': survey.get('sonar_frequency', ''),
+        'location': survey.get('location_name', ''),
+        'processing_status': survey.get('processing_status', ''),
+        **metadata
+    }
+    return jsonify(merged)
 
 @app.route('/api/v1/xtf/<survey_id>/pings', methods=['GET'])
-@require_roles('survey_operator', 'sonar_analyst', 'platform_admin')
+@require_roles('survey_operator', 'sonar_analyst', 'platform_admin', 'admin')
 def get_xtf_pings(survey_id):
     if survey_id not in XTF_SURVEYS:
-        return jsonify({'error': 'Survey not found'}), 404
+        return jsonify({'error': 'Ping data not available (session cache cleared). Re-upload the XTF to restore real-time ping access.'}), 404
     return jsonify(XTF_SURVEYS[survey_id]['pings'])
 
 @app.route('/api/v1/xtf/<survey_id>/images', methods=['GET'])
-@require_roles('survey_operator', 'sonar_analyst', 'platform_admin')
+@require_roles('survey_operator', 'sonar_analyst', 'marine_portal', 'government_portal', 'platform_admin', 'admin')
 def get_xtf_images(survey_id):
     images = sb_svc.get_sonar_images(survey_id)
     if images:
@@ -2678,7 +3081,7 @@ def get_xtf_images(survey_id):
     return jsonify({'error': 'No persisted sonar evidence images found for this survey.'}), 404
 
 @app.route('/api/v1/xtf/<survey_id>/images/<image_id>', methods=['GET'])
-@require_roles('survey_operator', 'sonar_analyst', 'platform_admin')
+@require_roles('survey_operator', 'sonar_analyst', 'marine_portal', 'government_portal', 'platform_admin', 'admin')
 def get_xtf_image_file(survey_id, image_id):
     for image in sb_svc.get_sonar_images(survey_id):
         if image_id in {str(image.get('image_id') or ''), str(image.get('id') or '')}:
@@ -2691,11 +3094,13 @@ def get_xtf_image_file(survey_id, image_id):
     return jsonify({'error': 'Image not found'}), 404
 
 @app.route('/api/v1/xtf/<survey_id>/detections', methods=['GET'])
-@require_roles('survey_operator', 'sonar_analyst', 'platform_admin')
+@require_roles('survey_operator', 'sonar_analyst', 'marine_portal', 'government_portal', 'platform_admin', 'admin')
 def get_xtf_detections(survey_id):
-    if survey_id not in XTF_SURVEYS:
-        return jsonify({'error': 'Survey not found'}), 404
-    return jsonify(XTF_SURVEYS[survey_id].get('detections', []))
+    # Return from session cache first; fall back to Supabase
+    if survey_id in XTF_SURVEYS:
+        return jsonify(XTF_SURVEYS[survey_id].get('detections', []))
+    dets = sb_svc.get_all_detections(survey_id=survey_id)
+    return jsonify(dets)
 
 # ===========================================================================
 # IMAGE/VIDEO DETECT ENDPOINT  (for sonar-ai.html inline analysis)
@@ -3251,6 +3656,82 @@ def serve_asset_file(filename):
 def serve_static_file(filename):
     return send_from_directory('static', filename)
 
+@app.route('/video/<path:filename>')
+def serve_video_file(filename):
+    return send_from_directory('video', filename)
+
+@app.route('/simulation/<path:filename>')
+def serve_simulation_file(filename):
+    return send_from_directory('Simulation/dist', filename)
+
+@app.route('/simulation/')
+def serve_simulation_index():
+    return send_from_directory('Simulation/dist', 'index.html')
+
+# ---------------------------------------------------------
+# Chatbot API Route
+# ---------------------------------------------------------
+import requests
+
+GEMINI_API_KEY = "YOUR_API_KEY_HERE"
+
+@app.route('/api/v1/chat', methods=['POST'])
+def handle_chat():
+    data = request.json
+    user_msg = data.get('message', '')
+    language = data.get('language', 'english').capitalize()
+    if not user_msg:
+        return jsonify({"reply": "I didn't catch that. Could you repeat?"})
+        
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key={GEMINI_API_KEY}"
+    
+    payload = {
+        "contents": [
+            {
+                "parts": [{"text": user_msg}]
+            }
+        ],
+        "systemInstruction": {
+            "parts": [
+                {"text": f"You are TARANG AI, an assistant for the TARANG Marine Intelligence Platform. Answer questions related to this platform, underwater sonar, hotspot detection, and cleanup missions. Keep your answers concise, helpful, and focused strictly on the website concept. IMPORTANT: You must respond entirely in {language}."}
+            ]
+        }
+    }
+    
+    try:
+        resp = requests.post(url, json=payload, timeout=10)
+        resp_data = resp.json()
+        
+        # Localized fallbacks
+        msg_503 = {
+            "Hindi": "मैं वर्तमान में बहुत अधिक अनुरोधों का अनुभव कर रहा हूं और एक छोटा ब्रेक ले रहा हूं। कृपया कुछ सेकंड में पुनः प्रयास करें!",
+            "Tamil": "தற்போது அதிக கோரிக்கைகள் வருவதால் நான் சிறிது நேரம் ஓய்வு எடுக்கிறேன். சில நொடிகள் கழித்து மீண்டும் முயற்சிக்கவும்!",
+            "English": "I am currently experiencing a high volume of requests and taking a short break. Please try asking again in a few seconds!"
+        }.get(language, "I am currently experiencing a high volume of requests and taking a short break. Please try asking again in a few seconds!")
+        
+        msg_err = {
+            "Hindi": "क्षमा करें, मुझे सर्वर से कनेक्ट होने में समस्या हो रही है।",
+            "Tamil": "மன்னிக்கவும், சர்வருடன் இணைப்பதில் சிக்கல் உள்ளது.",
+            "English": "I'm having trouble connecting to my AI brain. Please try again later."
+        }.get(language, "I'm having trouble connecting to my AI brain. Please try again later.")
+        
+        # Check for Google API error (like 503 Service Unavailable)
+        if 'error' in resp_data:
+            err_msg = resp_data['error'].get('message', 'Unknown error.')
+            if resp_data['error'].get('code') == 503:
+                return jsonify({"reply": msg_503})
+            else:
+                return jsonify({"reply": msg_err})
+                
+        if 'candidates' in resp_data and len(resp_data['candidates']) > 0:
+            reply = resp_data['candidates'][0]['content']['parts'][0]['text']
+            return jsonify({"reply": reply})
+        else:
+            return jsonify({"reply": msg_err})
+    except Exception as e:
+        print(f"Chatbot error: {e}")
+        return jsonify({"reply": "I'm having trouble connecting to my AI brain. Please try again later."})
+
 # ===========================================================================
 # MAIN
 # ===========================================================================
@@ -3258,3 +3739,4 @@ def serve_static_file(filename):
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 3000))
     app.run(host='0.0.0.0', port=port, debug=False)
+

@@ -1,597 +1,656 @@
 <!DOCTYPE html>
 <html class="h-full bg-slate-50" lang="en">
+
 <head>
-  <meta charset="utf-8"/>
-  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-  <title>TARANG — Sonar Image Analyst</title>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>TARANG — Sonar Image Analyst</title>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
 
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="js/tarang-map.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
+    <script src="js/tarang-map.js" defer></script>
 
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: { seafoam: '#14B8A6' },
-          fontFamily: {
-            sans: ['Inter', 'sans-serif'],
-            headline: ['Plus Jakarta Sans', 'sans-serif'],
-            mono: ['Space Grotesk', 'monospace'],
-          }
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        seafoam: '#14B8A6'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        headline: ['Plus Jakarta Sans', 'sans-serif'],
+                        mono: ['Space Grotesk', 'monospace'],
+                    }
+                }
+            }
         }
-      }
-    }
-  </script>
+    </script>
 
-  <style>
-    body { background-color: #f8fafc; color: #0f172a; font-family: 'Inter', sans-serif; }
-    .marine-card { background: #ffffff; border: 1px solid #e2e8f0; transition: all 0.2s ease-in-out; box-shadow: 0 1px 3px 0 rgba(0,0,0,0.04); }
-    .marine-card:hover { border-color: #cbd5e1; box-shadow: 0 6px 18px -4px rgba(15,23,42,0.06); cursor: pointer; }
-    .marine-card-no-hover { background: #ffffff; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px 0 rgba(0,0,0,0.04); }
-    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-    .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-    .dl-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #f8fafc; }
-    .dl-row .dl-label { color: #64748b; }
-    .dl-row .dl-value { font-weight: 500; color: #0f172a; text-align: right; max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  </style>
+    <style>
+        body {
+            background-color: #f8fafc;
+            color: #0f172a;
+            font-family: 'Inter', sans-serif;
+        }
 
-  <script src="js/auth.js"></script>
-  <script>
-    (function() {
-      const user = getCurrentUser();
-      if (!user) { window.location.href = 'login.html'; }
-    })();
-  </script>
-  <script>protectRoute();</script>
+        .marine-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04);
+        }
+
+        .marine-card:hover {
+            border-color: #cbd5e1;
+            box-shadow: 0 6px 18px -4px rgba(15, 23, 42, 0.06);
+            cursor: pointer;
+        }
+
+        .marine-card-no-hover {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        .dl-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid #f8fafc;
+        }
+
+        .dl-row .dl-label {
+            color: #64748b;
+        }
+
+        .dl-row .dl-value {
+            font-weight: 500;
+            color: #0f172a;
+            text-align: right;
+            max-width: 60%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    </style>
+
+    <script src="js/auth.js" defer></script>
+    <script>
+        (function() {
+            const user = getCurrentUser();
+            if (!user) {
+                window.location.href = 'login.html';
+            }
+        })();
+    </script>
+    <script>
+        protectRoute();
+    </script>
 </head>
+
 <body class="h-full flex flex-col text-slate-900 antialiased font-sans bg-slate-50 overflow-hidden">
 
-  <!-- ================================================================ -->
-  <!-- TOP NAVBAR                                                       -->
-  <!-- ================================================================ -->
-  <header class="h-16 w-full bg-white border-b border-slate-200 z-40 flex items-center justify-between px-6 shrink-0 shadow-sm">
-    <div class="flex items-center gap-4">
-      <div class="w-10 h-10 rounded-full overflow-hidden border border-slate-200 bg-slate-50 p-1 flex items-center justify-center shrink-0">
-        <img src="logoimage.jpg" class="w-full h-full object-contain rounded-full" alt="TARANG" />
-      </div>
-      <div class="flex items-center gap-2">
-        <span class="font-headline font-black text-lg text-slate-900 tracking-wider leading-none">TARANG</span>
-        <span class="text-xs font-mono font-semibold text-sky-700 tracking-wide border-l border-slate-300 pl-2">Sonar Image Analyst</span>
-      </div>
-    </div>
-    <div class="flex items-center gap-3">
-      <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-xs font-mono">
-        <span class="w-2 h-2 rounded-full bg-sky-400"></span>
-        <span class="text-slate-900 font-bold" id="analyst-user-name">Sonar Analyst</span>
-      </div>
-      <a href="login.html" onclick="sessionStorage.clear();localStorage.clear();" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white hover:bg-rose-50 text-slate-600 hover:text-rose-600 font-mono text-xs font-bold transition-all border border-slate-200">
-        <span class="material-symbols-outlined text-[16px]">logout</span>
-        <span class="hidden sm:inline">LOGOUT</span>
-      </a>
-    </div>
-  </header>
-
-  <!-- ================================================================ -->
-  <!-- BODY: LEFT SIDEBAR + MAIN                                        -->
-  <!-- ================================================================ -->
-  <div class="flex-1 flex overflow-hidden">
-
-    <!-- LEFT SIDEBAR -->
-    <aside class="w-60 bg-white border-r border-slate-200 flex flex-col shrink-0 p-4 shadow-sm z-30">
-      <div class="px-3 py-2 text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold mb-2">
-        Analyst Console
-      </div>
-      <nav class="space-y-1 flex-1">
-        <button onclick="switchTab('overview')" data-tab="overview"
-          class="analyst-nav w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-semibold transition-all bg-sky-50 text-sky-700">
-          <span class="material-symbols-outlined text-[20px]">dashboard</span>Overview
-        </button>
-        <button onclick="switchTab('survey-analysis')" data-tab="survey-analysis"
-          class="analyst-nav w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all text-slate-600 hover:bg-slate-50 hover:text-slate-900">
-          <span class="material-symbols-outlined text-[20px]">waterfall_chart</span>Survey Analysis
-        </button>
-        <button onclick="switchTab('detections')" data-tab="detections"
-          class="analyst-nav w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all text-slate-600 hover:bg-slate-50 hover:text-slate-900">
-          <span class="material-symbols-outlined text-[20px]">radar</span>AI Detection
-        </button>
-        <button onclick="switchTab('spatial-map')" data-tab="spatial-map"
-          class="analyst-nav w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all text-slate-600 hover:bg-slate-50 hover:text-slate-900">
-          <span class="material-symbols-outlined text-[20px]">map</span>Spatial Map
-        </button>
-        <button onclick="switchTab('verification')" data-tab="verification"
-          class="analyst-nav w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all text-slate-600 hover:bg-slate-50 hover:text-slate-900">
-          <span class="material-symbols-outlined text-[20px]">verified</span>Verification
-        </button>
-        <button onclick="switchTab('reports')" data-tab="reports"
-          class="analyst-nav w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all text-slate-600 hover:bg-slate-50 hover:text-slate-900">
-          <span class="material-symbols-outlined text-[20px]">description</span>Intelligence Report
-        </button>
-        <button onclick="switchTab('settings')" data-tab="settings"
-          class="analyst-nav w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all text-slate-600 hover:bg-slate-50 hover:text-slate-900">
-          <span class="material-symbols-outlined text-[20px]">settings</span>Settings
-        </button>
-      </nav>
-    </aside>
-
-    <!-- MAIN VIEWPORT -->
-    <main class="flex-1 overflow-y-auto custom-scrollbar p-6 lg:p-8 relative" id="main-content">
-      
-      <!-- Current Survey Context Header -->
-      <div id="survey-context-banner" class="hidden w-full bg-slate-800 text-white p-3 rounded-lg flex items-center justify-between mb-6 shadow-sm">
-        <div class="flex items-center gap-3 text-sm font-mono">
-          <span class="material-symbols-outlined text-sky-400">travel_explore</span>
-          <span class="text-slate-300">Active Survey:</span>
-          <span class="font-bold" id="ctx-survey-name">Loading...</span>
+    <!-- ================================================================ -->
+    <!-- TOP NAVBAR                                                       -->
+    <!-- ================================================================ -->
+    <header class="h-16 w-full bg-white border-b border-slate-200 z-40 flex items-center justify-between px-6 shrink-0 shadow-sm">
+        <div class="flex items-center gap-4">
+            <div class="w-10 h-10 rounded-full overflow-hidden border border-slate-200 bg-slate-50 p-1 flex items-center justify-center shrink-0">
+                <img src="logoimage.jpg" class="w-full h-full object-contain rounded-full" alt="TARANG" / loading="lazy">
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="font-headline font-black text-lg text-slate-900 tracking-wider leading-none">TARANG</span>
+                <span class="text-xs font-mono font-semibold text-sky-700 tracking-wide border-l border-slate-300 pl-2">Sonar Image Analyst</span>
+            </div>
         </div>
-        <button onclick="clearSurveySelection()" class="text-xs text-sky-300 hover:text-white underline">Change Survey</button>
-      </div>
-
-      <!-- ============================================================ -->
-      <!-- VIEW 1 — OVERVIEW                                            -->
-      <!-- ============================================================ -->
-      <div id="view-overview" class="analyst-view max-w-7xl mx-auto space-y-6">
-        <div class="border-b border-slate-200 pb-4">
-          <h2 class="font-headline font-bold text-[24px] text-slate-900">Assigned Surveys</h2>
-          <p class="text-sm text-slate-500 font-mono mt-1">Select a survey to begin analysis and verification.</p>
+        <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-xs font-mono">
+                <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+                <span class="text-slate-900 font-bold" id="analyst-user-name">Sonar Analyst</span>
+            </div>
+            <a href="login.html" onclick="sessionStorage.clear();localStorage.clear();" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white hover:bg-rose-50 text-slate-600 hover:text-rose-600 font-mono text-xs font-bold transition-all border border-slate-200">
+                <span class="material-symbols-outlined text-[16px]">logout</span>
+                <span class="hidden sm:inline">LOGOUT</span>
+            </a>
         </div>
+    </header>
 
-        <section class="marine-card-no-hover rounded-xl overflow-hidden">
-          <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs font-mono whitespace-nowrap">
-              <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[10px]">
-                <tr>
-                  <th class="p-4">Survey Name</th>
-                  <th class="p-4">Survey ID</th>
-                  <th class="p-4">Survey Type</th>
-                  <th class="p-4">Workflow Status</th>
-                  <th class="p-4">Action</th>
-                </tr>
-              </thead>
-              <tbody id="overview-tbody" class="divide-y divide-slate-100 bg-white">
-                <tr><td colspan="5" class="p-8 text-center text-slate-500">Loading surveys…</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
-      </div>
+    <!-- ================================================================ -->
+    <!-- BODY: LEFT SIDEBAR + MAIN                                        -->
+    <!-- ================================================================ -->
+    <div class="flex-1 flex overflow-hidden">
 
-      <!-- ============================================================ -->
-      <!-- VIEW 2 — SURVEY ANALYSIS                                     -->
-      <!-- ============================================================ -->
-      <div id="view-survey-analysis" class="analyst-view hidden max-w-7xl mx-auto space-y-6">
-        <div id="sa-empty" class="py-16 text-center text-slate-500 font-mono text-sm marine-card-no-hover rounded-xl">
-          Please select a survey from the Overview to analyze.
-        </div>
-        
-        <div id="sa-content" class="space-y-6 hidden">
-          <div class="border-b border-slate-200 pb-4">
-            <h2 class="font-headline font-bold text-[24px] text-slate-900">Survey Progress &amp; Details</h2>
-            <p class="text-sm text-slate-500 font-mono mt-1">Review the processing state and fundamental metadata of the survey.</p>
-          </div>
-
-          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
-            <!-- Workflow State (Completed vs Pending) -->
-            <div class="lg:col-span-1 space-y-6">
-              <div class="marine-card-no-hover rounded-xl p-5 border-t-4 border-t-emerald-500">
-                <h3 class="font-headline font-bold text-slate-900 mb-3 flex items-center gap-2">
-                  <span class="material-symbols-outlined text-emerald-600 text-sm">check_circle</span> Completed
-                </h3>
-                <ul class="space-y-2 text-xs font-mono text-slate-700" id="sa-completed-list">
-                  <li class="flex items-center gap-2"><span class="text-emerald-500">✓</span> XTF Ingestion</li>
-                  <li class="flex items-center gap-2"><span class="text-emerald-500">✓</span> Metadata Extraction</li>
-                  <li class="flex items-center gap-2"><span class="text-emerald-500">✓</span> Sonar Preprocessing</li>
-                </ul>
-              </div>
-
-              <div class="marine-card-no-hover rounded-xl p-5 border-t-4 border-t-amber-500">
-                <h3 class="font-headline font-bold text-slate-900 mb-3 flex items-center gap-2">
-                  <span class="material-symbols-outlined text-amber-600 text-sm">pending</span> Pending
-                </h3>
-                <ul class="space-y-2 text-xs font-mono text-slate-700" id="sa-pending-list">
-                  <li class="flex items-center gap-2 text-amber-700"><span class="text-amber-500">○</span> Analyst Verification</li>
-                  <li class="flex items-center gap-2 text-amber-700"><span class="text-amber-500">○</span> Intelligence Report</li>
-                </ul>
-                <div class="mt-4 p-3 bg-amber-50 rounded-lg text-xs font-mono text-amber-800 border border-amber-200" id="sa-pending-reason">
-                  <strong class="block mb-1">Reason:</strong>
-                  AI detections are available and require analyst verification.
-                </div>
-                <button onclick="switchTab('verification')" id="sa-btn-verify" class="mt-4 w-full py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold font-mono transition-colors">
-                  Begin Verification
+        <!-- LEFT SIDEBAR -->
+        <aside class="w-60 bg-white border-r border-slate-200 flex flex-col shrink-0 p-4 shadow-sm z-30">
+            <div class="px-3 py-2 text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold mb-2">
+                Analyst Console
+            </div>
+            <nav class="space-y-1 flex-1">
+                <button onclick="switchTab('overview')" data-tab="overview" class="analyst-nav w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-semibold transition-all bg-sky-50 text-sky-700">
+                    <span class="material-symbols-outlined text-[20px]">dashboard</span>Overview
                 </button>
-              </div>
+                <button onclick="switchTab('survey-analysis')" data-tab="survey-analysis" class="analyst-nav w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all text-slate-600 hover:bg-slate-50 hover:text-slate-900">
+                    <span class="material-symbols-outlined text-[20px]">waterfall_chart</span>Survey Analysis
+                </button>
+                <button onclick="switchTab('detections')" data-tab="detections" class="analyst-nav w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all text-slate-600 hover:bg-slate-50 hover:text-slate-900">
+                    <span class="material-symbols-outlined text-[20px]">radar</span>AI Detection
+                </button>
+                <button onclick="switchTab('spatial-map')" data-tab="spatial-map" class="analyst-nav w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all text-slate-600 hover:bg-slate-50 hover:text-slate-900">
+                    <span class="material-symbols-outlined text-[20px]">map</span>Spatial Map
+                </button>
+                <button onclick="switchTab('verification')" data-tab="verification" class="analyst-nav w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all text-slate-600 hover:bg-slate-50 hover:text-slate-900">
+                    <span class="material-symbols-outlined text-[20px]">verified</span>Verification
+                </button>
+                <button onclick="switchTab('reports')" data-tab="reports" class="analyst-nav w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all text-slate-600 hover:bg-slate-50 hover:text-slate-900">
+                    <span class="material-symbols-outlined text-[20px]">description</span>Intelligence Report
+                </button>
+                <button onclick="switchTab('settings')" data-tab="settings" class="analyst-nav w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all text-slate-600 hover:bg-slate-50 hover:text-slate-900">
+                    <span class="material-symbols-outlined text-[20px]">settings</span>Settings
+                </button>
+            </nav>
+        </aside>
+
+        <!-- MAIN VIEWPORT -->
+        <main class="flex-1 overflow-y-auto custom-scrollbar p-6 lg:p-8 relative" id="main-content">
+
+            <!-- Current Survey Context Header -->
+            <div id="survey-context-banner" class="hidden w-full bg-slate-800 text-white p-3 rounded-lg flex items-center justify-between mb-6 shadow-sm">
+                <div class="flex items-center gap-3 text-sm font-mono">
+                    <span class="material-symbols-outlined text-sky-400">travel_explore</span>
+                    <span class="text-slate-300">Active Survey:</span>
+                    <span class="font-bold" id="ctx-survey-name">Loading...</span>
+                </div>
+                <button onclick="clearSurveySelection()" class="text-xs text-sky-300 hover:text-white underline">Change Survey</button>
             </div>
 
-            <!-- Survey & Metadata Info -->
-            <div class="lg:col-span-2 space-y-6">
-              <div class="marine-card-no-hover rounded-xl p-5">
-                <h3 class="font-headline font-bold text-slate-900 border-b border-slate-100 pb-2 mb-3">Survey Information</h3>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 text-xs font-mono" id="sa-info"></div>
-              </div>
-              
-              <div class="marine-card-no-hover rounded-xl p-5">
-                <h3 class="font-headline font-bold text-slate-900 border-b border-slate-100 pb-2 mb-3">Survey Source &amp; Sonar Metadata</h3>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 text-xs font-mono" id="sa-meta"></div>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </div>
-
-      <!-- ============================================================ -->
-      <!-- VIEW 3 — AI DETECTION                                        -->
-      <!-- ============================================================ -->
-      <div id="view-detections" class="analyst-view hidden max-w-7xl mx-auto space-y-6">
-        <div id="det-empty" class="py-16 text-center text-slate-500 font-mono text-sm marine-card-no-hover rounded-xl">
-          Please select a survey from the Overview.
-        </div>
-
-        <div id="det-content" class="space-y-6 hidden">
-          <div class="border-b border-slate-200 pb-4">
-            <h2 class="font-headline font-bold text-[24px] text-slate-900">AI Detection Summary</h2>
-            <p class="text-sm text-slate-500 font-mono mt-1">Multi-factor assessment of AI pipeline candidates prior to human verification.</p>
-          </div>
-
-          <!-- Detection Metrics -->
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4" id="det-metrics">
-            <!-- Populated by JS -->
-          </div>
-
-          <!-- TARANG Classification Methodology -->
-          <div class="marine-card-no-hover rounded-xl p-6">
-            <h3 class="font-headline font-bold text-slate-900 mb-4">TARANG Target Classification Logic</h3>
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
-                <div class="text-sm font-bold text-slate-900 mb-1">Class A</div>
-                <div class="text-xs text-slate-600 font-mono">High structural definition. Multiple factors confirm acoustic shadow, geometry, and strong model confidence. Immediate verification recommended.</div>
-              </div>
-              <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
-                <div class="text-sm font-bold text-slate-900 mb-1">Class B</div>
-                <div class="text-xs text-slate-600 font-mono">Partial structural match or ambiguous acoustic shadow. AI candidate requires careful analyst review of surrounding metadata context.</div>
-              </div>
-              <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
-                <div class="text-sm font-bold text-slate-900 mb-1">Class C</div>
-                <div class="text-xs text-slate-600 font-mono">Uncertain/Low-confidence anomaly. Physics-based validation and visual inspection mandatory. May result in 'Rejected' or 'Unknown'.</div>
-              </div>
-            </div>
-            <div class="mt-4 p-3 bg-sky-50 text-sky-800 text-xs font-mono rounded-lg border border-sky-100">
-              <strong>Note:</strong> Classification is NOT determined by confidence score alone. It incorporates image quality, metadata consistency, and spatial context.
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ============================================================ -->
-      <!-- VIEW 4 — VERIFICATION                                        -->
-      <!-- ============================================================ -->
-      <div id="view-spatial-map" class="analyst-view hidden max-w-7xl mx-auto space-y-6">
-        <div id="spatial-empty" class="py-16 text-center text-slate-500 font-mono text-sm marine-card-no-hover rounded-xl">
-          Please select a survey from the Overview to inspect its spatial detections.
-        </div>
-        <div id="spatial-content" class="hidden space-y-4">
-          <div class="border-b border-slate-200 pb-4">
-            <h2 class="font-headline font-bold text-[24px] text-slate-900">Spatial Detection Map</h2>
-            <p class="text-sm text-slate-500 font-mono mt-1">Georeferenced AI detections and DBSCAN concentration clusters for the active survey.</p>
-          </div>
-          <div id="tab-spatial-map" class="marine-card-no-hover rounded-xl overflow-hidden">
-            <div id="sonar-spatial-map" class="h-[520px] w-full bg-slate-100"></div>
-          </div>
-          <p id="spatial-map-note" class="text-xs text-slate-500 font-mono"></p>
-        </div>
-      </div>
-
-      <div id="view-verification" class="analyst-view hidden max-w-7xl mx-auto space-y-6 flex-1 h-full flex flex-col">
-        <div id="ver-empty" class="py-16 text-center text-slate-500 font-mono text-sm marine-card-no-hover rounded-xl">
-          Please select a survey from the Overview to verify detections.
-        </div>
-
-        <div id="ver-content" class="space-y-6 hidden flex-1 flex flex-col">
-          <div class="border-b border-slate-200 pb-4 shrink-0">
-            <h2 class="font-headline font-bold text-[24px] text-slate-900">Analyst Verification Workplace</h2>
-            <p class="text-sm text-slate-500 font-mono mt-1">Review sonar evidence and assign the official verification status.</p>
-          </div>
-
-          <div class="flex-1 flex flex-col lg:flex-row gap-6 min-h-[500px]">
-            <!-- Left: Detection List -->
-            <div class="w-full lg:w-1/3 flex flex-col marine-card-no-hover rounded-xl overflow-hidden bg-white shrink-0">
-              <div class="p-3 border-b border-slate-200 bg-slate-50 text-xs font-bold text-slate-700 font-mono flex justify-between items-center">
-                <span>Pending Verification</span>
-                <span class="bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full" id="ver-list-count">0</span>
-              </div>
-              <div class="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-2" id="ver-list">
-                <!-- Populated by JS -->
-              </div>
-            </div>
-
-            <!-- Right: Verification Details & Image -->
-            <div class="w-full lg:w-2/3 flex flex-col marine-card-no-hover rounded-xl overflow-hidden bg-white shrink-0 relative">
-              <div id="ver-detail-empty" class="absolute inset-0 flex items-center justify-center text-slate-500 font-mono text-sm bg-slate-50 z-10">
-                Select a detection from the list to review.
-              </div>
-              
-              <div class="flex-1 flex flex-col" id="ver-detail-pane">
-                <!-- Image Viewer -->
-                <div id="ver-img-wrap" class="h-64 sm:h-80 bg-[#020b15] relative flex items-center justify-center p-2">
-                  <div class="absolute top-3 left-3 text-[10px] text-cyan-400 font-mono z-10 bg-black/50 px-2 py-1 rounded border border-cyan-500/30 backdrop-blur-sm">
-                    SONAR EVIDENCE — RECONSTRUCTED WATERFALL
-                  </div>
-                  <div id="ver-bbox-badge" class="absolute top-3 right-3 text-[10px] font-mono z-10 bg-black/50 px-2 py-1 rounded border backdrop-blur-sm hidden"></div>
-                  <img id="ver-img" src="" alt="Sonar Evidence" class="max-h-full max-w-full object-contain filter contrast-125" onerror="reportSonarEvidenceLoadError(this)"/>
-                  <!-- Real YOLO detection box, positioned from persisted bbox pixels -->
-                  <div id="ver-bbox" class="absolute border-2 border-cyan-300 pointer-events-none hidden z-20" style="box-shadow:0 0 0 1px rgba(2,11,21,.85);">
-                    <span id="ver-bbox-label" class="absolute -top-5 left-0 text-[9px] font-mono font-bold text-[#020b15] bg-cyan-300 px-1 rounded whitespace-nowrap"></span>
-                  </div>
+            <!-- ============================================================ -->
+            <!-- VIEW 1 — OVERVIEW                                            -->
+            <!-- ============================================================ -->
+            <div id="view-overview" class="analyst-view max-w-7xl mx-auto space-y-6">
+                <div class="border-b border-slate-200 pb-4">
+                    <h2 class="font-headline font-bold text-[24px] text-slate-900">Assigned Surveys</h2>
+                    <p class="text-sm text-slate-500 font-mono mt-1">Select a survey to begin analysis and verification.</p>
                 </div>
 
-                <!-- Info & Decision Panel -->
-                <div class="flex-1 p-5 overflow-y-auto custom-scrollbar bg-white flex flex-col gap-5">
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <!-- AI Candidate Info -->
-                    <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
-                      <div class="text-[10px] font-bold text-slate-400 uppercase font-mono mb-2 border-b border-slate-200 pb-1">AI Pipeline Output</div>
-                      <div class="text-xs font-mono space-y-1">
-                        <div class="flex justify-between"><span class="text-slate-500">Candidate:</span><span class="font-bold text-slate-900" id="ver-info-class">Unknown</span></div>
-                        <div class="flex justify-between"><span class="text-slate-500">Confidence:</span><span class="font-bold text-slate-900" id="ver-info-conf">0%</span></div>
-                        <div class="flex justify-between"><span class="text-slate-500">TARANG Class:</span><span class="font-bold text-slate-900" id="ver-info-tier">Class C</span></div>
-                      </div>
+                <section class="marine-card-no-hover rounded-xl overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs font-mono whitespace-nowrap">
+                            <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[10px]">
+                                <tr>
+                                    <th class="p-4">Survey Name</th>
+                                    <th class="p-4">Survey ID</th>
+                                    <th class="p-4">Survey Type</th>
+                                    <th class="p-4">Workflow Status</th>
+                                    <th class="p-4">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="overview-tbody" class="divide-y divide-slate-100 bg-white">
+                                <tr>
+                                    <td colspan="5" class="p-8 text-center text-slate-500">Loading surveys…</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
-                    
-                    <!-- Detection Meta -->
-                    <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
-                      <div class="text-[10px] font-bold text-slate-400 uppercase font-mono mb-2 border-b border-slate-200 pb-1">Context / Metadata</div>
-                      <div class="text-xs font-mono space-y-1">
-                        <div class="flex justify-between"><span class="text-slate-500">Latitude:</span><span class="font-medium text-slate-900" id="ver-info-lat">–</span></div>
-                        <div class="flex justify-between"><span class="text-slate-500">Longitude:</span><span class="font-medium text-slate-900" id="ver-info-lon">–</span></div>
-                        <div class="flex justify-between"><span class="text-slate-500">Water Depth:</span><span class="font-medium text-slate-900" id="ver-info-depth">–</span></div>
-                        <div class="flex justify-between"><span class="text-slate-500">Altitude:</span><span class="font-medium text-slate-900" id="ver-info-alt">–</span></div>
-                        <div class="flex justify-between"><span class="text-slate-500">Heading:</span><span class="font-medium text-slate-900" id="ver-info-heading">–</span></div>
-                        <div class="flex justify-between"><span class="text-slate-500">Ping #:</span><span class="font-medium text-slate-900" id="ver-info-ping">–</span></div>
-                      </div>
-                    </div>
-                  </div>
+                </section>
+            </div>
 
-                  <!-- Target provenance / lifecycle (all from persisted Supabase rows) -->
-                  <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
-                    <div class="text-[10px] font-bold text-slate-400 uppercase font-mono mb-2 border-b border-slate-200 pb-1">Target Information</div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-xs font-mono">
-                      <div class="flex justify-between"><span class="text-slate-500">Category:</span><span class="font-medium text-slate-900" id="ver-info-category">–</span></div>
-                      <div class="flex justify-between"><span class="text-slate-500">Material:</span><span class="font-medium text-slate-900" id="ver-info-material">–</span></div>
-                      <div class="flex justify-between"><span class="text-slate-500">Hazard:</span><span class="font-medium text-slate-900" id="ver-info-hazard">–</span></div>
-                      <div class="flex justify-between"><span class="text-slate-500">Verification:</span><span class="font-medium text-slate-900" id="ver-info-status">–</span></div>
-                      <div class="flex justify-between"><span class="text-slate-500">Requires Review:</span><span class="font-medium text-slate-900" id="ver-info-review">–</span></div>
-                      <div class="flex justify-between"><span class="text-slate-500">Offshore:</span><span class="font-medium text-slate-900" id="ver-info-offshore">–</span></div>
-                      <div class="flex justify-between col-span-1 sm:col-span-2"><span class="text-slate-500">Detection ID:</span><span class="font-medium text-slate-900 truncate" id="ver-info-detid">–</span></div>
-                      <div class="flex justify-between col-span-1 sm:col-span-2"><span class="text-slate-500">Survey ID:</span><span class="font-medium text-slate-900 truncate" id="ver-info-survey">–</span></div>
-                      <div class="flex justify-between col-span-1 sm:col-span-2"><span class="text-slate-500">Evidence Image:</span><span class="font-medium text-slate-900 truncate" id="ver-info-evidence">–</span></div>
-                    </div>
-                  </div>
-
-                  <!-- Analyst Decision -->
-                  <div class="border-t border-slate-200 pt-4 flex flex-col gap-3">
-                    <div class="text-[10px] font-bold text-slate-500 uppercase font-mono">Analyst Decision</div>
-                    <div class="flex flex-col sm:flex-row items-center gap-3">
-                      <select id="ver-decision-status" class="w-full sm:w-48 bg-white border border-slate-300 rounded text-sm font-mono p-2 focus:outline-none focus:border-sky-500">
-                        <option value="Verified">Verified</option>
-                        <option value="Rejected">Rejected</option>
-                        <option value="Requires Review">Requires Review</option>
-                        <option value="Unknown">Unknown</option>
-                      </select>
-                      <select id="ver-reclassify" class="w-full sm:w-56 bg-white border border-slate-300 rounded text-sm font-mono p-2 focus:outline-none focus:border-sky-500" aria-label="Reclassify target">
-                        <option value="">Keep AI classification</option>
-                        <option value="ghost_net">Reclassify: Ghost net</option>
-                        <option value="shipwreck">Reclassify: Shipwreck</option>
-                        <option value="crab_pot">Reclassify: Crab pot</option>
-                        <option value="submarine_pipeline">Reclassify: Submarine pipeline</option>
-                        <option value="mine_cylinder">Reclassify: Mine / cylinder</option>
-                        <option value="unknown">Reclassify: Unknown</option>
-                      </select>
-                      <button id="ver-btn-submit" class="w-full sm:w-auto px-6 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold font-mono rounded transition-colors whitespace-nowrap">
-                        Submit Verification
-                      </button>
-                    </div>
-                  </div>
+            <!-- ============================================================ -->
+            <!-- VIEW 2 — SURVEY ANALYSIS                                     -->
+            <!-- ============================================================ -->
+            <div id="view-survey-analysis" class="analyst-view hidden max-w-7xl mx-auto space-y-6">
+                <div id="sa-empty" class="py-16 text-center text-slate-500 font-mono text-sm marine-card-no-hover rounded-xl">
+                    Please select a survey from the Overview to analyze.
                 </div>
-              </div>
+
+                <div id="sa-content" class="space-y-6 hidden">
+                    <div class="border-b border-slate-200 pb-4">
+                        <h2 class="font-headline font-bold text-[24px] text-slate-900">Survey Progress &amp; Details</h2>
+                        <p class="text-sm text-slate-500 font-mono mt-1">Review the processing state and fundamental metadata of the survey.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                        <!-- Workflow State (Completed vs Pending) -->
+                        <div class="lg:col-span-1 space-y-6">
+                            <div class="marine-card-no-hover rounded-xl p-5 border-t-4 border-t-emerald-500">
+                                <h3 class="font-headline font-bold text-slate-900 mb-3 flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-emerald-600 text-sm">check_circle</span> Completed
+                                </h3>
+                                <ul class="space-y-2 text-xs font-mono text-slate-700" id="sa-completed-list">
+                                    <li class="flex items-center gap-2"><span class="text-emerald-500">✓</span> XTF Ingestion</li>
+                                    <li class="flex items-center gap-2"><span class="text-emerald-500">✓</span> Metadata Extraction</li>
+                                    <li class="flex items-center gap-2"><span class="text-emerald-500">✓</span> Sonar Preprocessing</li>
+                                </ul>
+                            </div>
+
+                            <div class="marine-card-no-hover rounded-xl p-5 border-t-4 border-t-amber-500">
+                                <h3 class="font-headline font-bold text-slate-900 mb-3 flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-amber-600 text-sm">pending</span> Pending
+                                </h3>
+                                <ul class="space-y-2 text-xs font-mono text-slate-700" id="sa-pending-list">
+                                    <li class="flex items-center gap-2 text-amber-700"><span class="text-amber-500">○</span> Analyst Verification</li>
+                                    <li class="flex items-center gap-2 text-amber-700"><span class="text-amber-500">○</span> Intelligence Report</li>
+                                </ul>
+                                <div class="mt-4 p-3 bg-amber-50 rounded-lg text-xs font-mono text-amber-800 border border-amber-200" id="sa-pending-reason">
+                                    <strong class="block mb-1">Reason:</strong>
+                                    AI detections are available and require analyst verification.
+                                </div>
+                                <button onclick="switchTab('verification')" id="sa-btn-verify" class="mt-4 w-full py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold font-mono transition-colors">
+                                    Begin Verification
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Survey & Metadata Info -->
+                        <div class="lg:col-span-2 space-y-6">
+                            <div class="marine-card-no-hover rounded-xl p-5">
+                                <h3 class="font-headline font-bold text-slate-900 border-b border-slate-100 pb-2 mb-3">Survey Information</h3>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 text-xs font-mono" id="sa-info"></div>
+                            </div>
+
+                            <div class="marine-card-no-hover rounded-xl p-5">
+                                <h3 class="font-headline font-bold text-slate-900 border-b border-slate-100 pb-2 mb-3">Survey Source &amp; Sonar Metadata</h3>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 text-xs font-mono" id="sa-meta"></div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
             </div>
-          </div>
-        </div>
-      </div>
 
-      <!-- ============================================================ -->
-      <!-- VIEW 5 — INTELLIGENCE REPORT                                 -->
-      <!-- ============================================================ -->
-      <div id="view-reports" class="analyst-view hidden max-w-5xl mx-auto space-y-6">
-        <div id="rep-empty" class="py-16 text-center text-slate-500 font-mono text-sm marine-card-no-hover rounded-xl">
-          Please select a survey from the Overview.
-        </div>
+            <!-- ============================================================ -->
+            <!-- VIEW 3 — AI DETECTION                                        -->
+            <!-- ============================================================ -->
+            <div id="view-detections" class="analyst-view hidden max-w-7xl mx-auto space-y-6">
+                <div id="det-empty" class="py-16 text-center text-slate-500 font-mono text-sm marine-card-no-hover rounded-xl">
+                    Please select a survey from the Overview.
+                </div>
 
-        <div id="rep-content" class="space-y-6 hidden">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
-            <div>
-              <h2 class="font-headline font-bold text-[24px] text-slate-900">Intelligence Report Summary</h2>
-              <p class="text-sm text-slate-500 font-mono mt-1">Official summary of verified findings for the selected survey.</p>
+                <div id="det-content" class="space-y-6 hidden">
+                    <div class="border-b border-slate-200 pb-4">
+                        <h2 class="font-headline font-bold text-[24px] text-slate-900">AI Detection Summary</h2>
+                        <p class="text-sm text-slate-500 font-mono mt-1">Multi-factor assessment of AI pipeline candidates prior to human verification.</p>
+                    </div>
+
+                    <!-- Detection Metrics -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4" id="det-metrics">
+                        <!-- Populated by JS -->
+                    </div>
+
+                    <!-- TARANG Classification Methodology -->
+                    <div class="marine-card-no-hover rounded-xl p-6">
+                        <h3 class="font-headline font-bold text-slate-900 mb-4">TARANG Target Classification Logic</h3>
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                            <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                                <div class="text-sm font-bold text-slate-900 mb-1">Class A</div>
+                                <div class="text-xs text-slate-600 font-mono">High structural definition. Multiple factors confirm acoustic shadow, geometry, and strong model confidence. Immediate verification recommended.</div>
+                            </div>
+                            <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                                <div class="text-sm font-bold text-slate-900 mb-1">Class B</div>
+                                <div class="text-xs text-slate-600 font-mono">Partial structural match or ambiguous acoustic shadow. AI candidate requires careful analyst review of surrounding metadata context.</div>
+                            </div>
+                            <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                                <div class="text-sm font-bold text-slate-900 mb-1">Class C</div>
+                                <div class="text-xs text-slate-600 font-mono">Uncertain/Low-confidence anomaly. Physics-based validation and visual inspection mandatory. May result in 'Rejected' or 'Unknown'.</div>
+                            </div>
+                        </div>
+                        <div class="mt-4 p-3 bg-sky-50 text-sky-800 text-xs font-mono rounded-lg border border-sky-100">
+                            <strong>Note:</strong> Classification is NOT determined by confidence score alone. It incorporates image quality, metadata consistency, and spatial context.
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div id="rep-status-badge" class="px-3 py-1 bg-slate-100 text-slate-700 text-xs font-bold font-mono rounded border border-slate-200">
-              Not Started
+
+            <!-- ============================================================ -->
+            <!-- VIEW 4 — VERIFICATION                                        -->
+            <!-- ============================================================ -->
+            <div id="view-spatial-map" class="analyst-view hidden max-w-7xl mx-auto space-y-6">
+                <div id="spatial-empty" class="py-16 text-center text-slate-500 font-mono text-sm marine-card-no-hover rounded-xl">
+                    Please select a survey from the Overview to inspect its spatial detections.
+                </div>
+                <div id="spatial-content" class="hidden space-y-4">
+                    <div class="border-b border-slate-200 pb-4">
+                        <h2 class="font-headline font-bold text-[24px] text-slate-900">Spatial Detection Map</h2>
+                        <p class="text-sm text-slate-500 font-mono mt-1">Georeferenced AI detections and DBSCAN concentration clusters for the active survey.</p>
+                    </div>
+                    <div id="tab-spatial-map" class="marine-card-no-hover rounded-xl overflow-hidden">
+                        <div id="sonar-spatial-map" class="h-[520px] w-full bg-slate-100"></div>
+                    </div>
+                    <p id="spatial-map-note" class="text-xs text-slate-500 font-mono"></p>
+                </div>
             </div>
-          </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="marine-card-no-hover rounded-xl p-5">
-              <h3 class="text-sm font-bold text-slate-900 mb-3 border-b border-slate-100 pb-2">Survey Context</h3>
-              <div class="space-y-0 text-xs font-mono" id="rep-info"></div>
+            <div id="view-verification" class="analyst-view hidden max-w-7xl mx-auto space-y-6 flex-1 h-full flex flex-col">
+                <div id="ver-empty" class="py-16 flex flex-col items-center justify-center text-slate-500 font-mono text-sm marine-card-no-hover rounded-xl">
+                    <p class="mb-4">Please select a survey from the Overview to verify detections.</p>
+                    <button onclick="switchTab('overview')" class="px-4 py-2 bg-sky-50 hover:bg-sky-100 text-sky-700 text-xs font-bold rounded transition-colors border border-sky-200">
+                        Go to Overview
+                    </button>
+                </div>
+
+                <div id="ver-content" class="space-y-6 hidden flex-1 flex flex-col">
+                    <div class="border-b border-slate-200 pb-4 shrink-0">
+                        <h2 class="font-headline font-bold text-[24px] text-slate-900">Analyst Verification Workplace</h2>
+                        <p class="text-sm text-slate-500 font-mono mt-1">Review sonar evidence and assign the official verification status.</p>
+                    </div>
+
+                    <div class="flex-1 flex flex-col lg:flex-row gap-6 min-h-[500px]">
+                        <!-- Left: Detection List -->
+                        <div class="w-full lg:w-1/3 flex flex-col marine-card-no-hover rounded-xl overflow-hidden bg-white shrink-0">
+                            <div class="p-3 border-b border-slate-200 bg-slate-50 text-xs font-bold text-slate-700 font-mono flex justify-between items-center">
+                                <span>Pending Verification</span>
+                                <span class="bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full" id="ver-list-count">0</span>
+                            </div>
+                            <div class="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-2" id="ver-list">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+
+                        <!-- Right: Verification Details & Image -->
+                        <div class="w-full lg:w-2/3 flex flex-col marine-card-no-hover rounded-xl overflow-hidden bg-white shrink-0 relative">
+                            <div id="ver-detail-empty" class="absolute inset-0 flex items-center justify-center text-slate-500 font-mono text-sm bg-slate-50 z-10">
+                                Select a detection from the list to review.
+                            </div>
+
+                            <div class="flex-1 flex flex-col" id="ver-detail-pane">
+                                <!-- Image Viewer -->
+                                <div id="ver-img-wrap" class="h-64 sm:h-80 bg-[#020b15] relative flex items-center justify-center p-2">
+                                    <div class="absolute top-3 left-3 text-[10px] text-cyan-400 font-mono z-10 bg-black/50 px-2 py-1 rounded border border-cyan-500/30 backdrop-blur-sm">
+                                        SONAR EVIDENCE — RECONSTRUCTED WATERFALL
+                                    </div>
+                                    <div id="ver-bbox-badge" class="absolute top-3 right-3 text-[10px] font-mono z-10 bg-black/50 px-2 py-1 rounded border backdrop-blur-sm hidden"></div>
+                                    <img id="ver-img" src="" alt="Sonar Evidence" class="max-h-full max-w-full object-contain filter contrast-125" onerror="reportSonarEvidenceLoadError(this)" />
+                                    <!-- Real YOLO detection box, positioned from persisted bbox pixels -->
+                                    <div id="ver-bbox" class="absolute border-2 border-cyan-300 pointer-events-none hidden z-20" style="box-shadow:0 0 0 1px rgba(2,11,21,.85);">
+                                        <span id="ver-bbox-label" class="absolute -top-5 left-0 text-[9px] font-mono font-bold text-[#020b15] bg-cyan-300 px-1 rounded whitespace-nowrap"></span>
+                                    </div>
+                                </div>
+
+                                <!-- Info & Decision Panel -->
+                                <div class="flex-1 p-5 overflow-y-auto custom-scrollbar bg-white flex flex-col gap-5">
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <!-- AI Candidate Info -->
+                                        <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                                            <div class="text-[10px] font-bold text-slate-400 uppercase font-mono mb-2 border-b border-slate-200 pb-1">AI Pipeline Output</div>
+                                            <div class="text-xs font-mono space-y-1">
+                                                <div class="flex justify-between"><span class="text-slate-500">Candidate:</span><span class="font-bold text-slate-900" id="ver-info-class">Unknown</span></div>
+                                                <div class="flex justify-between"><span class="text-slate-500">Confidence:</span><span class="font-bold text-slate-900" id="ver-info-conf">0%</span></div>
+                                                <div class="flex justify-between"><span class="text-slate-500">TARANG Class:</span><span class="font-bold text-slate-900" id="ver-info-tier">Class C</span></div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Detection Meta -->
+                                        <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                                            <div class="text-[10px] font-bold text-slate-400 uppercase font-mono mb-2 border-b border-slate-200 pb-1">Context / Metadata</div>
+                                            <div class="text-xs font-mono space-y-1">
+                                                <div class="flex justify-between"><span class="text-slate-500">Latitude:</span><span class="font-medium text-slate-900" id="ver-info-lat">–</span></div>
+                                                <div class="flex justify-between"><span class="text-slate-500">Longitude:</span><span class="font-medium text-slate-900" id="ver-info-lon">–</span></div>
+                                                <div class="flex justify-between"><span class="text-slate-500">Water Depth:</span><span class="font-medium text-slate-900" id="ver-info-depth">–</span></div>
+                                                <div class="flex justify-between"><span class="text-slate-500">Altitude:</span><span class="font-medium text-slate-900" id="ver-info-alt">–</span></div>
+                                                <div class="flex justify-between"><span class="text-slate-500">Heading:</span><span class="font-medium text-slate-900" id="ver-info-heading">–</span></div>
+                                                <div class="flex justify-between"><span class="text-slate-500">Ping #:</span><span class="font-medium text-slate-900" id="ver-info-ping">–</span></div>
+                                            </div>
+                                            <div id="ver-mini-map" class="h-64 w-full mt-3 rounded-lg border border-slate-300 hidden relative z-10 shadow-sm"></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Target provenance / lifecycle (all from persisted Supabase rows) -->
+                                    <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                                        <div class="text-[10px] font-bold text-slate-400 uppercase font-mono mb-2 border-b border-slate-200 pb-1">Target Information</div>
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-xs font-mono">
+                                            <div class="flex justify-between"><span class="text-slate-500">Category:</span><span class="font-medium text-slate-900" id="ver-info-category">–</span></div>
+                                            <div class="flex justify-between"><span class="text-slate-500">Material:</span><span class="font-medium text-slate-900" id="ver-info-material">–</span></div>
+                                            <div class="flex justify-between"><span class="text-slate-500">Hazard:</span><span class="font-medium text-slate-900" id="ver-info-hazard">–</span></div>
+                                            <div class="flex justify-between"><span class="text-slate-500">Verification:</span><span class="font-medium text-slate-900" id="ver-info-status">–</span></div>
+                                            <div class="flex justify-between"><span class="text-slate-500">Requires Review:</span><span class="font-medium text-slate-900" id="ver-info-review">–</span></div>
+                                            <div class="flex justify-between"><span class="text-slate-500">Offshore:</span><span class="font-medium text-slate-900" id="ver-info-offshore">–</span></div>
+                                            <div class="flex justify-between col-span-1 sm:col-span-2"><span class="text-slate-500">Detection ID:</span><span class="font-medium text-slate-900 truncate" id="ver-info-detid">–</span></div>
+                                            <div class="flex justify-between col-span-1 sm:col-span-2"><span class="text-slate-500">Survey ID:</span><span class="font-medium text-slate-900 truncate" id="ver-info-survey">–</span></div>
+                                            <div class="flex justify-between col-span-1 sm:col-span-2"><span class="text-slate-500">Evidence Image:</span><span class="font-medium text-slate-900 truncate" id="ver-info-evidence">–</span></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Analyst Decision -->
+                                    <div class="border-t border-slate-200 pt-4 flex flex-col gap-3">
+                                        <div class="text-[10px] font-bold text-slate-500 uppercase font-mono">Analyst Decision</div>
+                                        <div class="flex flex-col sm:flex-row items-center gap-3">
+                                            <select id="ver-decision-status" class="w-full sm:w-48 bg-white border border-slate-300 rounded text-sm font-mono p-2 focus:outline-none focus:border-sky-500">
+                                                <option value="Verified">Verified</option>
+                                                <option value="Rejected">Rejected</option>
+                                                <option value="Requires Review">Requires Review</option>
+                                                <option value="Unknown">Unknown</option>
+                                            </select>
+                                            <select id="ver-reclassify" class="w-full sm:w-56 bg-white border border-slate-300 rounded text-sm font-mono p-2 focus:outline-none focus:border-sky-500" aria-label="Reclassify target">
+                                                <option value="">Keep AI classification</option>
+                                                <option value="ghost_net">Reclassify: Ghost net</option>
+                                                <option value="shipwreck">Reclassify: Shipwreck</option>
+                                                <option value="crab_pot">Reclassify: Crab pot</option>
+                                                <option value="submarine_pipeline">Reclassify: Submarine pipeline</option>
+                                                <option value="mine_cylinder">Reclassify: Mine / cylinder</option>
+                                                <option value="unknown">Reclassify: Unknown</option>
+                                            </select>
+                                            <button id="ver-btn-submit" class="w-full sm:w-auto px-6 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold font-mono rounded transition-colors whitespace-nowrap">
+                                                Submit Verification
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="marine-card-no-hover rounded-xl p-5">
-              <h3 class="text-sm font-bold text-slate-900 mb-3 border-b border-slate-100 pb-2">Verification Summary</h3>
-              <div class="space-y-0 text-xs font-mono" id="rep-summary"></div>
+
+            <!-- ============================================================ -->
+            <!-- VIEW 5 — INTELLIGENCE REPORT                                 -->
+            <!-- ============================================================ -->
+            <div id="view-reports" class="analyst-view hidden max-w-5xl mx-auto space-y-6">
+                <div id="rep-empty" class="py-16 text-center text-slate-500 font-mono text-sm marine-card-no-hover rounded-xl">
+                    Please select a survey from the Overview.
+                </div>
+
+                <div id="rep-content" class="space-y-6 hidden">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+                        <div>
+                            <h2 class="font-headline font-bold text-[24px] text-slate-900">Intelligence Report Summary</h2>
+                            <p class="text-sm text-slate-500 font-mono mt-1">Official summary of verified findings for the selected survey.</p>
+                        </div>
+                        <div id="rep-status-badge" class="px-3 py-1 bg-slate-100 text-slate-700 text-xs font-bold font-mono rounded border border-slate-200">
+                            Not Started
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="marine-card-no-hover rounded-xl p-5">
+                            <h3 class="text-sm font-bold text-slate-900 mb-3 border-b border-slate-100 pb-2">Survey Context</h3>
+                            <div class="space-y-0 text-xs font-mono" id="rep-info"></div>
+                        </div>
+                        <div class="marine-card-no-hover rounded-xl p-5">
+                            <h3 class="text-sm font-bold text-slate-900 mb-3 border-b border-slate-100 pb-2">Verification Summary</h3>
+                            <div class="space-y-0 text-xs font-mono" id="rep-summary"></div>
+                        </div>
+                    </div>
+
+                    <div class="marine-card-no-hover rounded-xl overflow-hidden flex flex-col">
+                        <div class="p-4 border-b border-slate-200 bg-slate-50">
+                            <h3 class="text-sm font-bold text-slate-900">Verified Findings</h3>
+                        </div>
+                        <div class="overflow-x-auto p-4">
+                            <table class="w-full text-left text-xs font-mono whitespace-nowrap">
+                                <thead class="text-slate-400 border-b border-slate-200">
+                                    <tr>
+                                        <th class="py-2 px-3">Candidate</th>
+                                        <th class="py-2 px-3">Class</th>
+                                        <th class="py-2 px-3">Status</th>
+                                        <th class="py-2 px-3">Coordinates</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="rep-findings-tbody" class="divide-y divide-slate-100">
+                                    <tr>
+                                        <td colspan="4" class="py-4 text-center text-slate-500">No verified findings available.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
 
-          <div class="marine-card-no-hover rounded-xl overflow-hidden flex flex-col">
-            <div class="p-4 border-b border-slate-200 bg-slate-50">
-              <h3 class="text-sm font-bold text-slate-900">Verified Findings</h3>
+            <!-- ============================================================ -->
+            <!-- VIEW 6 — SETTINGS                                            -->
+            <!-- ============================================================ -->
+            <div id="view-settings" class="analyst-view hidden max-w-3xl mx-auto space-y-6">
+                <div class="border-b border-slate-200 pb-4">
+                    <h2 class="font-headline font-bold text-[24px] text-slate-900">Portal Settings</h2>
+                    <p class="text-sm text-slate-500 font-mono mt-1">Configure your analyst account preferences.</p>
+                </div>
+
+                <div class="marine-card-no-hover rounded-xl p-6 space-y-8">
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-900 mb-4 border-b border-slate-100 pb-2">Account Profile</h3>
+                        <div class="space-y-3 text-sm font-mono">
+                            <div class="flex justify-between py-2 border-b border-slate-50"><span class="text-slate-500">Analyst Name</span><span class="font-medium text-slate-900" id="set-name">–</span></div>
+                            <div class="flex justify-between py-2 border-b border-slate-50"><span class="text-slate-500">Department</span><span class="font-medium text-slate-900" id="set-dept">–</span></div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-900 mb-4 border-b border-slate-100 pb-2">Notifications &amp; Display</h3>
+                        <div class="space-y-3 text-sm font-mono">
+                            <label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" class="w-4 h-4 text-sky-600 rounded" checked><span class="text-slate-700">Alert on new survey assignment</span></label>
+                            <label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" class="w-4 h-4 text-sky-600 rounded" checked><span class="text-slate-700">Show AI bounding boxes in viewer</span></label>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-900 mb-4 border-b border-slate-100 pb-2">Security &amp; Session</h3>
+                        <button onclick="sessionStorage.clear();localStorage.clear();window.location.href='login.html';" class="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-mono font-bold rounded-lg transition-colors border border-rose-200">
+                            Sign Out of All Sessions
+                        </button>
+                    </div>
+                </div>
             </div>
-            <div class="overflow-x-auto p-4">
-              <table class="w-full text-left text-xs font-mono whitespace-nowrap">
-                <thead class="text-slate-400 border-b border-slate-200">
-                  <tr>
-                    <th class="py-2 px-3">Candidate</th>
-                    <th class="py-2 px-3">Class</th>
-                    <th class="py-2 px-3">Status</th>
-                    <th class="py-2 px-3">Coordinates</th>
-                  </tr>
-                </thead>
-                <tbody id="rep-findings-tbody" class="divide-y divide-slate-100">
-                  <tr><td colspan="4" class="py-4 text-center text-slate-500">No verified findings available.</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      <!-- ============================================================ -->
-      <!-- VIEW 6 — SETTINGS                                            -->
-      <!-- ============================================================ -->
-      <div id="view-settings" class="analyst-view hidden max-w-3xl mx-auto space-y-6">
-        <div class="border-b border-slate-200 pb-4">
-          <h2 class="font-headline font-bold text-[24px] text-slate-900">Portal Settings</h2>
-          <p class="text-sm text-slate-500 font-mono mt-1">Configure your analyst account preferences.</p>
-        </div>
+        </main>
+    </div>
 
-        <div class="marine-card-no-hover rounded-xl p-6 space-y-8">
-          <div>
-            <h3 class="text-sm font-bold text-slate-900 mb-4 border-b border-slate-100 pb-2">Account Profile</h3>
-            <div class="space-y-3 text-sm font-mono">
-              <div class="flex justify-between py-2 border-b border-slate-50"><span class="text-slate-500">Analyst Name</span><span class="font-medium text-slate-900" id="set-name">–</span></div>
-              <div class="flex justify-between py-2 border-b border-slate-50"><span class="text-slate-500">Department</span><span class="font-medium text-slate-900" id="set-dept">–</span></div>
-            </div>
-          </div>
+    <!-- ================================================================ -->
+    <!-- JAVASCRIPT LOGIC                                                 -->
+    <!-- ================================================================ -->
+    <script>
+        let gSurveys = null;
+        let gDetections = null; // Detections for current survey
+        let currentSurveyId = null;
+        let currentDetectionId = null;
+        let sonarSpatialMap = null;
+        let verMiniMap = null;
 
-          <div>
-            <h3 class="text-sm font-bold text-slate-900 mb-4 border-b border-slate-100 pb-2">Notifications &amp; Display</h3>
-            <div class="space-y-3 text-sm font-mono">
-              <label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" class="w-4 h-4 text-sky-600 rounded" checked><span class="text-slate-700">Alert on new survey assignment</span></label>
-              <label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" class="w-4 h-4 text-sky-600 rounded" checked><span class="text-slate-700">Show AI bounding boxes in viewer</span></label>
-            </div>
-          </div>
+        const API = {
+            surveys: '/api/v1/surveys',
+            detsBase: '/api/v1/surveys/all/detections'
+        };
 
-          <div>
-            <h3 class="text-sm font-bold text-slate-900 mb-4 border-b border-slate-100 pb-2">Security &amp; Session</h3>
-            <button onclick="sessionStorage.clear();localStorage.clear();window.location.href='login.html';" class="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-mono font-bold rounded-lg transition-colors border border-rose-200">
-              Sign Out of All Sessions
-            </button>
-          </div>
-        </div>
-      </div>
-
-    </main>
-  </div>
-
-  <!-- ================================================================ -->
-  <!-- JAVASCRIPT LOGIC                                                 -->
-  <!-- ================================================================ -->
-  <script>
-    let gSurveys = null;
-    let gDetections = null; // Detections for current survey
-    let currentSurveyId = null;
-    let currentDetectionId = null;
-    let sonarSpatialMap = null;
-
-    const API = {
-      surveys: '/api/v1/surveys',
-      detsBase: '/api/v1/surveys/all/detections'
-    };
-
-    function dlRow(label, value) {
-      return '<div class="dl-row"><span class="dl-label">' + label + '</span><span class="dl-value">' + (value || 'Not available') + '</span></div>';
-    }
-
-    function confidencePercent(detection) {
-      const confidence = Number(detection && detection.confidence);
-      if (!Number.isFinite(confidence)) return 0;
-      return confidence > 1 ? confidence : confidence * 100;
-    }
-
-    function detectionTier(detection) {
-      const suppliedTier = String((detection && detection.classification_tier) || '').toUpperCase();
-      if (['A', 'B', 'C'].includes(suppliedTier)) return `Class ${suppliedTier}`;
-      const confidence = confidencePercent(detection);
-      return confidence >= 85 ? 'Class A' : (confidence >= 60 ? 'Class B' : 'Class C');
-    }
-
-    function switchTab(id) {
-      document.querySelectorAll('.analyst-nav').forEach(btn => {
-        if (btn.getAttribute('data-tab') === id) {
-          btn.className = 'analyst-nav w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-semibold transition-all bg-sky-50 text-sky-700';
-        } else {
-          btn.className = 'analyst-nav w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all text-slate-600 hover:bg-slate-50 hover:text-slate-900';
+        function dlRow(label, value) {
+            return '<div class="dl-row"><span class="dl-label">' + label + '</span><span class="dl-value">' + (value || 'Not available') + '</span></div>';
         }
-      });
-      document.querySelectorAll('.analyst-view').forEach(v => v.classList.add('hidden'));
-      document.getElementById('view-' + id).classList.remove('hidden');
-      if (id === 'spatial-map') renderSpatialMap();
-      
-      // Context banner
-      const banner = document.getElementById('survey-context-banner');
-      if (id !== 'overview' && id !== 'settings' && currentSurveyId) {
-        banner.classList.remove('hidden');
-      } else {
-        banner.classList.add('hidden');
-      }
-    }
 
-    document.addEventListener('DOMContentLoaded', async () => {
-      // Keep the real detection overlay aligned when the viewport/image resizes.
-      window.addEventListener('resize', positionBboxOverlay);
-      const user = getCurrentUser();
-      if (user) {
-        document.getElementById('analyst-user-name').textContent = user.full_name || 'Sonar Analyst';
-        document.getElementById('set-name').textContent = user.full_name || '–';
-        document.getElementById('set-dept').textContent = user.department || '–';
-      }
-      await loadSurveys();
+        function confidencePercent(detection) {
+            const confidence = Number(detection && detection.confidence);
+            if (!Number.isFinite(confidence)) return 0;
+            return confidence > 1 ? confidence : confidence * 100;
+        }
 
-      // The Sonar Analyst portal opens this focused verification view.
-      if (new URLSearchParams(window.location.search).get('view') === 'verification') {
-        switchTab('verification');
-      }
-    });
+        function detectionTier(detection) {
+            const suppliedTier = String((detection && detection.classification_tier) || '').toUpperCase();
+            if (['A', 'B', 'C'].includes(suppliedTier)) return `Class ${suppliedTier}`;
+            const confidence = confidencePercent(detection);
+            return confidence >= 85 ? 'Class A' : (confidence >= 60 ? 'Class B' : 'Class C');
+        }
 
-    async function fetchJSON(url) {
-      try {
-        const r = await fetch(url);
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        return await r.json();
-      } catch (e) {
-        console.error('Fetch error:', url, e);
-        return null;
-      }
-    }
+        function switchTab(id) {
+            document.querySelectorAll('.analyst-nav').forEach(btn => {
+                if (btn.getAttribute('data-tab') === id) {
+                    btn.className = 'analyst-nav w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-semibold transition-all bg-sky-50 text-sky-700';
+                } else {
+                    btn.className = 'analyst-nav w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all text-slate-600 hover:bg-slate-50 hover:text-slate-900';
+                }
+            });
+            document.querySelectorAll('.analyst-view').forEach(v => v.classList.add('hidden'));
+            document.getElementById('view-' + id).classList.remove('hidden');
+            if (id === 'spatial-map') renderSpatialMap();
 
-    async function loadSurveys() {
-      gSurveys = await fetchJSON(API.surveys);
-      const tbody = document.getElementById('overview-tbody');
-      
-      if (!gSurveys) {
-        tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-rose-500">Error loading surveys.</td></tr>';
-        return;
-      }
-      if (gSurveys.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-slate-500">No surveys available.</td></tr>';
-        return;
-      }
+            // Context banner
+            const banner = document.getElementById('survey-context-banner');
+            if (id !== 'overview' && id !== 'settings' && currentSurveyId) {
+                banner.classList.remove('hidden');
+            } else {
+                banner.classList.add('hidden');
+            }
+        }
 
-      tbody.innerHTML = gSurveys.map(s => `
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Keep the real detection overlay aligned when the viewport/image resizes.
+            window.addEventListener('resize', positionBboxOverlay);
+            const user = getCurrentUser();
+            if (user) {
+                document.getElementById('analyst-user-name').textContent = user.full_name || 'Sonar Analyst';
+                document.getElementById('set-name').textContent = user.full_name || '–';
+                document.getElementById('set-dept').textContent = user.department || '–';
+            }
+            await loadSurveys();
+
+            // The Sonar Analyst portal opens this focused verification view.
+            if (new URLSearchParams(window.location.search).get('view') === 'verification') {
+                switchTab('verification');
+            }
+        });
+
+        async function fetchJSON(url) {
+            try {
+                const r = await fetch(url);
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                return await r.json();
+            } catch (e) {
+                console.error('Fetch error:', url, e);
+                return null;
+            }
+        }
+
+        async function loadSurveys() {
+            gSurveys = await fetchJSON(API.surveys);
+            const tbody = document.getElementById('overview-tbody');
+
+            if (!gSurveys) {
+                tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-rose-500">Error loading surveys.</td></tr>';
+                return;
+            }
+            if (gSurveys.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-slate-500">No surveys available.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = gSurveys.map(s => `
         <tr class="hover:bg-slate-50 transition-colors">
           <td class="p-4 font-bold text-slate-900">${s.survey_name || s.survey_id}</td>
           <td class="p-4 text-slate-500">${s.survey_id}</td>
@@ -602,74 +661,76 @@
           </td>
         </tr>
       `).join('');
-    }
+        }
 
-    function clearSurveySelection() {
-      currentSurveyId = null;
-      gDetections = null;
-      switchTab('overview');
-      updateViews();
-    }
+        function clearSurveySelection() {
+            currentSurveyId = null;
+            gDetections = null;
+            switchTab('overview');
+            updateViews();
+        }
 
-    async function selectSurvey(id) {
-      currentSurveyId = id;
-      const survey = gSurveys.find(s => s.survey_id === id);
-      document.getElementById('ctx-survey-name').textContent = survey ? (survey.survey_name || survey.survey_id) : id;
-      
-      // Load detections for this specific survey
-      const allDets = await fetchJSON(API.detsBase);
-      const images = await fetchJSON(`/api/v1/surveys/${encodeURIComponent(id)}/images`);
-      if (allDets) {
-        const byImageId = new Map((images || []).map(image => [image.image_id, image]));
-        gDetections = allDets.filter(d => d.survey_id === id).map(d => {
-          // An evidence image belongs to its stable image ID. Falling back to
-          // the first image in a survey can show the wrong XTF sequence.
-          const evidence = byImageId.get(d.evidence_image_id);
-          const evidenceUrl = d.evidence_image_url || d.crop_url || (evidence && evidence.url) || '';
-          if (!evidenceUrl) {
-            console.error('TARANG Sonar Analyst received a detection without an evidence URL.', {
-              surveyId: id, detectionId: d.id, evidenceImageId: d.evidence_image_id
-            });
-          }
-          return {
-            ...d,
-            evidence_image_id: d.evidence_image_id || (evidence && evidence.image_id) || '',
-            evidence_image_url: evidenceUrl,
-            image_url: evidenceUrl
-          };
-        });
-      } else {
-        gDetections = null;
-      }
+        async function selectSurvey(id) {
+            currentSurveyId = id;
+            const survey = gSurveys.find(s => s.survey_id === id);
+            document.getElementById('ctx-survey-name').textContent = survey ? (survey.survey_name || survey.survey_id) : id;
 
-      switchTab('survey-analysis');
-      updateViews();
-    }
+            // Load detections for this specific survey
+            const allDets = await fetchJSON(API.detsBase);
+            const images = await fetchJSON(`/api/v1/surveys/${encodeURIComponent(id)}/images`);
+            if (allDets) {
+                const byImageId = new Map((images || []).map(image => [image.image_id, image]));
+                gDetections = allDets.filter(d => d.survey_id === id).map(d => {
+                    // An evidence image belongs to its stable image ID. Falling back to
+                    // the first image in a survey can show the wrong XTF sequence.
+                    const evidence = byImageId.get(d.evidence_image_id);
+                    const evidenceUrl = d.evidence_image_url || d.crop_url || (evidence && evidence.url) || '';
+                    if (!evidenceUrl) {
+                        console.error('TARANG Sonar Analyst received a detection without an evidence URL.', {
+                            surveyId: id,
+                            detectionId: d.id,
+                            evidenceImageId: d.evidence_image_id
+                        });
+                    }
+                    return {
+                        ...d,
+                        evidence_image_id: d.evidence_image_id || (evidence && evidence.image_id) || '',
+                        evidence_image_url: evidenceUrl,
+                        image_url: evidenceUrl
+                    };
+                });
+            } else {
+                gDetections = null;
+            }
 
-    function updateViews() {
-      renderSurveyAnalysis();
-      renderAIDetection();
-      renderVerification();
-      renderReports();
-    }
+            switchTab('survey-analysis');
+            updateViews();
+        }
 
-    // ── SURVEY ANALYSIS ──
-    function renderSurveyAnalysis() {
-      const empty = document.getElementById('sa-empty');
-      const content = document.getElementById('sa-content');
-      
-      if (!currentSurveyId) {
-        empty.classList.remove('hidden');
-        content.classList.add('hidden');
-        return;
-      }
-      empty.classList.add('hidden');
-      content.classList.remove('hidden');
+        function updateViews() {
+            renderSurveyAnalysis();
+            renderAIDetection();
+            renderVerification();
+            renderReports();
+        }
 
-      const survey = gSurveys.find(s => s.survey_id === currentSurveyId);
-      if (!survey) return;
+        // ── SURVEY ANALYSIS ──
+        function renderSurveyAnalysis() {
+            const empty = document.getElementById('sa-empty');
+            const content = document.getElementById('sa-content');
 
-      document.getElementById('sa-info').innerHTML = `
+            if (!currentSurveyId) {
+                empty.classList.remove('hidden');
+                content.classList.add('hidden');
+                return;
+            }
+            empty.classList.add('hidden');
+            content.classList.remove('hidden');
+
+            const survey = gSurveys.find(s => s.survey_id === currentSurveyId);
+            if (!survey) return;
+
+            document.getElementById('sa-info').innerHTML = `
         <div class="space-y-0">
           ${dlRow('Name', survey.survey_name || survey.survey_id)}
           ${dlRow('Type', survey.survey_type)}
@@ -682,7 +743,7 @@
         </div>
       `;
 
-      document.getElementById('sa-meta').innerHTML = `
+            document.getElementById('sa-meta').innerHTML = `
         <div class="space-y-0">
           ${dlRow('XTF File', survey.xtf_file || survey.xtf_filename)}
           ${dlRow('Sonar Device', survey.sonar_device)}
@@ -695,149 +756,235 @@
         </div>
       `;
 
-      // Compute Workflow state based on detections
-      const dets = gDetections || [];
-      const pendingDets = dets.filter(d => (d.verification_status || '').toLowerCase() !== 'verified' && (d.verification_status || '').toLowerCase() !== 'rejected');
-      const pending = pendingDets.length > 0;
-      
-      const pList = document.getElementById('sa-pending-list');
-      const pReason = document.getElementById('sa-pending-reason');
-      const btnVerify = document.getElementById('sa-btn-verify');
+            // Compute Workflow state based on detections
+            const dets = gDetections || [];
+            const pendingDets = dets.filter(d => (d.verification_status || '').toLowerCase() !== 'verified' && (d.verification_status || '').toLowerCase() !== 'rejected');
+            const pending = pendingDets.length > 0;
 
-      if (pending || dets.length === 0) {
-        pList.innerHTML = `
+            const pList = document.getElementById('sa-pending-list');
+            const pReason = document.getElementById('sa-pending-reason');
+            const btnVerify = document.getElementById('sa-btn-verify');
+
+            if (pending || dets.length === 0) {
+                pList.innerHTML = `
           <li class="flex items-center gap-2 text-amber-700"><span class="text-amber-500">○</span> Analyst Verification</li>
           <li class="flex items-center gap-2 text-amber-700"><span class="text-amber-500">○</span> Intelligence Report</li>
         `;
-        pReason.classList.remove('hidden');
-        btnVerify.classList.remove('hidden');
-      } else {
-        pList.innerHTML = `<li class="text-slate-500 italic">No pending tasks. Workflow complete.</li>`;
-        pReason.classList.add('hidden');
-        btnVerify.classList.add('hidden');
-      }
-    }
+                pReason.classList.remove('hidden');
+                btnVerify.classList.remove('hidden');
+            } else {
+                pList.innerHTML = `<li class="text-slate-500 italic">No pending tasks. Workflow complete.</li>`;
+                pReason.classList.add('hidden');
+                btnVerify.classList.add('hidden');
+            }
+        }
 
-    // ── AI DETECTION ──
-    function renderAIDetection() {
-      const empty = document.getElementById('det-empty');
-      const content = document.getElementById('det-content');
-      
-      if (!currentSurveyId) {
-        empty.textContent = 'Please select a survey from the Overview.';
-        empty.classList.remove('hidden');
-        content.classList.add('hidden');
-        return;
-      }
+        // ── AI DETECTION ──
+        function renderAIDetection() {
+            const empty = document.getElementById('det-empty');
+            const content = document.getElementById('det-content');
 
-      const dets = gDetections || [];
-      if (dets.length === 0) {
-        empty.textContent = 'No AI detections available for this survey.';
-        empty.classList.remove('hidden');
-        content.classList.add('hidden');
-        return;
-      }
-      empty.classList.add('hidden');
-      content.classList.remove('hidden');
+            if (!currentSurveyId) {
+                empty.textContent = 'Please select a survey from the Overview.';
+                empty.classList.remove('hidden');
+                content.classList.add('hidden');
+                return;
+            }
 
-      const total = dets.length;
-      let verified = 0;
-      let rejected = 0;
-      let pending = 0;
-      
-      dets.forEach(d => {
-        const s = (d.verification_status || '').toLowerCase();
-        if (s === 'verified') verified++;
-        else if (s === 'rejected') rejected++;
-        else pending++;
-      });
+            const dets = gDetections || [];
+            if (dets.length === 0) {
+                empty.textContent = 'No AI detections available for this survey.';
+                empty.classList.remove('hidden');
+                content.classList.add('hidden');
+                return;
+            }
+            empty.classList.add('hidden');
+            content.classList.remove('hidden');
 
-      document.getElementById('det-metrics').innerHTML = `
+            const total = dets.length;
+            let verified = 0;
+            let rejected = 0;
+            let pending = 0;
+
+            // Count by class type
+            const byClass = {};
+            const byTier = {
+                'Class A': 0,
+                'Class B': 0,
+                'Class C': 0
+            };
+
+            dets.forEach(d => {
+                const s = (d.verification_status || d.review_status || '').toLowerCase();
+                if (s === 'verified') verified++;
+                else if (s === 'rejected') rejected++;
+                else pending++;
+
+                // Count by detection class
+                const cls = d.class_name || 'unknown';
+                byClass[cls] = (byClass[cls] || 0) + 1;
+
+                // Count by TARANG tier
+                const tier = detectionTier(d);
+                byTier[tier] = (byTier[tier] || 0) + 1;
+            });
+
+            const avgConfidence = dets.length > 0 ?
+                (dets.reduce((sum, d) => sum + confidencePercent(d), 0) / dets.length).toFixed(1) :
+                0;
+
+            document.getElementById('det-metrics').innerHTML = `
         <div class="bg-white border border-slate-200 rounded-xl p-5 text-center shadow-sm">
           <div class="text-xs font-mono text-slate-500 uppercase">Total AI Detections</div>
           <div class="text-3xl font-bold font-mono text-slate-900 mt-2">${total}</div>
+          <div class="text-[10px] font-mono text-slate-400 mt-1">Avg: ${avgConfidence}% confidence</div>
         </div>
         <div class="bg-white border border-slate-200 rounded-xl p-5 text-center shadow-sm">
           <div class="text-xs font-mono text-slate-500 uppercase">Verified</div>
           <div class="text-3xl font-bold font-mono text-emerald-600 mt-2">${verified}</div>
+          <div class="text-[10px] font-mono text-slate-400 mt-1">${total > 0 ? Math.round(100*verified/total) : 0}% complete</div>
         </div>
         <div class="bg-white border border-slate-200 rounded-xl p-5 text-center shadow-sm">
           <div class="text-xs font-mono text-slate-500 uppercase">Rejected</div>
           <div class="text-3xl font-bold font-mono text-rose-600 mt-2">${rejected}</div>
+          <div class="text-[10px] font-mono text-slate-400 mt-1">${total > 0 ? Math.round(100*rejected/total) : 0}% false positives</div>
         </div>
         <div class="bg-white border border-slate-200 rounded-xl p-5 text-center shadow-sm border-b-4 border-b-amber-400">
           <div class="text-xs font-mono text-slate-500 uppercase">Pending Review</div>
           <div class="text-3xl font-bold font-mono text-amber-600 mt-2">${pending}</div>
+          <div class="text-[10px] font-mono text-slate-400 mt-1">Requires verification</div>
         </div>
       `;
-    }
 
-    // ── VERIFICATION ──
-    async function renderSpatialMap() {
-      const empty = document.getElementById('spatial-empty');
-      const content = document.getElementById('spatial-content');
-      const note = document.getElementById('spatial-map-note');
-      if (!currentSurveyId) {
-        empty.classList.remove('hidden');
-        content.classList.add('hidden');
-        return;
-      }
+            // Add detailed breakdown section after metrics if not exists
+            let breakdownEl = document.getElementById('det-breakdown');
+            if (!breakdownEl) {
+                const metricsEl = document.getElementById('det-metrics');
+                breakdownEl = document.createElement('div');
+                breakdownEl.id = 'det-breakdown';
+                breakdownEl.className = 'grid grid-cols-1 lg:grid-cols-2 gap-6';
+                metricsEl.parentNode.insertBefore(breakdownEl, metricsEl.nextSibling);
+            }
 
-      empty.classList.add('hidden');
-      content.classList.remove('hidden');
-      if (!sonarSpatialMap) {
-        sonarSpatialMap = new TarangMap('sonar-spatial-map', { center: [12.905, 80.495], zoom: 11 });
-      }
-      if (!sonarSpatialMap || !sonarSpatialMap.map) return;
+            // By Class breakdown
+            const classRows = Object.entries(byClass)
+                .sort((a, b) => b[1] - a[1])
+                .map(([cls, count]) => {
+                    const pct = Math.round(100 * count / total);
+                    const displayName = cls.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                    return `
+            <div class="flex justify-between items-center py-2 border-b border-slate-100">
+              <span class="text-xs font-medium text-slate-700">${displayName}</span>
+              <div class="flex items-center gap-3">
+                <div class="w-32 h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div class="h-full bg-sky-500" style="width: ${pct}%"></div>
+                </div>
+                <span class="text-xs font-bold font-mono text-slate-900 w-12 text-right">${count}</span>
+              </div>
+            </div>
+          `;
+                }).join('');
 
-      const detections = (gDetections || []).filter(d => d.latitude != null && d.longitude != null && d.is_offshore !== false);
-      sonarSpatialMap.clear();
-      sonarSpatialMap.setDetections(detections, selectDetection);
-      if (detections.length === 0) {
-        note.textContent = 'No georeferenced detections are available for this survey.';
-      } else {
-        note.textContent = `${detections.length} georeferenced detection${detections.length === 1 ? '' : 's'} displayed.`;
-        const clusters = await fetchJSON(`/api/v1/surveys/${encodeURIComponent(currentSurveyId)}/clusters`);
-        if (clusters) sonarSpatialMap.setClusters(clusters);
-        sonarSpatialMap.fitBounds();
-      }
-      setTimeout(() => sonarSpatialMap.map.invalidateSize(), 100);
-    }
+            // By Tier breakdown
+            const tierRows = ['Class A', 'Class B', 'Class C'].map(tier => {
+                const count = byTier[tier];
+                const pct = Math.round(100 * count / total);
+                const color = tier === 'Class A' ? 'emerald' : tier === 'Class B' ? 'amber' : 'rose';
+                return `
+          <div class="flex justify-between items-center py-2 border-b border-slate-100">
+            <span class="text-xs font-medium text-slate-700">${tier}</span>
+            <div class="flex items-center gap-3">
+              <div class="w-32 h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div class="h-full bg-${color}-500" style="width: ${pct}%"></div>
+              </div>
+              <span class="text-xs font-bold font-mono text-slate-900 w-12 text-right">${count}</span>
+            </div>
+          </div>
+        `;
+            }).join('');
 
-    function renderVerification() {
-      const empty = document.getElementById('ver-empty');
-      const content = document.getElementById('ver-content');
-      
-      if (!currentSurveyId) {
-        empty.classList.remove('hidden');
-        content.classList.add('hidden');
-        return;
-      }
-      empty.classList.add('hidden');
-      content.classList.remove('hidden');
+            breakdownEl.innerHTML = `
+        <div class="marine-card-no-hover rounded-xl p-5">
+          <h3 class="font-headline font-bold text-slate-900 border-b border-slate-200 pb-2 mb-3 text-sm">Detection Type Distribution</h3>
+          ${classRows || '<div class="text-xs text-slate-500 font-mono">No data</div>'}
+        </div>
+        <div class="marine-card-no-hover rounded-xl p-5">
+          <h3 class="font-headline font-bold text-slate-900 border-b border-slate-200 pb-2 mb-3 text-sm">TARANG Classification Tiers</h3>
+          ${tierRows}
+        </div>
+      `;
+        }
 
-      const listEl = document.getElementById('ver-list');
-      const dets = gDetections || [];
-      const pendingDets = dets.filter(d => {
-        const s = (d.verification_status || '').toLowerCase();
-        return s !== 'verified' && s !== 'rejected';
-      });
+        // ── VERIFICATION ──
+        async function renderSpatialMap() {
+            const empty = document.getElementById('spatial-empty');
+            const content = document.getElementById('spatial-content');
+            const note = document.getElementById('spatial-map-note');
+            if (!currentSurveyId) {
+                empty.classList.remove('hidden');
+                content.classList.add('hidden');
+                return;
+            }
 
-      document.getElementById('ver-list-count').textContent = pendingDets.length;
+            empty.classList.add('hidden');
+            content.classList.remove('hidden');
+            if (!sonarSpatialMap) {
+                // Use MAP_CONFIG default center (Indian Ocean), will be auto-centered on actual survey data
+                sonarSpatialMap = new TarangMap('sonar-spatial-map', {
+                    center: MAP_CONFIG.defaultCenter,
+                    zoom: 11
+                });
+            }
+            if (!sonarSpatialMap || !sonarSpatialMap.map) return;
 
-      if (pendingDets.length === 0) {
-        listEl.innerHTML = '<div class="p-4 text-center text-slate-500 text-xs font-mono">No detections require verification.</div>';
-        clearVerificationDetail();
-        return;
-      }
+            const detections = (gDetections || []).filter(d => d.latitude != null && d.longitude != null && d.is_offshore !== false);
+            sonarSpatialMap.clear();
+            sonarSpatialMap.setDetections(detections, selectDetection);
+            if (detections.length === 0) {
+                note.textContent = 'No georeferenced detections are available for this survey.';
+            } else {
+                note.textContent = `${detections.length} georeferenced detection${detections.length === 1 ? '' : 's'} displayed.`;
+                const clusters = await fetchJSON(`/api/v1/surveys/${encodeURIComponent(currentSurveyId)}/clusters`);
+                if (clusters) sonarSpatialMap.setClusters(clusters);
+                sonarSpatialMap.fitBounds();
+            }
+            setTimeout(() => sonarSpatialMap.map.invalidateSize(), 100);
+        }
 
-      listEl.innerHTML = pendingDets.map(d => {
-        const confidence = confidencePercent(d);
-        const tier = detectionTier(d);
-        const isSelected = currentDetectionId === d.id;
-        const bg = isSelected ? 'bg-sky-50 border-sky-200' : 'bg-white hover:bg-slate-50 border-slate-200';
-        
-        return `
+        function renderVerification() {
+            const empty = document.getElementById('ver-empty');
+            const content = document.getElementById('ver-content');
+
+            if (!currentSurveyId) {
+                empty.classList.remove('hidden');
+                content.classList.add('hidden');
+                return;
+            }
+            empty.classList.add('hidden');
+            content.classList.remove('hidden');
+
+            const listEl = document.getElementById('ver-list');
+            const dets = gDetections || [];
+            const pendingDets = dets.filter(d => {
+                const s = (d.verification_status || '').toLowerCase();
+                return s !== 'verified' && s !== 'rejected';
+            });
+
+            document.getElementById('ver-list-count').textContent = pendingDets.length;
+
+            if (pendingDets.length === 0) {
+                listEl.innerHTML = '<div class="p-4 text-center text-slate-500 text-xs font-mono">No detections require verification.</div>';
+                clearVerificationDetail();
+                return;
+            }
+
+            listEl.innerHTML = pendingDets.map(d => {
+                const confidence = confidencePercent(d);
+                const tier = detectionTier(d);
+                const isSelected = currentDetectionId === d.id;
+                const bg = isSelected ? 'bg-sky-50 border-sky-200' : 'bg-white hover:bg-slate-50 border-slate-200';
+
+                return `
           <div onclick="selectDetection('${d.id}')" class="p-3 rounded border ${bg} cursor-pointer transition-colors">
             <div class="flex justify-between items-center mb-1">
               <span class="font-bold text-slate-900 text-xs truncate mr-2">${d.class_name || 'Anomaly'}</span>
@@ -849,244 +996,274 @@
             </div>
           </div>
         `;
-      }).join('');
+            }).join('');
 
-      // Auto-select first if none selected, or if current is no longer pending
-      if (!currentDetectionId || !pendingDets.find(d => d.id === currentDetectionId)) {
-        if (pendingDets.length > 0) selectDetection(pendingDets[0].id);
-      }
-    }
-
-    function clearVerificationDetail() {
-      document.getElementById('ver-detail-empty').classList.remove('hidden');
-      currentDetectionId = null;
-    }
-
-    // Real YOLO box (natural-image pixels) for the currently selected detection.
-    let currentBbox = null;
-
-    function fmtCoord(v, suffix) {
-      const n = parseFloat(v);
-      if (v === null || v === undefined || v === '' || isNaN(n)) return 'Not geotagged';
-      return n.toFixed(5) + (suffix ? ' ' + suffix : '');
-    }
-
-    function fmtOrDash(v, suffix) {
-      if (v === null || v === undefined || v === '') return '–';
-      const n = parseFloat(v);
-      if (!isNaN(n) && suffix) return n.toFixed(1) + ' ' + suffix;
-      return String(v);
-    }
-
-    function positionBboxOverlay() {
-      const wrap = document.getElementById('ver-img-wrap');
-      const img = document.getElementById('ver-img');
-      const box = document.getElementById('ver-bbox');
-      const badge = document.getElementById('ver-bbox-badge');
-      if (!wrap || !img || !box) return;
-
-      const valid = Array.isArray(currentBbox) && currentBbox.length === 4 &&
-        currentBbox.every(v => typeof v === 'number' && !isNaN(v));
-      if (!valid || !img.naturalWidth || img.classList.contains('hidden')) {
-        box.classList.add('hidden');
-        if (badge) {
-          badge.classList.remove('hidden');
-          badge.className = 'absolute top-3 right-3 text-[10px] font-mono z-10 bg-black/50 px-2 py-1 rounded border backdrop-blur-sm border-amber-500/40 text-amber-300';
-          badge.textContent = 'NO BBOX ON RECORD';
+            // Auto-select first if none selected, or if current is no longer pending
+            if (!currentDetectionId || !pendingDets.find(d => d.id === currentDetectionId)) {
+                if (pendingDets.length > 0) selectDetection(pendingDets[0].id);
+            }
         }
-        return;
-      }
 
-      const wrapRect = wrap.getBoundingClientRect();
-      const imgRect = img.getBoundingClientRect();
-      const scale = imgRect.width / img.naturalWidth;
-      const [x1, y1, x2, y2] = currentBbox;
-      box.style.left = ((imgRect.left - wrapRect.left) + x1 * scale) + 'px';
-      box.style.top = ((imgRect.top - wrapRect.top) + y1 * scale) + 'px';
-      box.style.width = ((x2 - x1) * scale) + 'px';
-      box.style.height = ((y2 - y1) * scale) + 'px';
-      box.classList.remove('hidden');
-
-      if (badge) {
-        badge.classList.remove('hidden');
-        badge.className = 'absolute top-3 right-3 text-[10px] font-mono z-10 bg-black/50 px-2 py-1 rounded border backdrop-blur-sm border-cyan-500/40 text-cyan-300';
-        badge.textContent = 'DETECTION OVERLAY: REAL YOLO BOX';
-      }
-    }
-
-    function selectDetection(id) {
-      currentDetectionId = id;
-      document.getElementById('ver-detail-empty').classList.add('hidden');
-      
-      // Re-render list to highlight selected (without full data reload)
-      const listItems = document.getElementById('ver-list').children;
-      for (let i = 0; i < listItems.length; i++) {
-        const el = listItems[i];
-        if (el.innerHTML.includes(id.substring(0,8))) {
-          el.className = "p-3 rounded border bg-sky-50 border-sky-200 cursor-pointer transition-colors";
-        } else {
-          el.className = "p-3 rounded border bg-white hover:bg-slate-50 border-slate-200 cursor-pointer transition-colors";
+        function clearVerificationDetail() {
+            document.getElementById('ver-detail-empty').classList.remove('hidden');
+            currentDetectionId = null;
         }
-      }
 
-      const det = (gDetections || []).find(d => d.id === id);
-      if (!det) return;
+        // Real YOLO box (natural-image pixels) for the currently selected detection.
+        let currentBbox = null;
 
-      document.getElementById('ver-reclassify').value = '';
-      const confidence = confidencePercent(det);
-      const tier = detectionTier(det);
-
-      document.getElementById('ver-info-class').textContent = det.class_name || 'Anomaly';
-      document.getElementById('ver-info-conf').textContent = confidence.toFixed(1) + '%';
-      document.getElementById('ver-info-tier').textContent = tier;
-      document.getElementById('ver-info-lat').textContent = fmtCoord(det.latitude, 'N');
-      document.getElementById('ver-info-lon').textContent = fmtCoord(det.longitude, 'E');
-      document.getElementById('ver-info-depth').textContent = det.depth || '–';
-      document.getElementById('ver-info-alt').textContent = det.altitude || '–';
-      document.getElementById('ver-info-heading').textContent = fmtOrDash(det.heading, '°');
-      document.getElementById('ver-info-ping').textContent = (det.ping_number === null || det.ping_number === undefined) ? '–' : String(det.ping_number);
-
-      // Target Information (all from the persisted detection row / link event)
-      document.getElementById('ver-info-category').textContent = det.category || '–';
-      document.getElementById('ver-info-material').textContent = det.material || '–';
-      document.getElementById('ver-info-hazard').textContent = det.hazard || '–';
-      document.getElementById('ver-info-status').textContent = det.verification_status || det.review_status || '–';
-      document.getElementById('ver-info-review').textContent = (det.requires_review === undefined) ? '–' : (det.requires_review ? 'Yes' : 'No');
-      document.getElementById('ver-info-offshore').textContent = (det.is_offshore === undefined) ? '–' : (det.is_offshore ? 'Yes' : 'No');
-      document.getElementById('ver-info-detid').textContent = det.id || '–';
-      document.getElementById('ver-info-survey').textContent = det.survey_id || '–';
-      const evSeq = (det.evidence_sequence === null || det.evidence_sequence === undefined) ? '' : ` (seq ${det.evidence_sequence})`;
-      document.getElementById('ver-info-evidence').textContent = (det.evidence_image_id ? det.evidence_image_id + evSeq : '–');
-
-      // Real YOLO box for the overlay; null for legacy rows persisted before bbox existed.
-      currentBbox = Array.isArray(det.bbox) ? det.bbox : null;
-      const label = document.getElementById('ver-bbox-label');
-      if (label) label.textContent = `${(det.class_name || 'target')} ${confidence.toFixed(0)}%`;
-
-      const imgEl = document.getElementById('ver-img');
-      const evidenceUrl = String(det.evidence_image_url || det.crop_url || det.image_url || '').trim();
-      if (/^(https?:\/\/|\/)/i.test(evidenceUrl) && !/^[A-Za-z]:[\\/]/.test(evidenceUrl) && !/^\\\\/.test(evidenceUrl)) {
-        imgEl.dataset.evidenceId = det.evidence_image_id || '';
-        imgEl.dataset.detectionId = det.id || '';
-        imgEl.classList.remove('hidden');
-        imgEl.onload = positionBboxOverlay;
-        imgEl.src = evidenceUrl;
-        // If the image is already cached, onload may not fire again.
-        if (imgEl.complete && imgEl.naturalWidth) positionBboxOverlay();
-      } else {
-        console.error('TARANG evidence URL is missing or not browser-safe.', { detectionId: det.id, evidenceUrl });
-        imgEl.removeAttribute('src');
-        imgEl.classList.add('hidden');
-        currentBbox = null;
-        positionBboxOverlay();
-      }
-
-      const btn = document.getElementById('ver-btn-submit');
-      btn.onclick = () => submitVerification(det.id);
-    }
-
-    function reportSonarEvidenceLoadError(image) {
-      console.error('TARANG Sonar Analyst evidence image failed to load.', {
-        evidenceId: image.dataset.evidenceId,
-        detectionId: image.dataset.detectionId,
-        url: image.currentSrc || image.src
-      });
-      image.classList.add('hidden');
-    }
-
-    async function submitVerification(id) {
-      const status = document.getElementById('ver-decision-status').value;
-      const className = document.getElementById('ver-reclassify').value;
-      const btn = document.getElementById('ver-btn-submit');
-      btn.disabled = true;
-      btn.textContent = 'Saving...';
-
-      try {
-        const res = await fetch(`/api/v1/detections/${id}/verify`, {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({ status: status, class_name: className || null })
-        });
-        if (res.ok) {
-          // Update local state
-          const det = gDetections.find(d => d.id === id);
-          if (det) {
-            det.verification_status = status;
-            det.review_status = status;
-            det.detection_status = status === 'Rejected' ? 'Rejected' : (status === 'Verified' ? 'Verified' : 'Pending Review');
-            if (className) det.class_name = className;
-          }
-          currentDetectionId = null;
-          updateViews();
-        } else {
-          alert('Failed to update verification status.');
+        function fmtCoord(v, suffix) {
+            const n = parseFloat(v);
+            if (v === null || v === undefined || v === '' || isNaN(n)) return 'Not geotagged';
+            return n.toFixed(5) + (suffix ? ' ' + suffix : '');
         }
-      } catch (e) {
-        console.error(e);
-        alert('Error submitting verification.');
-      } finally {
-        btn.disabled = false;
-        btn.textContent = 'Submit Verification';
-      }
-    }
 
-    // ── INTELLIGENCE REPORT ──
-    function renderReports() {
-      const empty = document.getElementById('rep-empty');
-      const content = document.getElementById('rep-content');
-      
-      if (!currentSurveyId) {
-        empty.classList.remove('hidden');
-        content.classList.add('hidden');
-        return;
-      }
-      empty.classList.add('hidden');
-      content.classList.remove('hidden');
+        function fmtOrDash(v, suffix) {
+            if (v === null || v === undefined || v === '') return '–';
+            const n = parseFloat(v);
+            if (!isNaN(n) && suffix) return n.toFixed(1) + ' ' + suffix;
+            return String(v);
+        }
 
-      const survey = gSurveys.find(s => s.survey_id === currentSurveyId);
-      const dets = gDetections || [];
-      const verifiedDets = dets.filter(d => {
-        const s = (d.verification_status || '').toLowerCase();
-        return s === 'verified';
-      });
-      const rejectedDets = dets.filter(d => (d.verification_status||'').toLowerCase() === 'rejected');
-      const pendingDets = dets.length - verifiedDets.length - rejectedDets.length;
+        function positionBboxOverlay() {
+            const wrap = document.getElementById('ver-img-wrap');
+            const img = document.getElementById('ver-img');
+            const box = document.getElementById('ver-bbox');
+            const badge = document.getElementById('ver-bbox-badge');
+            if (!wrap || !img || !box) return;
 
-      let repStatus = 'Not Started';
-      let repColor = 'bg-slate-100 text-slate-700';
-      if (dets.length > 0) {
-        if (pendingDets === 0) { repStatus = 'Completed'; repColor = 'bg-emerald-100 text-emerald-800 border-emerald-200'; }
-        else if (verifiedDets.length > 0) { repStatus = 'In Progress'; repColor = 'bg-sky-100 text-sky-800 border-sky-200'; }
-      }
+            const valid = Array.isArray(currentBbox) && currentBbox.length === 4 &&
+                currentBbox.every(v => typeof v === 'number' && !isNaN(v));
+            if (!valid || !img.naturalWidth || img.classList.contains('hidden')) {
+                box.classList.add('hidden');
+                if (badge) {
+                    badge.classList.remove('hidden');
+                    badge.className = 'absolute top-3 right-3 text-[10px] font-mono z-10 bg-black/50 px-2 py-1 rounded border backdrop-blur-sm border-amber-500/40 text-amber-300';
+                    badge.textContent = 'NO BBOX ON RECORD';
+                }
+                return;
+            }
 
-      document.getElementById('rep-status-badge').textContent = repStatus;
-      document.getElementById('rep-status-badge').className = `px-3 py-1 text-xs font-bold font-mono rounded border ${repColor}`;
+            const wrapRect = wrap.getBoundingClientRect();
+            const imgRect = img.getBoundingClientRect();
+            const scale = imgRect.width / img.naturalWidth;
+            const [x1, y1, x2, y2] = currentBbox;
+            box.style.left = ((imgRect.left - wrapRect.left) + x1 * scale) + 'px';
+            box.style.top = ((imgRect.top - wrapRect.top) + y1 * scale) + 'px';
+            box.style.width = ((x2 - x1) * scale) + 'px';
+            box.style.height = ((y2 - y1) * scale) + 'px';
+            box.classList.remove('hidden');
 
-      if (survey) {
-        document.getElementById('rep-info').innerHTML = `
+            if (badge) {
+                badge.classList.remove('hidden');
+                badge.className = 'absolute top-3 right-3 text-[10px] font-mono z-10 bg-black/50 px-2 py-1 rounded border backdrop-blur-sm border-cyan-500/40 text-cyan-300';
+                badge.textContent = 'DETECTION OVERLAY: REAL YOLO BOX';
+            }
+        }
+
+        function selectDetection(id) {
+            currentDetectionId = id;
+            document.getElementById('ver-detail-empty').classList.add('hidden');
+
+            // Re-render list to highlight selected (without full data reload)
+            const listItems = document.getElementById('ver-list').children;
+            for (let i = 0; i < listItems.length; i++) {
+                const el = listItems[i];
+                if (el.innerHTML.includes(id.substring(0, 8))) {
+                    el.className = "p-3 rounded border bg-sky-50 border-sky-200 cursor-pointer transition-colors";
+                } else {
+                    el.className = "p-3 rounded border bg-white hover:bg-slate-50 border-slate-200 cursor-pointer transition-colors";
+                }
+            }
+
+            const det = (gDetections || []).find(d => d.id === id);
+            if (!det) return;
+
+            document.getElementById('ver-reclassify').value = '';
+            const confidence = confidencePercent(det);
+            const tier = detectionTier(det);
+
+            document.getElementById('ver-info-class').textContent = det.class_name || 'Anomaly';
+            document.getElementById('ver-info-conf').textContent = confidence.toFixed(1) + '%';
+            document.getElementById('ver-info-tier').textContent = tier;
+            document.getElementById('ver-info-lat').textContent = fmtCoord(det.latitude, 'N');
+            document.getElementById('ver-info-lon').textContent = fmtCoord(det.longitude, 'E');
+            document.getElementById('ver-info-depth').textContent = det.depth || '–';
+            document.getElementById('ver-info-alt').textContent = det.altitude || '–';
+            document.getElementById('ver-info-heading').textContent = fmtOrDash(det.heading, '°');
+            document.getElementById('ver-info-ping').textContent = (det.ping_number === null || det.ping_number === undefined) ? '–' : String(det.ping_number);
+
+            // Target Information (all from the persisted detection row / link event)
+            document.getElementById('ver-info-category').textContent = det.category || '–';
+            document.getElementById('ver-info-material').textContent = det.material || '–';
+            document.getElementById('ver-info-hazard').textContent = det.hazard || '–';
+            document.getElementById('ver-info-status').textContent = det.verification_status || det.review_status || '–';
+            document.getElementById('ver-info-review').textContent = (det.requires_review === undefined) ? '–' : (det.requires_review ? 'Yes' : 'No');
+            document.getElementById('ver-info-offshore').textContent = (det.is_offshore === undefined) ? '–' : (det.is_offshore ? 'Yes' : 'No');
+            document.getElementById('ver-info-detid').textContent = det.id || '–';
+            document.getElementById('ver-info-survey').textContent = det.survey_id || '–';
+            const evSeq = (det.evidence_sequence === null || det.evidence_sequence === undefined) ? '' : ` (seq ${det.evidence_sequence})`;
+            document.getElementById('ver-info-evidence').textContent = (det.evidence_image_id ? det.evidence_image_id + evSeq : '–');
+
+            // Real YOLO box for the overlay; null for legacy rows persisted before bbox existed.
+            currentBbox = Array.isArray(det.bbox) ? det.bbox : null;
+            const label = document.getElementById('ver-bbox-label');
+            if (label) label.textContent = `${(det.class_name || 'target')} ${confidence.toFixed(0)}%`;
+
+            const imgEl = document.getElementById('ver-img');
+            const evidenceUrl = String(det.evidence_image_url || det.crop_url || det.image_url || '').trim();
+            if (/^(https?:\/\/|\/)/i.test(evidenceUrl) && !/^[A-Za-z]:[\\/]/.test(evidenceUrl) && !/^\\\\/.test(evidenceUrl)) {
+                imgEl.dataset.evidenceId = det.evidence_image_id || '';
+                imgEl.dataset.detectionId = det.id || '';
+                imgEl.classList.remove('hidden');
+                imgEl.onload = positionBboxOverlay;
+                imgEl.src = evidenceUrl;
+                // If the image is already cached, onload may not fire again.
+                if (imgEl.complete && imgEl.naturalWidth) positionBboxOverlay();
+            } else {
+                console.error('TARANG evidence URL is missing or not browser-safe.', {
+                    detectionId: det.id,
+                    evidenceUrl
+                });
+                imgEl.removeAttribute('src');
+                imgEl.classList.add('hidden');
+                currentBbox = null;
+                positionBboxOverlay();
+            }
+
+            const mapEl = document.getElementById('ver-mini-map');
+            if (det.latitude != null && det.longitude != null && det.is_offshore !== false) {
+                mapEl.classList.remove('hidden');
+                if (!verMiniMap) {
+                    verMiniMap = new TarangMap('ver-mini-map', {
+                        zoom: 14,
+                        readOnly: true
+                    });
+                }
+                verMiniMap.clear();
+                verMiniMap.setDetections([det]);
+                verMiniMap.map.setView([Number(det.latitude), Number(det.longitude)], 14);
+                setTimeout(() => verMiniMap.map.invalidateSize(), 150);
+            } else {
+                mapEl.classList.add('hidden');
+            }
+
+            const btn = document.getElementById('ver-btn-submit');
+            btn.onclick = () => submitVerification(det.id);
+        }
+
+        function reportSonarEvidenceLoadError(image) {
+            console.error('TARANG Sonar Analyst evidence image failed to load.', {
+                evidenceId: image.dataset.evidenceId,
+                detectionId: image.dataset.detectionId,
+                url: image.currentSrc || image.src
+            });
+            image.classList.add('hidden');
+        }
+
+        async function submitVerification(id) {
+            const status = document.getElementById('ver-decision-status').value;
+            const className = document.getElementById('ver-reclassify').value;
+            const btn = document.getElementById('ver-btn-submit');
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+
+            try {
+                const res = await fetch(`/api/v1/detections/${id}/verify`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        status: status,
+                        class_name: className || null
+                    })
+                });
+                if (res.ok) {
+                    // Update local state
+                    const det = gDetections.find(d => d.id === id);
+                    if (det) {
+                        det.verification_status = status;
+                        det.review_status = status;
+                        det.detection_status = status === 'Rejected' ? 'Rejected' : (status === 'Verified' ? 'Verified' : 'Pending Review');
+                        if (className) det.class_name = className;
+                    }
+                    currentDetectionId = null;
+                    updateViews();
+                } else {
+                    alert('Failed to update verification status.');
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Error submitting verification.');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Submit Verification';
+            }
+        }
+
+        // ── INTELLIGENCE REPORT ──
+        function renderReports() {
+            const empty = document.getElementById('rep-empty');
+            const content = document.getElementById('rep-content');
+
+            if (!currentSurveyId) {
+                empty.classList.remove('hidden');
+                content.classList.add('hidden');
+                return;
+            }
+            empty.classList.add('hidden');
+            content.classList.remove('hidden');
+
+            const survey = gSurveys.find(s => s.survey_id === currentSurveyId);
+            const dets = gDetections || [];
+            const verifiedDets = dets.filter(d => {
+                const s = (d.verification_status || '').toLowerCase();
+                return s === 'verified';
+            });
+            const rejectedDets = dets.filter(d => (d.verification_status || '').toLowerCase() === 'rejected');
+            const pendingDets = dets.length - verifiedDets.length - rejectedDets.length;
+
+            let repStatus = 'Not Started';
+            let repColor = 'bg-slate-100 text-slate-700';
+            if (dets.length > 0) {
+                if (pendingDets === 0) {
+                    repStatus = 'Completed';
+                    repColor = 'bg-emerald-100 text-emerald-800 border-emerald-200';
+                } else if (verifiedDets.length > 0) {
+                    repStatus = 'In Progress';
+                    repColor = 'bg-sky-100 text-sky-800 border-sky-200';
+                }
+            }
+
+            document.getElementById('rep-status-badge').textContent = repStatus;
+            document.getElementById('rep-status-badge').className = `px-3 py-1 text-xs font-bold font-mono rounded border ${repColor}`;
+
+            if (survey) {
+                document.getElementById('rep-info').innerHTML = `
           ${dlRow('Survey Name', survey.survey_name || survey.survey_id)}
           ${dlRow('Survey Type', survey.survey_type)}
           ${dlRow('Region', survey.region)}
           ${dlRow('Operator', survey.created_by)}
         `;
-      }
+            }
 
-      document.getElementById('rep-summary').innerHTML = `
+            document.getElementById('rep-summary').innerHTML = `
         ${dlRow('Total AI Detections', dets.length)}
         ${dlRow('Verified Targets', verifiedDets.length)}
         ${dlRow('Rejected / False Positives', rejectedDets.length)}
         ${dlRow('Pending Verification', pendingDets)}
       `;
 
-      const tbody = document.getElementById('rep-findings-tbody');
-      if (verifiedDets.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" class="py-4 text-center text-slate-500">No verified findings available.</td></tr>';
-      } else {
-        tbody.innerHTML = verifiedDets.map(d => {
-          const conf = parseFloat(d.confidence || 0);
-          const tier = conf > 0.85 ? 'Class A' : (conf > 0.6 ? 'Class B' : 'Class C');
-          const coords = d.latitude && d.longitude ? `${parseFloat(d.latitude).toFixed(4)}, ${parseFloat(d.longitude).toFixed(4)}` : '–';
-          return `
+            const tbody = document.getElementById('rep-findings-tbody');
+            if (verifiedDets.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="py-4 text-center text-slate-500">No verified findings available.</td></tr>';
+            } else {
+                tbody.innerHTML = verifiedDets.map(d => {
+                    const conf = parseFloat(d.confidence || 0);
+                    const tier = conf > 0.85 ? 'Class A' : (conf > 0.6 ? 'Class B' : 'Class C');
+                    const coords = d.latitude && d.longitude ? `${parseFloat(d.latitude).toFixed(4)}, ${parseFloat(d.longitude).toFixed(4)}` : '–';
+                    return `
             <tr>
               <td class="py-3 px-3 font-bold text-slate-900">${d.class_name || '–'}</td>
               <td class="py-3 px-3 font-medium text-slate-600">${tier}</td>
@@ -1094,9 +1271,11 @@
               <td class="py-3 px-3 text-slate-500">${coords}</td>
             </tr>
           `;
-        }).join('');
-      }
-    }
-  </script>
+                }).join('');
+            }
+        }
+    </script>
+<script src="/js/chatbot.js" defer></script>
 </body>
+
 </html>
