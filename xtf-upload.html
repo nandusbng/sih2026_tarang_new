@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;family=Space+Grotesk:wght@600;700&amp;display=swap" rel="stylesheet"/>
+<style>
+        body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color: #f7f9ff; color: #081d2f; }
+        .header { background: #ffffff; padding: 20px; box-shadow: 0 1px 12px rgba(10,37,64,0.06); display: flex; justify-content: space-between; align-items: center; }
+        .logo { height: 32px; font-weight: bold; font-size: 24px; color: #000f22; display: flex; align-items: center; gap: 8px; }
+        .logo span { color: #14B8A6; }
+        .container { max-width: 1200px; margin: 40px auto; padding: 20px; }
+        .card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 24px; }
+        .title { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 24px; font-weight: 700; margin-bottom: 16px; color: #000f22; }
+        
+        .upload-area { border: 2px dashed #b0c8eb; border-radius: 12px; padding: 40px; text-align: center; cursor: pointer; transition: all 0.2s; background: #edf4ff; }
+        .upload-area:hover { border-color: #006398; background: #e3efff; }
+        .upload-icon { font-size: 48px; color: #006398; margin-bottom: 16px; }
+        
+        .btn { background: #006398; color: white; padding: 10px 20px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; font-size: 14px; transition: background 0.2s; }
+        .btn:hover { background: #004b73; }
+        .btn:disabled { background: #c4c6ce; cursor: not-allowed; }
+        
+        .progress-list { list-style: none; padding: 0; margin: 20px 0; font-family: 'Space Grotesk', sans-serif; }
+        .progress-list li { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; color: #43474d; }
+        .progress-list li.active { color: #006398; font-weight: bold; }
+        .progress-list li.done { color: #14B8A6; }
+        
+        .metadata-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .meta-item { background: #f7f9ff; padding: 16px; border-radius: 8px; border: 1px solid #e3efff; }
+        .meta-label { font-size: 11px; text-transform: uppercase; color: #74777e; font-weight: 600; margin-bottom: 4px; display: block; }
+        .meta-value { font-size: 16px; font-weight: 700; color: #000f22; }
+        
+        .waterfall-img { width: 100%; height: auto; border-radius: 8px; margin-top: 16px; border: 1px solid #e3efff; }
+        
+        .detection-card { display: flex; align-items: center; gap: 16px; padding: 12px; background: #fff; border: 1px solid #e3efff; border-radius: 8px; margin-bottom: 8px; }
+        .det-img { width: 64px; height: 64px; object-fit: cover; border-radius: 4px; }
+        .det-info { flex: 1; }
+        .det-title { font-weight: 700; font-size: 14px; color: #000f22; }
+        .det-conf { font-size: 12px; font-weight: 600; color: #14B8A6; }
+        
+        #resultsSection, #progressSection { display: none; }
+    </style>
+</head>
+<body>
+<header class="header">
+<div class="logo">
+<span class="material-symbols-outlined">waves</span> TARANG <span>XTF Portal</span>
+</div>
+<div style="font-weight:600; font-size: 14px; color:#006398;">Sonar Analyst View</div>
+</header>
+<div class="container">
+<div class="card" id="uploadSection">
+<h2 class="title">Upload XTF Survey</h2>
+<p style="color: #43474d; margin-bottom: 24px;">Select a binary .XTF file to parse acoustic samples and reconstruct side-scan sonar imagery.</p>
+<input accept=".xtf" id="xtfFileInput" style="display: none;" type="file"/>
+<div class="upload-area" id="uploadArea" onclick="document.getElementById('xtfFileInput').click()">
+<span class="material-symbols-outlined upload-icon">upload_file</span>
+<h3 style="margin: 0 0 8px 0; color: #000f22;">Click to browse or drag &amp; drop</h3>
+<p style="margin: 0; color: #74777e; font-size: 14px;">Supports binary .XTF files only</p>
+</div>
+<div id="fileInfo" style="margin-top: 20px; display: none; align-items: center; justify-content: space-between; background: #f7f9ff; padding: 16px; border-radius: 8px;">
+<div>
+<strong id="fileName" style="color:#000f22;"></strong>
+<span id="fileSize" style="color:#74777e; font-size: 12px; margin-left: 8px;"></span>
+</div>
+<button class="btn" id="uploadBtn">Process XTF</button>
+</div>
+</div>
+<div class="card" id="progressSection">
+<h2 class="title">Processing Pipeline</h2>
+<ul class="progress-list" id="progressList">
+<li id="step-upload"><span class="material-symbols-outlined">pending</span> Uploading XTF binary...</li>
+<li id="step-parse"><span class="material-symbols-outlined">pending</span> Parsing XTF header &amp; packets...</li>
+<li id="step-acoustic"><span class="material-symbols-outlined">pending</span> Extracting pings &amp; acoustic samples...</li>
+<li id="step-image"><span class="material-symbols-outlined">pending</span> Reconstructing sonar waterfall...</li>
+<li id="step-ai"><span class="material-symbols-outlined">pending</span> Running TARANG AI detection...</li>
+</ul>
+</div>
+<div id="resultsSection">
+<div class="card" style="background: #eafffa; border: 1px solid #14B8A6; display: flex; align-items: center; gap: 12px;">
+<span class="material-symbols-outlined" style="color: #14B8A6; font-size: 32px;">check_circle</span>
+<div>
+<h3 style="margin:0; color: #005049; font-size: 18px;">XTF Parsed Successfully</h3>
+<p style="margin:4px 0 0 0; color: #005049; font-size: 14px;">Converted binary acoustic data into synchronized imagery and metadata.</p>
+</div>
+</div>
+<div class="card">
+<h2 class="title">Survey Metadata</h2>
+<div class="metadata-grid">
+<div class="meta-item">
+<span class="meta-label">Survey ID</span>
+<span class="meta-value" id="res-id"></span>
+</div>
+<div class="meta-item">
+<span class="meta-label">Total Pings</span>
+<span class="meta-value" id="res-pings"></span>
+</div>
+<div class="meta-item">
+<span class="meta-label">Channels</span>
+<span class="meta-value" id="res-channels"></span>
+</div>
+<div class="meta-item">
+<span class="meta-label">Data Type</span>
+<span class="meta-value" id="res-type"></span>
+</div>
+</div>
+</div>
+<div class="card">
+<h2 class="title">Reconstructed Sonar Imagery</h2>
+<p style="color: #43474d; font-size: 14px;">PORT and STARBOARD channels synthesized from acoustic intensities.</p>
+<div id="imagesContainer"></div>
+</div>
+<div class="card">
+<h2 class="title">AI Detections &amp; Physics Validation</h2>
+<div id="detectionsContainer"></div>
+</div>
+</div>
+</div>
+<script>
+        const fileInput = document.getElementById('xtfFileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const uploadBtn = document.getElementById('uploadBtn');
+        
+        let selectedFile = null;
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                selectedFile = e.target.files[0];
+                fileName.textContent = selectedFile.name;
+                fileSize.textContent = (selectedFile.size / (1024 * 1024)).toFixed(2) + ' MB';
+                fileInfo.style.display = 'flex';
+            }
+        });
+
+        function setProgress(step, status) {
+            const el = document.getElementById(`step-${step}`);
+            if (el) {
+                const icon = el.querySelector('.material-symbols-outlined');
+                if (status === 'active') {
+                    el.className = 'active';
+                    icon.textContent = 'autorenew';
+                    icon.style.animation = 'spin 2s linear infinite';
+                } else if (status === 'done') {
+                    el.className = 'done';
+                    icon.textContent = 'check_circle';
+                    icon.style.animation = 'none';
+                }
+            }
+        }
+        
+        const style = document.createElement('style');
+        style.innerHTML = `@keyframes spin { 100% { transform: rotate(360deg); } }`;
+        document.head.appendChild(style);
+
+        uploadBtn.addEventListener('click', async () => {
+            if (!selectedFile) return;
+            
+            document.getElementById('uploadSection').style.display = 'none';
+            document.getElementById('progressSection').style.display = 'block';
+            
+            // Simulate steps for UI feel
+            setProgress('upload', 'active');
+            
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            
+            try {
+                setTimeout(() => { setProgress('upload', 'done'); setProgress('parse', 'active'); }, 500);
+                setTimeout(() => { setProgress('parse', 'done'); setProgress('acoustic', 'active'); }, 1500);
+                setTimeout(() => { setProgress('acoustic', 'done'); setProgress('image', 'active'); }, 2500);
+                
+                const response = await fetch('/api/v1/xtf/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                setProgress('image', 'done');
+                setProgress('ai', 'active');
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    alert('Error: ' + data.error);
+                    location.reload();
+                    return;
+                }
+                
+                setTimeout(() => {
+                    setProgress('ai', 'done');
+                    showResults(data);
+                }, 1000);
+                
+            } catch (err) {
+                alert('Upload failed: ' + err.message);
+                location.reload();
+            }
+        });
+        
+        async function showResults(data) {
+            document.getElementById('progressSection').style.display = 'none';
+            document.getElementById('resultsSection').style.display = 'block';
+            
+            document.getElementById('res-id').textContent = data.survey_id;
+            document.getElementById('res-pings').textContent = data.total_pings;
+            document.getElementById('res-channels').textContent = data.channels === 2 ? 'PORT, STARBOARD' : data.channels;
+            document.getElementById('res-type').textContent = data.input_type.toUpperCase();
+            
+            // Fetch Images
+            const imgRes = await fetch(`/api/v1/xtf/${data.survey_id}/images`);
+            const images = await imgRes.json();
+            const imgContainer = document.getElementById('imagesContainer');
+            images.forEach(img => {
+                const imgEl = document.createElement('img');
+                imgEl.className = 'waterfall-img';
+                imgEl.src = `/api/v1/xtf/${data.survey_id}/images/${img.id}`;
+                imgContainer.appendChild(imgEl);
+            });
+            
+            // Fetch Detections
+            const detRes = await fetch(`/api/v1/xtf/${data.survey_id}/detections`);
+            const detections = await detRes.json();
+            const detContainer = document.getElementById('detectionsContainer');
+            
+            if (detections.length === 0) {
+                detContainer.innerHTML = '<p style="color:#74777e;">No anomalies detected.</p>';
+            } else {
+                detections.forEach(det => {
+                    const card = document.createElement('div');
+                    card.className = 'detection-card';
+                    card.innerHTML = `
+                        <img src="${det.crop_url}" class="det-img" />
+                        <div class="det-info">
+                            <div class="det-title">${det.title}</div>
+                            <div style="font-size: 12px; color: #74777e; margin-top: 4px;">ID: ${det.detection_id} | Class: ${det.class_name} | Ping Range: ${det.ping_start} - ${det.ping_end}</div>
+                        </div>
+                        <div class="det-conf">Confidence: ${det.confidence}%</div>
+                    `;
+                    detContainer.appendChild(card);
+                });
+            }
+        }
+    </script>
+</body>
+</html>

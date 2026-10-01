@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><script>window.location.replace("operator-portal.html?view=active-mission");</script><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "on-tertiary-fixed-variant": "#004b73", "surface-container-high": "#dce9ff", "secondary": "#006a61", "on-tertiary-fixed": "#001d31", "outline-variant": "#c4c6ce", "surface-tint": "#49607e", "surface-container": "#e5eeff", "on-surface": "#0b1c30", "surface-dim": "#cbdbf5", "secondary-fixed-dim": "#6bd8cb", "on-primary": "#ffffff", "surface": "#f8f9ff", "inverse-on-surface": "#eaf1ff", "on-background": "#0b1c30", "on-secondary-fixed": "#00201d", "secondary-fixed": "#89f5e7", "on-primary-fixed": "#001c37", "error-container": "#ffdad6", "tertiary-fixed-dim": "#93ccff", "on-tertiary-container": "#2792d5", "on-primary-fixed-variant": "#314865", "tertiary-fixed": "#cce5ff", "secondary-container": "#86f2e4", "on-error": "#ffffff", "primary": "#000f22", "surface-variant": "#d3e4fe", "on-primary-container": "#768dad", "surface-bright": "#f8f9ff", "inverse-primary": "#b0c8eb", "background": "#f8f9ff", "error": "#ba1a1a", "on-tertiary": "#ffffff", "primary-fixed-dim": "#b0c8eb", "primary-fixed": "#d2e4ff", "tertiary-container": "#00263e", "on-error-container": "#93000a", "surface-container-highest": "#d3e4fe", "on-secondary-fixed-variant": "#005049", "tertiary": "#00101d", "on-secondary": "#ffffff", "surface-container-low": "#eff4ff", "primary-container": "#0a2540", "inverse-surface": "#213145", "on-secondary-container": "#006f66", "outline": "#74777e", "surface-container-lowest": "#ffffff", "on-surface-variant": "#43474d" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "space-md": "1rem", "gutter": "1.5rem", "space-sm": "0.5rem", "margin": "2rem", "space-xl": "2.5rem", "space-xs": "0.25rem", "space-lg": "1.5rem" }, "fontFamily": { "body-lg": [ "Plus Jakarta Sans" ], "display-lg": [ "Plus Jakarta Sans" ], "headline-xl-mobile": [ "Plus Jakarta Sans" ], "telemetry-md": [ "JetBrains Mono" ], "body-sm": [ "Plus Jakarta Sans" ], "label-caps": [ "Plus Jakarta Sans" ], "telemetry-sm": [ "JetBrains Mono" ], "headline-xl": [ "Plus Jakarta Sans" ], "headline-sm": [ "Plus Jakarta Sans" ], "headline-md": [ "Plus Jakarta Sans" ], "telemetry-lg": [ "JetBrains Mono" ], "body-md": [ "Plus Jakarta Sans" ], "headline-lg": [ "Plus Jakarta Sans" ] }, "fontSize": { "body-lg": [ "16px", { "lineHeight": "26px", "letterSpacing": "-0.005em", "fontWeight": "400" } ], "display-lg": [ "48px", { "lineHeight": "56px", "letterSpacing": "-0.03em", "fontWeight": "700" } ], "headline-xl-mobile": [ "28px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "700" } ], "telemetry-md": [ "13px", { "lineHeight": "18px", "letterSpacing": "0em", "fontWeight": "500" } ], "body-sm": [ "13px", { "lineHeight": "18px", "letterSpacing": "0.005em", "fontWeight": "400" } ], "label-caps": [ "11px", { "lineHeight": "14px", "letterSpacing": "0.08em", "fontWeight": "700" } ], "telemetry-sm": [ "11px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" } ], "headline-xl": [ "36px", { "lineHeight": "44px", "letterSpacing": "-0.025em", "fontWeight": "700" } ], "headline-sm": [ "18px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "600" } ], "headline-md": [ "22px", { "lineHeight": "28px", "letterSpacing": "-0.015em", "fontWeight": "600" } ], "telemetry-lg": [ "18px", { "lineHeight": "24px", "letterSpacing": "-0.02em", "fontWeight": "600" } ], "body-md": [ "14px", { "lineHeight": "22px", "letterSpacing": "0em", "fontWeight": "400" } ], "headline-lg": [ "28px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "600" } ] } } } };</script><script src="js/supabase-config.js" type="module"></script>
+</head><body class="bg-surface font-body-md text-on-surface antialiased"><header class="fixed top-0 left-0 right-0 z-50 w-full bg-surface-container-lowest/90 backdrop-blur-xl shadow-[0_1px_12px_rgba(10,37,64,0.06)]"><div class="h-20 w-full px-gutter-desktop flex items-center justify-between gap-space-md"><div class="flex items-center gap-space-md shrink-0"><img alt="TARANG Logo" class="h-8 w-auto object-contain rounded-lg" src="logoimage.jpg"/></div><nav class="hidden lg:flex items-center gap-space-xs bg-surface-ice/70 p-1 rounded-xl shadow-[0_1px_4px_rgba(10,37,64,0.04)]" data-active-classes="bg-surface-container-low text-secondary font-semibold rounded-xl"><a class="px-space-md py-2 rounded-lg font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all" data-path="dummy" href="dashboard.html">Overview</a><a class="px-space-md py-2 rounded-lg font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all" data-path="dummy" href="sonar-ai.html">Sonar AI Detection</a><a class="px-space-md py-2 rounded-lg font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all" data-path="dummy" href="expert-verification.html">Verification Console</a><a class="px-space-md py-2 rounded-lg font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all" data-path="dummy" href="logistics.html">Logistics &amp; Dispatch</a></nav><div class="flex items-center gap-space-md shrink-0"><div class="flex items-center gap-space-xs bg-surface-ice pl-space-xs pr-space-md py-1 rounded-full shadow-[0_1px_4px_rgba(10,37,64,0.04)]"><div class="flex flex-col text-left"><span class="font-label-code text-label-code text-primary font-bold leading-none">INCOIS Ops #409</span><span class="font-label-sm text-label-sm text-on-surface-variant text-[10px] leading-tight">Hydro Command</span></div></div><a class="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-slate-800 hover:bg-red-600 text-white font-bold text-[12px] transition-colors shadow-md cursor-pointer ml-4 border border-slate-700" href="login.html" onclick="sessionStorage.clear()">
+<span class="material-symbols-outlined text-[16px]">logout</span> LOGOUT
+</a></div></div>
+</header><main class="w-full pt-20 bg-surface min-h-[calc(100vh-80px)]"><div class="flex flex-col w-full relative">
+<!-- Hero Section with Canvas Interactive Ripple Field -->
+<section class="relative w-full overflow-hidden bg-surface pb-space-xl pt-space-lg">
+<!-- Interactive Ocean Wave Ripple Canvas Backdrop -->
+<canvas class="absolute inset-0 w-full h-full pointer-events-auto opacity-40 mix-blend-multiply" id="ocean-fluid-canvas"></canvas>
+<!-- Ambient Sea Caustic Gradients -->
+<div class="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-secondary-container/20 blur-3xl pointer-events-none"></div>
+<div class="absolute top-1/3 -right-24 w-[30rem] h-[30rem] rounded-full bg-tertiary-fixed-dim/20 blur-3xl pointer-events-none"></div>
+<div class="relative z-10 w-full max-w-7xl mx-auto px-gutter flex flex-col items-start gap-space-lg">
+<!-- Eyebrow Tag -->
+<div class="inline-flex items-center gap-space-xs px-space-md py-1.5 rounded-full bg-surface-container-lowest shadow-sm">
+<span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+<span class="font-telemetry-sm text-telemetry-sm uppercase tracking-wider text-on-surface-variant font-semibold">
+          SMART INDIA HACKATHON 2026 • MINISTRY OF EARTH SCIENCES &amp; INCOIS
+        </span>
+<span class="ml-2 font-telemetry-sm text-telemetry-sm text-outline">|</span>
+<span class="font-telemetry-sm text-telemetry-sm text-secondary font-medium">REV 4.2.8 LIVE</span>
+</div>
+<!-- Main Headline & Subtitle -->
+<div class="max-w-4xl flex flex-col gap-space-sm">
+<h1 class="font-headline-xl text-headline-xl text-primary font-bold tracking-tight md:text-display-lg md:leading-[1.15]">
+          Autonomous Ocean Debris Recognition &amp; Maritime Interception
+        </h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-3xl">
+          Multispectral satellite SAR fusion, autonomous sonar clustering, and hydrodynamic drift tracking across the Indian Ocean and Exclusive Economic Zones.
+        </p>
+</div>
+<!-- Action Cluster -->
+<div class="flex flex-wrap items-center gap-space-md pt-space-xs">
+<a class="group flex items-center gap-space-sm bg-primary-container hover:bg-primary text-on-primary px-space-lg py-3 rounded-lg shadow-md transition-all" href="#analyzer">
+<span class="material-symbols-outlined text-[20px] text-secondary-fixed">radar</span>
+<span class="font-body-md text-body-md font-semibold">Launch Sonar AI Analyzer</span>
+<span class="material-symbols-outlined text-[18px] transition-transform group-hover:translate-x-0.5">arrow_forward</span>
+</a>
+<a class="flex items-center gap-space-sm bg-surface-container-lowest hover:bg-surface-container text-on-surface px-space-lg py-3 rounded-lg shadow-sm transition-all" href="#logistics">
+<span class="material-symbols-outlined text-[20px] text-secondary">alt_route</span>
+<span class="font-body-md text-body-md font-medium">Explore Logistics Routing</span>
+</a>
+<a class="flex items-center gap-space-xs px-space-md py-3 rounded-lg bg-surface-container-low/60 hover:bg-surface-container text-on-surface-variant transition-colors" href="#architecture">
+<span class="material-symbols-outlined text-[18px]">terminal</span>
+<span class="font-telemetry-sm text-telemetry-sm uppercase tracking-wider font-semibold">Docs &amp; Micro-Architecture</span>
+</a>
+</div>
+<!-- Live Mission Metrics HUD Strip -->
+<div class="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md pt-space-md">
+<!-- Metric 1 -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col justify-between gap-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps uppercase text-outline">Active Debris Density</span>
+<span class="inline-flex items-center gap-1 font-telemetry-sm text-telemetry-sm text-error bg-error-container/40 px-2 py-0.5 rounded">
+<span class="material-symbols-outlined text-[12px]">trending_up</span> +2.4%
+            </span>
+</div>
+<div>
+<div class="font-headline-md text-headline-md font-bold text-primary">14.82 <span class="text-body-md font-normal text-on-surface-variant">MT</span></div>
+<div class="font-telemetry-sm text-telemetry-sm text-on-surface-variant mt-0.5">Drifting SW toward Lakshadweep shelf</div>
+</div>
+<div class="w-full h-1 bg-surface-container rounded-full overflow-hidden">
+<div class="bg-secondary h-full rounded-full w-[68%]"></div>
+</div>
+</div>
+<!-- Metric 2 -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col justify-between gap-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps uppercase text-outline">SAR &amp; Sonar Accuracy</span>
+<span class="inline-flex items-center gap-1 font-telemetry-sm text-telemetry-sm text-secondary bg-secondary-container/40 px-2 py-0.5 rounded">
+              ResNet-Ocean v4
+            </span>
+</div>
+<div>
+<div class="font-headline-md text-headline-md font-bold text-primary">98.6% <span class="text-body-md font-normal text-on-surface-variant">IoU</span></div>
+<div class="font-telemetry-sm text-telemetry-sm text-on-surface-variant mt-0.5">Inference delay: 24ms per frame</div>
+</div>
+<div class="w-full h-1 bg-surface-container rounded-full overflow-hidden">
+<div class="bg-secondary h-full rounded-full w-[98.6%]"></div>
+</div>
+</div>
+<!-- Metric 3 -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col justify-between gap-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps uppercase text-outline">Vessel Sorties Active</span>
+<span class="inline-flex items-center gap-1 font-telemetry-sm text-telemetry-sm text-on-surface-variant bg-surface-container-high px-2 py-0.5 rounded">
+              ICG &amp; USV
+            </span>
+</div>
+<div>
+<div class="font-headline-md text-headline-md font-bold text-primary">28 <span class="text-body-md font-normal text-on-surface-variant">Cutters</span></div>
+<div class="font-telemetry-sm text-telemetry-sm text-on-surface-variant mt-0.5">18 autonomous + 10 Coast Guard patrol</div>
+</div>
+<div class="w-full h-1 bg-surface-container rounded-full overflow-hidden">
+<div class="bg-primary-container h-full rounded-full w-[74%]"></div>
+</div>
+</div>
+<!-- Metric 4 -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col justify-between gap-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps uppercase text-outline">Monitored Corridors</span>
+<span class="inline-flex items-center gap-1 font-telemetry-sm text-telemetry-sm text-secondary bg-secondary-container/40 px-2 py-0.5 rounded">
+              NIO Basin
+            </span>
+</div>
+<div>
+<div class="font-headline-md text-headline-md font-bold text-primary">1,420 <span class="text-body-md font-normal text-on-surface-variant">NM²</span></div>
+<div class="font-telemetry-sm text-telemetry-sm text-on-surface-variant mt-0.5">Arabian Sea &amp; Bay of Bengal sweeps</div>
+</div>
+<div class="w-full h-1 bg-surface-container rounded-full overflow-hidden">
+<div class="bg-secondary-fixed-dim h-full rounded-full w-[84%]"></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Visual Section Divider with Hydrographic Gradient Line -->
+<div class="w-full h-[1px] bg-gradient-to-r from-transparent via-surface-variant to-transparent"></div>
+<!-- Core Module Routing Directory (Interactive Bento Grid) -->
+<section class="w-full max-w-7xl mx-auto px-gutter py-space-xl flex flex-col gap-space-lg" id="analyzer">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-space-sm">
+<div class="flex flex-col gap-space-xs">
+<span class="font-label-caps text-label-caps uppercase text-secondary font-bold tracking-wider">Mission Architecture Layers</span>
+<h2 class="font-headline-lg text-headline-lg font-bold text-primary">Core Autonomous Interception Pipeline</h2>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant max-w-md">
+        From sub-surface synthetic aperture acoustics to high-seas cutter fleet rendezvous dispatch algorithms.
+      </p>
+</div>
+<!-- 3 Core Module Cards -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-space-lg">
+<!-- Card 1: Sonar AI Detection -->
+<div class="group bg-surface-container-lowest rounded-xl p-space-lg shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+<div class="flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[24px]">graphic_eq</span>
+</div>
+<span class="font-telemetry-sm text-telemetry-sm px-2.5 py-1 rounded-full bg-secondary-container/30 text-on-secondary-container font-semibold">
+              ACOUSTIC / SAR
+            </span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm font-bold text-primary group-hover:text-secondary transition-colors">
+              Sonar &amp; Multispectral AI Detection
+            </h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-2 leading-relaxed">
+              Real-time side-scan sonar waterfall reconstruction paired with dual-pol ISRO-RISAT synthetic aperture radar anomaly overlays for deep ghost-net and microplastic identification.
+            </p>
+</div>
+<!-- Sonar Waterfall Mock Visualization -->
+<div class="relative w-full h-36 rounded-lg bg-primary-container overflow-hidden p-2 flex flex-col justify-between">
+<div class="absolute inset-0 opacity-20 bg-[radial-gradient(#86f2e4_1px,transparent_1px)] [background-size:12px_12px]"></div>
+<!-- Acoustic HUD Overlay -->
+<div class="relative z-10 flex justify-between items-center text-secondary-fixed font-telemetry-sm text-telemetry-sm">
+<span>FREQ: 455 kHz</span>
+<span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-secondary-fixed animate-ping"></span> BEAM LOCK</span>
+</div>
+<!-- Acoustic Wave Vector Graphic -->
+<svg class="relative z-10 w-full h-16 text-secondary-container/80" fill="none" preserveaspectratio="none" viewbox="0 0 300 60">
+<path d="M0,30 Q30,10 60,35 T120,25 T180,45 T240,15 T300,30" fill="none" stroke="currentColor" stroke-width="1.5"></path>
+<path d="M0,35 Q40,50 80,20 T160,35 T220,10 T300,40" fill="none" opacity="0.6" stroke="#89f5e7" stroke-width="1"></path>
+<circle cx="180" cy="45" fill="#ffdad6" r="4" stroke="#ba1a1a" stroke-width="1.5"></circle>
+</svg>
+<div class="relative z-10 flex justify-between items-center text-on-primary-container font-telemetry-sm text-telemetry-sm">
+<span>SWATH: 120m</span>
+<span class="text-error-container">DEBRIS DETECTED [89.4%]</span>
+</div>
+</div>
+<!-- Feature Bullets -->
+<ul class="space-y-1.5 pt-space-xs font-body-sm text-body-sm text-on-surface-variant">
+<li class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-secondary">check_circle</span>
+              Synthetic Aperture Radar (SAR) polarization
+            </li>
+<li class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-secondary">check_circle</span>
+              Under-surface acoustic signature clustering
+            </li>
+</ul>
+</div>
+<div class="pt-space-md">
+<a class="w-full py-2.5 px-space-md rounded-lg bg-surface-container-low hover:bg-surface-container text-primary font-body-sm text-body-sm font-semibold flex items-center justify-between transition-colors" href="#">
+<span>Launch Sonar Console</span>
+<span class="material-symbols-outlined text-[18px]">open_in_new</span>
+</a>
+</div>
+</div>
+<!-- Card 2: Verification Console -->
+<div class="group bg-surface-container-lowest rounded-xl p-space-lg shadow-sm hover:shadow-md transition-all flex flex-col justify-between" id="verification">
+<div class="flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[24px]">verified_user</span>
+</div>
+<span class="font-telemetry-sm text-telemetry-sm px-2.5 py-1 rounded-full bg-surface-container text-on-surface font-semibold">
+              VALIDATION HUD
+            </span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm font-bold text-primary group-hover:text-secondary transition-colors">
+              Human-in-the-Loop Verification
+            </h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-2 leading-relaxed">
+              Dual-frame visual inspection console allowing marine command officers to cross-verify satellite imagery against predicted semantic masks before vessel dispatch.
+            </p>
+</div>
+<!-- Dual-view Preview UI Simulator -->
+<div class="relative w-full h-36 rounded-lg bg-surface-container-low overflow-hidden p-2.5 flex flex-col justify-between">
+<div class="grid grid-cols-2 gap-2 h-full">
+<!-- Raw SAR View -->
+<div class="relative rounded bg-surface-container-high p-1.5 flex flex-col justify-between overflow-hidden">
+<span class="font-telemetry-sm text-telemetry-sm text-on-surface font-semibold">SAR RAW</span>
+<div class="absolute inset-0 bg-gradient-to-tr from-primary/10 to-transparent"></div>
+<img alt="TARANG Logo" class="h-8 w-auto object-contain rounded-lg" src="logoimage.jpg"/>
+<div class="pt-space-md">
+<a class="w-full py-2.5 px-space-md rounded-lg bg-surface-container-low hover:bg-surface-container text-primary font-body-sm text-body-sm font-semibold flex items-center justify-between transition-colors" href="#">
+<span>Open Verification Queue</span>
+<span class="material-symbols-outlined text-[18px]">open_in_new</span>
+</a>
+</div>
+</div>
+<!-- Card 3: Logistics & Dispatch -->
+<div class="group bg-surface-container-lowest rounded-xl p-space-lg shadow-sm hover:shadow-md transition-all flex flex-col justify-between" id="logistics">
+<div class="flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[24px]">directions_boat</span>
+</div>
+<span class="font-telemetry-sm text-telemetry-sm px-2.5 py-1 rounded-full bg-secondary-fixed/40 text-on-secondary-fixed-variant font-semibold">
+              DISPATCH CORE
+            </span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm font-bold text-primary group-hover:text-secondary transition-colors">
+              Maritime Fleet Route Planning
+            </h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-2 leading-relaxed">
+              Hydrodynamic tide and current vector routing engine that directs autonomous cleanup vessels and Coast Guard patrol cutters for optimal fuel-to-recovery yield.
+            </p>
+</div>
+<!-- Route Mini Visualization -->
+<div class="relative w-full h-36 rounded-lg bg-surface-container-high/40 overflow-hidden p-3 flex flex-col justify-between">
+<div class="flex justify-between items-center font-telemetry-sm text-telemetry-sm">
+<span class="text-primary font-bold">ROUTE: KOCHI → NIO-4</span>
+<span class="text-secondary font-semibold">DRIFT -1.8 KTS</span>
+</div>
+<!-- Trajectory Path Vector -->
+<svg class="w-full h-14" viewbox="0 0 260 50">
+<path d="M10,40 C60,40 70,10 130,20 C180,30 200,15 250,15" fill="none" stroke="#006a61" stroke-dasharray="4 4" stroke-width="2"></path>
+<circle cx="10" cy="40" fill="#000f22" r="4"></circle>
+<circle cx="130" cy="20" fill="#006a61" r="3"></circle>
+<circle cx="250" cy="15" fill="#ba1a1a" r="5"></circle>
+</svg>
+<div class="flex justify-between items-center font-telemetry-sm text-telemetry-sm text-outline">
+<span>FUEL OPTIMIZED: 18.4%</span>
+<span class="text-on-surface">ETA: 03h 42m</span>
+</div>
+</div>
+<!-- Feature Bullets -->
+<ul class="space-y-1.5 pt-space-xs font-body-sm text-body-sm text-on-surface-variant">
+<li class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-secondary">check_circle</span>
+              Current &amp; surface drift vector compensation
+            </li>
+<li class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-secondary">check_circle</span>
+              Port offloading and biomass disposal logistics
+            </li>
+</ul>
+</div>
+<div class="pt-space-md">
+<a class="w-full py-2.5 px-space-md rounded-lg bg-secondary text-on-secondary hover:bg-on-secondary-container font-body-sm text-body-sm font-semibold flex items-center justify-between transition-colors shadow-sm" href="#">
+<span>Dispatch Active Fleet</span>
+<span class="material-symbols-outlined text-[18px]">navigation</span>
+</a>
+</div>
+</div>
+</div>
+</div></div></div></div></section>
+<!-- Live Ocean Drift Radar & Acoustic Telemetry Panel -->
+<section class="w-full bg-surface-container-low/50 py-space-xl">
+<div class="max-w-7xl mx-auto px-gutter flex flex-col gap-space-lg">
+<!-- Section Header with Real-Time Oceanic Coordinate HUD -->
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md pb-space-xs">
+<div>
+<div class="flex items-center gap-space-xs">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="font-label-caps text-label-caps uppercase text-secondary font-bold">LIVE TELEMETRY STREAM</span>
+</div>
+<h2 class="font-headline-lg text-headline-lg font-bold text-primary mt-1">
+            Real-Time Ocean Drift Tracking &amp; Detected Clusters
+          </h2>
+</div>
+<!-- Coordinates & Oceanic Ambient Indicators -->
+<div class="flex flex-wrap items-center gap-space-sm bg-surface-container-lowest p-2.5 rounded-xl shadow-sm">
+<div class="px-space-sm py-1 rounded bg-surface-container font-telemetry-sm text-telemetry-sm text-primary">
+<span class="text-outline">LOC:</span> 8°29'N 76°57'E (Cape Comorin)
+          </div>
+<div class="px-space-sm py-1 rounded bg-surface-container font-telemetry-sm text-telemetry-sm text-primary">
+<span class="text-outline">WIND:</span> 14 kts WSW
+          </div>
+<div class="px-space-sm py-1 rounded bg-surface-container font-telemetry-sm text-telemetry-sm text-primary">
+<span class="text-outline">SST:</span> 28.4°C
+          </div>
+<div class="px-space-sm py-1 rounded bg-surface-container font-telemetry-sm text-telemetry-sm text-primary">
+<span class="text-outline">SALINITY:</span> 35.2 PSU
+          </div>
+</div>
+</div>
+<!-- High-Fidelity Tactical Telemetry Ledger Table -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden">
+<!-- Table Control Toolbar -->
+<div class="px-space-lg py-space-md flex flex-col sm:flex-row items-center justify-between gap-space-sm bg-surface-container-lowest">
+<div class="flex items-center gap-space-sm w-full sm:w-auto">
+<span class="font-headline-sm text-headline-sm font-semibold text-primary">Cluster Interception Ledger</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-telemetry-sm text-telemetry-sm">4 Targets Tracked</span>
+</div>
+<div class="flex items-center gap-space-sm w-full sm:w-auto justify-end">
+<button class="px-3 py-1.5 rounded-lg bg-surface-container text-on-surface font-body-sm text-body-sm flex items-center gap-1.5 hover:bg-surface-container-high transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">filter_list</span> Filter Severity
+            </button>
+<button class="px-3 py-1.5 rounded-lg bg-surface-container text-on-surface font-body-sm text-body-sm flex items-center gap-1.5 hover:bg-surface-container-high transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">download</span> Export SAR Feed
+            </button>
+</div>
+</div>
+<!-- Ledger Table -->
+<div class="overflow-x-auto w-full">
+<table class="w-full text-left font-body-sm text-body-sm">
+<thead class="bg-surface-container-low font-telemetry-sm text-telemetry-sm text-outline uppercase tracking-wider">
+<tr>
+<th class="py-3 px-space-lg">Target ID &amp; Class</th>
+<th class="py-3 px-space-md">Coordinates (SAR Fusion)</th>
+<th class="py-3 px-space-md">Estimated Mass</th>
+<th class="py-3 px-space-md">Verified Depth</th>
+<th class="py-3 px-space-md">Drift Vector</th>
+<th class="py-3 px-space-md">Severity Status</th>
+<th class="py-3 px-space-lg text-right">Rapid Action</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container-low text-on-surface">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container-low/40 transition-colors">
+<td class="py-space-md px-space-lg">
+<div class="flex items-center gap-space-sm">
+<span class="w-2.5 h-2.5 rounded-full bg-error"></span>
+<div>
+<div class="font-headline-sm text-body-md font-bold text-primary">TAR-9021-GHOST</div>
+<div class="font-telemetry-sm text-telemetry-sm text-on-surface-variant">Synthetic Gillnets &amp; Trawls</div>
+</div>
+</div>
+</td>
+<td class="py-space-md px-space-md font-telemetry-md text-telemetry-md">
+                  08°44'12"N, 76°12'04"E
+                </td>
+<td class="py-space-md px-space-md font-telemetry-md text-telemetry-md font-semibold text-primary">
+                  4.2 MT
+                </td>
+<td class="py-space-md px-space-md font-telemetry-md text-telemetry-md">
+                  12.4 m Sub-surface
+                </td>
+<td class="py-space-md px-space-md font-telemetry-sm text-telemetry-sm text-on-surface-variant">
+                  2.1 kts @ 218° SW
+                </td>
+<td class="py-space-md px-space-md">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-error-container text-on-error-container font-telemetry-sm text-telemetry-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-error animate-ping"></span> CRITICAL
+                  </span>
+</td>
+<td class="py-space-md px-space-lg text-right">
+<button class="px-3 py-1 rounded bg-secondary text-on-secondary font-body-sm text-body-sm font-medium hover:bg-on-secondary-container transition-colors shadow-sm" type="button">
+                    Intercept
+                  </button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container-low/40 transition-colors">
+<td class="py-space-md px-space-lg">
+<div class="flex items-center gap-space-sm">
+<span class="w-2.5 h-2.5 rounded-full bg-outline"></span>
+<div>
+<div class="font-headline-sm text-body-md font-bold text-primary">TAR-8842-POLY</div>
+<div class="font-telemetry-sm text-telemetry-sm text-on-surface-variant">Macro-plastics &amp; Rigid Drums</div>
+</div>
+</div>
+</td>
+<td class="py-space-md px-space-md font-telemetry-md text-telemetry-md">
+                  09°12'38"N, 75°49'22"E
+                </td>
+<td class="py-space-md px-space-md font-telemetry-md text-telemetry-md font-semibold text-primary">
+                  2.8 MT
+                </td>
+<td class="py-space-md px-space-md font-telemetry-md text-telemetry-md">
+                  Surface Slick (&lt;1m)
+                </td>
+<td class="py-space-md px-space-md font-telemetry-sm text-telemetry-sm text-on-surface-variant">
+                  1.4 kts @ 195° SSW
+                </td>
+<td class="py-space-md px-space-md">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-telemetry-sm text-telemetry-sm font-semibold">
+                    ELEVATED
+                  </span>
+</td>
+<td class="py-space-md px-space-lg text-right">
+<button class="px-3 py-1 rounded bg-surface-container hover:bg-surface-container-high text-primary font-body-sm text-body-sm font-medium transition-colors" type="button">
+                    Assign USV
+                  </button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-low/40 transition-colors">
+<td class="py-space-md px-space-lg">
+<div class="flex items-center gap-space-sm">
+<span class="w-2.5 h-2.5 rounded-full bg-secondary"></span>
+<div>
+<div class="font-headline-sm text-body-md font-bold text-primary">TAR-7719-SLICK</div>
+<div class="font-telemetry-sm text-telemetry-sm text-on-surface-variant">Emulsified Hydrocarbon Sheen</div>
+</div>
+</div>
+</td>
+<td class="py-space-md px-space-md font-telemetry-md text-telemetry-md">
+                  08°02'50"N, 77°20'11"E
+                </td>
+<td class="py-space-md px-space-md font-telemetry-md text-telemetry-md font-semibold text-primary">
+                  1.1 MT
+                </td>
+<td class="py-space-md px-space-md font-telemetry-md text-telemetry-md">
+                  Surface Film
+                </td>
+<td class="py-space-md px-space-md font-telemetry-sm text-telemetry-sm text-on-surface-variant">
+                  0.8 kts @ 160° SSE
+                </td>
+<td class="py-space-md px-space-md">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-telemetry-sm text-telemetry-sm font-semibold">
+                    NOMINAL
+                  </span>
+</td>
+<td class="py-space-md px-space-lg text-right">
+<button class="px-3 py-1 rounded bg-surface-container hover:bg-surface-container-high text-primary font-body-sm text-body-sm font-medium transition-colors" type="button">
+                    Monitor
+                  </button>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-container-low/40 transition-colors">
+<td class="py-space-md px-space-lg">
+<div class="flex items-center gap-space-sm">
+<span class="w-2.5 h-2.5 rounded-full bg-error"></span>
+<div>
+<div class="font-headline-sm text-body-md font-bold text-primary">TAR-6401-CONTAINER</div>
+<div class="font-telemetry-sm text-telemetry-sm text-on-surface-variant">Semi-Submerged ISO Cargo Box</div>
+</div>
+</div>
+</td>
+<td class="py-space-md px-space-md font-telemetry-md text-telemetry-md">
+                  07°55'10"N, 76°45'00"E
+                </td>
+<td class="py-space-md px-space-md font-telemetry-md text-telemetry-md font-semibold text-primary">
+                  18.5 MT
+                </td>
+<td class="py-space-md px-space-md font-telemetry-md text-telemetry-md">
+                  4.8 m Sub-surface
+                </td>
+<td class="py-space-md px-space-md font-telemetry-sm text-telemetry-sm text-on-surface-variant">
+                  2.4 kts @ 230° SW
+                </td>
+<td class="py-space-md px-space-md">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-error-container text-on-error-container font-telemetry-sm text-telemetry-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-error animate-ping"></span> CRITICAL
+                  </span>
+</td>
+<td class="py-space-md px-space-lg text-right">
+<button class="px-3 py-1 rounded bg-secondary text-on-secondary font-body-sm text-body-sm font-medium hover:bg-on-secondary-container transition-colors shadow-sm" type="button">
+                    Intercept
+                  </button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Ledger Footer Summary -->
+<div class="px-space-lg py-space-sm bg-surface-container-low flex flex-col sm:flex-row items-center justify-between gap-space-sm font-telemetry-sm text-telemetry-sm text-on-surface-variant">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[16px] text-secondary">security</span>
+<span>All coordinates synced with INCOIS Ocean State Forecast (OSF) numerical models.</span>
+</div>
+<div class="flex items-center gap-space-sm">
+<span>Last sweep: <strong>42 seconds ago</strong></span>
+<button class="text-secondary font-semibold hover:underline" type="button">Force Telemetry Refresh</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- SIH Innovation Credentials Section -->
+<section class="w-full max-w-7xl mx-auto px-gutter py-space-xl flex flex-col gap-space-lg" id="architecture">
+<div class="bg-surface-container-lowest rounded-2xl p-space-xl shadow-sm flex flex-col lg:flex-row items-center justify-between gap-space-lg">
+<div class="flex flex-col gap-space-sm max-w-2xl">
+<div class="inline-flex items-center gap-2 text-secondary font-telemetry-sm text-telemetry-sm font-bold uppercase">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+          Government &amp; Hackathon Specifications
+        </div>
+<h3 class="font-headline-md text-headline-md font-bold text-primary">
+          Engineered for Smart India Hackathon 2026 - Problem Statement #1842
+        </h3>
+<p class="font-body-md text-body-md text-on-surface-variant">
+          TARANG bridges the gap between deep satellite radar observation and tactical robotic cutter interceptors. Designed under guidance from INCOIS, Ministry of Earth Sciences, and Ministry of Jal Shakti.
+        </p>
+<div class="flex flex-wrap gap-space-md pt-space-xs text-on-surface font-telemetry-sm text-telemetry-sm">
+<span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-secondary"></span> ISRO SAR C-Band Integration</span>
+<span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-secondary"></span> Autonomous Hydrodynamic Routing</span>
+<span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-secondary"></span> Real-Time ICG Alerting</span>
+</div>
+</div>
+<div class="flex flex-col sm:flex-row lg:flex-col gap-space-sm shrink-0 w-full lg:w-auto">
+<a class="flex items-center justify-center gap-space-sm bg-primary text-on-primary px-space-lg py-3 rounded-lg font-body-sm text-body-sm font-semibold shadow-sm hover:bg-primary-container transition-colors" href="#analyzer">
+<span>Deploy Telemetry Instance</span>
+<span class="material-symbols-outlined text-[18px]">bolt</span>
+</a>
+<button class="flex items-center justify-center gap-space-sm bg-surface-container-low hover:bg-surface-container text-primary px-space-lg py-3 rounded-lg font-body-sm text-body-sm font-semibold transition-colors" type="button">
+<span>Download SIH Whitepaper</span>
+<span class="material-symbols-outlined text-[18px]">description</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Interactive Ocean Fluid Ripple Wave Canvas Script -->
+<script>
+    (function() {
+      const canvas = document.getElementById('ocean-fluid-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+
+      let width, height;
+      let mouseX = -1000, mouseY = -1000;
+      let targetMouseX = -1000, targetMouseY = -1000;
+      let drops = [];
+      let time = 0;
+
+      function resize() {
+        width = canvas.width = canvas.parentElement.clientWidth;
+        height = canvas.height = canvas.parentElement.clientHeight;
+      }
+
+      window.addEventListener('resize', resize);
+      resize();
+
+      // Track mouse position on hero
+      const heroContainer = canvas.parentElement;
+      heroContainer.addEventListener('mousemove', function(e) {
+        const rect = canvas.getBoundingClientRect();
+        targetMouseX = e.clientX - rect.left;
+        targetMouseY = e.clientY - rect.top;
+
+        // Spawn a subtle ripple droplet on movement
+        if (Math.random() < 0.25) {
+          drops.push({
+            x: targetMouseX,
+            y: targetMouseY,
+            radius: 4,
+            maxRadius: 60 + Math.random() * 40,
+            alpha: 0.35
+          });
+        }
+      });
+
+      heroContainer.addEventListener('mouseleave', function() {
+        targetMouseX = -1000;
+        targetMouseY = -1000;
+      });
+
+      function draw() {
+        time += 0.02;
+        mouseX += (targetMouseX - mouseX) * 0.1;
+        mouseY += (targetMouseY - mouseY) * 0.1;
+
+        ctx.clearRect(0, 0, width, height);
+
+        // Draw multiple translucent ocean wave lines
+        const waveLayers = [
+          { freq: 0.006, speed: 0.015, amp: 28, y: height * 0.35, color: 'rgba(134, 242, 228, 0.22)', lw: 1.5 },
+          { freq: 0.009, speed: -0.02, amp: 20, y: height * 0.55, color: 'rgba(0, 106, 97, 0.12)', lw: 1.2 },
+          { freq: 0.005, speed: 0.012, amp: 35, y: height * 0.75, color: 'rgba(39, 146, 213, 0.18)', lw: 2.0 },
+          { freq: 0.012, speed: 0.025, amp: 16, y: height * 0.90, color: 'rgba(10, 37, 64, 0.08)', lw: 1.0 }
+        ];
+
+        waveLayers.forEach(layer => {
+          ctx.beginPath();
+          ctx.lineWidth = layer.lw;
+          ctx.strokeStyle = layer.color;
+
+          for (let x = 0; x <= width; x += 6) {
+            // Distance from cursor to influence wave crests
+            const dx = x - mouseX;
+            const dist = Math.abs(dx);
+            let mouseInfluence = 0;
+            if (dist < 180) {
+              const damp = Math.cos((dist / 180) * (Math.PI / 2));
+              mouseInfluence = Math.sin(time * 6 + dist * 0.04) * 18 * damp;
+            }
+
+            const y = layer.y + Math.sin(x * layer.freq + time * layer.speed * 80) * layer.amp + mouseInfluence;
+            if (x === 0) {
+              ctx.moveTo(x, y);
+            } else {
+              ctx.lineTo(x, y);
+            }
+          }
+          ctx.stroke();
+        });
+
+        // Draw and update active ripple disturbances
+        for (let i = drops.length - 1; i >= 0; i--) {
+          const d = drops[i];
+          d.radius += 1.2;
+          d.alpha -= 0.007;
+
+          if (d.alpha <= 0 || d.radius >= d.maxRadius) {
+            drops.splice(i, 1);
+            continue;
+          }
+
+          ctx.beginPath();
+          ctx.arc(d.x, d.y, d.radius, 0, Math.PI * 2);
+          ctx.strokeStyle = `rgba(0, 106, 97, ${d.alpha * 0.5})`;
+          ctx.lineWidth = 1;
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.arc(d.x, d.y, d.radius * 0.6, 0, Math.PI * 2);
+          ctx.strokeStyle = `rgba(134, 242, 228, ${d.alpha * 0.35})`;
+          ctx.lineWidth = 0.75;
+          ctx.stroke();
+        }
+
+        requestAnimationFrame(draw);
+      }
+
+      requestAnimationFrame(draw);
+    })();
+  </script>
+</div></main><footer class="w-full bg-surface-container-lowest shadow-[0_-1px_8px_rgba(10,37,64,0.03)] py-space-lg"><div class="w-full px-gutter flex flex-col md:flex-row items-center justify-between gap-space-md font-telemetry-sm text-telemetry-sm text-on-surface-variant"><div class="flex items-center gap-space-sm"><span class="font-bold text-on-surface">TARANG</span><span>© 2026 Ministry of Jal Shakti &amp; Smart India Hackathon. Mission Ocean Cleantech.</span></div><div class="flex items-center gap-space-lg"><span>SAR Telemetry Feeds Active</span><span>Inference Node: 24ms</span><span>Ocean Basin: Northern Indian Ocean (NIO-04)</span></div></div></footer></body></html>

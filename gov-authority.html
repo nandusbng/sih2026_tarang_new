@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html class="h-full bg-slate-50" lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>TARANG — Government Portal</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { seafoam: '#14B8A6' },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            headline: ['Plus Jakarta Sans', 'sans-serif'],
+            mono: ['Space Grotesk', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body { background-color: #f8fafc; color: #0f172a; font-family: 'Inter', sans-serif; }
+    .marine-card-no-hover { background: #ffffff; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px 0 rgba(0,0,0,0.04); }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    .dl-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #f8fafc; }
+    .dl-row .dl-label { color: #64748b; }
+    .dl-row .dl-value { font-weight: 500; color: #0f172a; text-align: right; max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  </style>
+
+  <script src="js/auth.js"></script>
+  <script>
+    (function() {
+      const user = getCurrentUser();
+      if (!user) { window.location.href = 'login.html'; }
+    })();
+  </script>
+</head>
+<body class="h-full flex flex-col text-slate-900 antialiased font-sans bg-slate-50 overflow-hidden">
+
+  <!-- ================================================================ -->
+  <!-- TOP NAVBAR                                                       -->
+  <!-- ================================================================ -->
+  <header class="h-16 w-full bg-white border-b border-slate-200 z-40 flex items-center justify-between px-6 shrink-0 shadow-sm">
+    <div class="flex items-center gap-4">
+      <div class="w-10 h-10 rounded-full overflow-hidden border border-slate-200 bg-slate-50 p-1 flex items-center justify-center shrink-0">
+        <img src="logoimage.jpg" class="w-full h-full object-contain rounded-full" alt="TARANG" />
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="font-headline font-black text-lg text-slate-900 tracking-wider leading-none">TARANG</span>
+        <span class="text-xs font-mono font-semibold text-teal-700 tracking-wide border-l border-slate-300 pl-2">Government Authority</span>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-xs font-mono">
+        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+        <span class="text-slate-900 font-bold" id="gov-user-name">Gov User</span>
+      </div>
+      <a href="login.html" onclick="sessionStorage.clear();localStorage.clear();" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white hover:bg-rose-50 text-slate-600 hover:text-rose-600 font-mono text-xs font-bold transition-all border border-slate-200">
+        <span class="material-symbols-outlined text-[16px]">logout</span>
+        <span class="hidden sm:inline">LOGOUT</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- ================================================================ -->
+  <!-- BODY: LEFT SIDEBAR + MAIN                                        -->
+  <!-- ================================================================ -->
+  <div class="flex-1 flex overflow-hidden">
+
+    <!-- LEFT SIDEBAR — exactly 4 items -->
+    <aside class="w-60 bg-white border-r border-slate-200 flex flex-col shrink-0 p-4 shadow-sm z-30">
+      <div class="px-3 py-2 text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold mb-2">
+        Government Authority
+      </div>
+      <nav class="space-y-1 flex-1">
+        <button onclick="switchTab('overview')" data-tab="overview"
+          class="gov-nav w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-semibold transition-all bg-teal-50 text-teal-700">
+          <span class="material-symbols-outlined text-[20px]">dashboard</span>Overview
+        </button>
+        <button onclick="switchTab('hotspots')" data-tab="hotspots"
+          class="gov-nav w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all text-slate-600 hover:bg-slate-50 hover:text-slate-900">
+          <span class="material-symbols-outlined text-[20px]">map</span>Hotspot Region
+        </button>
+        <button onclick="switchTab('survey-details')" data-tab="survey-details"
+          class="gov-nav w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all text-slate-600 hover:bg-slate-50 hover:text-slate-900">
+          <span class="material-symbols-outlined text-[20px]">travel_explore</span>Survey Details
+        </button>
+        <button onclick="switchTab('settings')" data-tab="settings"
+          class="gov-nav w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all text-slate-600 hover:bg-slate-50 hover:text-slate-900">
+          <span class="material-symbols-outlined text-[20px]">settings</span>Settings
+        </button>
+      </nav>
+    </aside>
+
+    <!-- MAIN VIEWPORT -->
+    <main class="flex-1 overflow-y-auto custom-scrollbar p-6 lg:p-8" id="main-content">
+
+      <!-- ============================================================ -->
+      <!-- VIEW 1 — OVERVIEW                                            -->
+      <!-- ============================================================ -->
+      <div id="view-overview" class="gov-view max-w-7xl mx-auto space-y-8">
+
+        <!-- 4 Summary Cards -->
+        <section>
+          <div class="grid grid-cols-1 sm:grid-cols-4 gap-4" id="overview-cards">
+            <div class="col-span-4 p-6 text-center text-slate-500 text-sm font-mono marine-card-no-hover rounded-xl">Loading overview data…</div>
+          </div>
+        </section>
+
+        <!-- Survey Overview Table -->
+        <section class="marine-card-no-hover rounded-xl overflow-hidden">
+          <div class="p-5 border-b border-slate-200">
+            <h2 class="text-lg font-headline font-bold text-slate-900">Survey Overview</h2>
+            <p class="text-xs text-slate-500 font-mono mt-1">Click a row to view detailed survey intelligence.</p>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs font-mono whitespace-nowrap">
+              <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[10px]">
+                <tr>
+                  <th class="p-4">Survey Name</th>
+                  <th class="p-4">Survey Type</th>
+                  <th class="p-4">AI Detections</th>
+                  <th class="p-4">Verified Targets</th>
+                  <th class="p-4">Cleanup Status</th>
+                  <th class="p-4">Survey Status</th>
+                </tr>
+              </thead>
+              <tbody id="overview-tbody" class="divide-y divide-slate-100 bg-white">
+                <tr><td colspan="6" class="p-8 text-center text-slate-500">Loading surveys…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- VIEW 2 — HOTSPOT REGION                                      -->
+      <!-- ============================================================ -->
+      <div id="view-hotspots" class="gov-view hidden max-w-7xl mx-auto space-y-6">
+        <div class="border-b border-slate-200 pb-4">
+          <h2 class="font-headline font-bold text-[24px] text-slate-900">Hotspot Regions</h2>
+          <p class="text-sm text-slate-500 font-mono mt-1">Regions identified as environmental hotspots based on verified survey data.</p>
+        </div>
+
+        <!-- Hotspot Table -->
+        <div class="marine-card-no-hover rounded-xl overflow-x-auto">
+          <table class="w-full text-left text-xs font-mono whitespace-nowrap">
+            <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[10px]">
+              <tr>
+                <th class="p-4">Region</th>
+                <th class="p-4">Surveys</th>
+                <th class="p-4">Verified Detections</th>
+                <th class="p-4">Major Target Types</th>
+                <th class="p-4">Hotspot Basis</th>
+                <th class="p-4">Cleanup Status</th>
+              </tr>
+            </thead>
+            <tbody id="hotspots-tbody" class="divide-y divide-slate-100 bg-white">
+              <tr><td colspan="6" class="p-8 text-center text-slate-500">Loading hotspot data…</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Hotspot Map -->
+        <div class="marine-card-no-hover rounded-xl p-4 flex flex-col" style="height:500px">
+          <h3 class="text-sm font-headline font-bold text-slate-900 mb-3">Regional Hotspot Map</h3>
+          <div class="flex-1 relative rounded-lg border border-slate-200 overflow-hidden bg-slate-100">
+            <div id="hotspot-map" class="absolute inset-0"></div>
+            <div id="hotspot-map-empty" class="absolute inset-0 flex items-center justify-center text-slate-500 text-sm font-mono bg-slate-50 z-[500]">Loading map…</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- VIEW 3 — SURVEY DETAILS                                      -->
+      <!-- ============================================================ -->
+      <div id="view-survey-details" class="gov-view hidden max-w-7xl mx-auto space-y-6">
+        <div class="border-b border-slate-200 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 class="font-headline font-bold text-[24px] text-slate-900">Survey Details</h2>
+            <p class="text-sm text-slate-500 font-mono mt-1">Full lifecycle view of a selected survey.</p>
+          </div>
+          <select id="survey-selector" onchange="renderSurveyDetail(this.value)"
+            class="w-full sm:w-72 bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-teal-500 shadow-sm">
+            <option value="">Loading surveys…</option>
+          </select>
+        </div>
+
+        <!-- Placeholder when nothing is selected -->
+        <div id="sd-empty" class="py-16 text-center text-slate-500 font-mono text-sm marine-card-no-hover rounded-xl">
+          Select a survey from the dropdown to view details.
+        </div>
+
+        <!-- Actual detail content (hidden until survey chosen) -->
+        <div id="sd-content" class="space-y-6 hidden">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Survey Info -->
+            <div class="marine-card-no-hover rounded-xl p-5">
+              <h3 class="font-headline font-bold text-slate-900 border-b border-slate-100 pb-2 mb-3">Survey Information</h3>
+              <div class="space-y-0 text-xs font-mono" id="sd-info"></div>
+            </div>
+            <!-- Sonar / XTF Metadata -->
+            <div class="marine-card-no-hover rounded-xl p-5">
+              <h3 class="font-headline font-bold text-slate-900 border-b border-slate-100 pb-2 mb-3">Survey Source &amp; Sonar Metadata</h3>
+              <div class="space-y-0 text-xs font-mono" id="sd-meta"></div>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Detection Summary -->
+            <div class="marine-card-no-hover rounded-xl p-5">
+              <h3 class="font-headline font-bold text-slate-900 border-b border-slate-100 pb-2 mb-3">Detection Summary</h3>
+              <div class="space-y-0 text-xs font-mono" id="sd-dets"></div>
+            </div>
+            <!-- Cleanup Outcome -->
+            <div class="marine-card-no-hover rounded-xl p-5">
+              <h3 class="font-headline font-bold text-slate-900 border-b border-slate-100 pb-2 mb-3">Cleanup Outcome</h3>
+              <div class="space-y-0 text-xs font-mono" id="sd-cleanup"></div>
+              <div id="sd-evidence" class="mt-4"></div>
+            </div>
+          </div>
+          <!-- Survey Map -->
+          <div class="marine-card-no-hover rounded-xl p-5 flex flex-col" style="height:400px">
+            <h3 class="font-headline font-bold text-slate-900 mb-3">Survey Geographic Context</h3>
+            <div class="flex-1 relative rounded-lg border border-slate-200 overflow-hidden bg-slate-100">
+              <div id="survey-detail-map" class="absolute inset-0"></div>
+              <div id="survey-detail-map-empty" class="absolute inset-0 flex items-center justify-center text-slate-500 text-sm font-mono bg-slate-50 z-[500]">No geographic data available for this survey.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- VIEW 4 — SETTINGS                                            -->
+      <!-- ============================================================ -->
+      <div id="view-settings" class="gov-view hidden max-w-3xl mx-auto space-y-6">
+        <div class="border-b border-slate-200 pb-4">
+          <h2 class="font-headline font-bold text-[24px] text-slate-900">Portal Settings</h2>
+          <p class="text-sm text-slate-500 font-mono mt-1">Configure your government authority preferences.</p>
+        </div>
+
+        <div class="marine-card-no-hover rounded-xl p-6 space-y-8">
+          <!-- Account -->
+          <div>
+            <h3 class="text-sm font-bold text-slate-900 mb-4 border-b border-slate-100 pb-2">Account</h3>
+            <div class="space-y-3 text-sm font-mono">
+              <div class="flex justify-between py-2 border-b border-slate-50"><span class="text-slate-500">Government User Name</span><span class="font-medium text-slate-900" id="s-name">–</span></div>
+              <div class="flex justify-between py-2 border-b border-slate-50"><span class="text-slate-500">Department</span><span class="font-medium text-slate-900" id="s-dept">–</span></div>
+              <div class="flex justify-between py-2 border-b border-slate-50"><span class="text-slate-500">Region / Jurisdiction</span><span class="font-medium text-slate-900" id="s-region">–</span></div>
+              <div class="flex justify-between py-2 border-b border-slate-50"><span class="text-slate-500">Account Status</span><span class="inline-flex px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200" id="s-status">ACTIVE</span></div>
+            </div>
+          </div>
+
+          <!-- Notifications -->
+          <div>
+            <h3 class="text-sm font-bold text-slate-900 mb-4 border-b border-slate-100 pb-2">Notifications</h3>
+            <div class="space-y-3 text-sm font-mono">
+              <label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" class="w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500" checked><span class="text-slate-700">Email alerts for new high-priority hotspots</span></label>
+              <label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" class="w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500" checked><span class="text-slate-700">Daily verified detection digest</span></label>
+              <label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" class="w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500"><span class="text-slate-700">Cleanup completion notifications</span></label>
+            </div>
+          </div>
+
+          <!-- Display Preferences -->
+          <div>
+            <h3 class="text-sm font-bold text-slate-900 mb-4 border-b border-slate-100 pb-2">Display Preferences</h3>
+            <div class="space-y-3 text-sm font-mono">
+              <label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" class="w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500"><span class="text-slate-700">Enable compact table mode</span></label>
+            </div>
+          </div>
+
+          <!-- Security / Session -->
+          <div>
+            <h3 class="text-sm font-bold text-slate-900 mb-4 border-b border-slate-100 pb-2">Security &amp; Session</h3>
+            <div class="text-sm font-mono text-slate-600 mb-3">Session managed by the TARANG authentication system.</div>
+            <button onclick="sessionStorage.clear();localStorage.clear();window.location.href='login.html';" class="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-mono font-bold rounded-lg transition-colors border border-rose-200">
+              Sign Out of All Sessions
+            </button>
+          </div>
+
+          <div class="pt-2">
+            <button class="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-mono font-bold rounded-lg transition-colors shadow-sm">Save Preferences</button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ================================================================ -->
+  <!-- ALL JS — DATA-DRIVEN, NO MOCK DATA                               -->
+  <!-- ================================================================ -->
+  <script>
+    // ── Global State ──
+    let gSurveys     = null;   // from /api/v1/surveys
+    let gDetections  = null;   // from /api/v1/surveys/all/detections
+    let gHotspots    = null;   // from /api/v1/hotspots
+    let gClearance   = null;   // from /api/v1/clearance
+
+    let mapHotspot   = null;   // Leaflet instance
+    let mapDetail    = null;   // Leaflet instance
+
+    const API = {
+      surveys:    '/api/v1/surveys',
+      detections: '/api/v1/surveys/all/detections',
+      hotspots:   '/api/v1/hotspots',
+      clearance:  '/api/v1/clearance'
+    };
+
+    // ── Helpers ──
+    async function fetchJSON(url) {
+      try {
+        const r = await fetch(url);
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return await r.json();
+      } catch (e) {
+        console.error('[gov] fetch error', url, e);
+        return null;
+      }
+    }
+
+    function dlRow(label, value) {
+      return '<div class="dl-row"><span class="dl-label">' + label + '</span><span class="dl-value">' + (value || 'Not available') + '</span></div>';
+    }
+
+    // ── Tab Switching ──
+    function switchTab(id) {
+      document.querySelectorAll('.gov-nav').forEach(btn => {
+        if (btn.getAttribute('data-tab') === id) {
+          btn.className = 'gov-nav w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-semibold transition-all bg-teal-50 text-teal-700';
+        } else {
+          btn.className = 'gov-nav w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all text-slate-600 hover:bg-slate-50 hover:text-slate-900';
+        }
+      });
+      document.querySelectorAll('.gov-view').forEach(v => v.classList.add('hidden'));
+      const el = document.getElementById('view-' + id);
+      if (el) el.classList.remove('hidden');
+      // Fix Leaflet map rendering after tab switch
+      setTimeout(function() {
+        if (id === 'hotspots' && mapHotspot) mapHotspot.invalidateSize();
+        if (id === 'survey-details' && mapDetail) mapDetail.invalidateSize();
+      }, 150);
+    }
+
+    // ── Init ──
+    document.addEventListener('DOMContentLoaded', async function() {
+      var user = getCurrentUser();
+      if (user) {
+        document.getElementById('gov-user-name').textContent = user.full_name || 'Gov User';
+        document.getElementById('s-name').textContent   = user.full_name || '–';
+        document.getElementById('s-dept').textContent    = user.department || '–';
+        document.getElementById('s-region').textContent  = user.region || '–';
+        document.getElementById('s-status').textContent  = (user.status || 'active').toUpperCase();
+      }
+
+      var results = await Promise.allSettled([
+        fetchJSON(API.surveys),
+        fetchJSON(API.detections),
+        fetchJSON(API.hotspots),
+        fetchJSON(API.clearance)
+      ]);
+      gSurveys    = results[0].value;
+      gDetections = results[1].value;
+      gHotspots   = results[2].value;
+      gClearance  = results[3].value;
+
+      renderOverview();
+      renderHotspots();
+      initSurveySelector();
+    });
+
+    // ────────────────────────────────────────────────────────
+    //  VIEW 1 — OVERVIEW
+    // ────────────────────────────────────────────────────────
+    function renderOverview() {
+      var cards = document.getElementById('overview-cards');
+      var tbody = document.getElementById('overview-tbody');
+
+      // Error guard
+      if (gSurveys === null) {
+        cards.innerHTML = '<div class="col-span-4 p-6 text-center text-rose-500 text-sm font-mono marine-card-no-hover rounded-xl">Unable to load survey data. Please try again.</div>';
+        tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-rose-500">Error loading surveys.</td></tr>';
+        return;
+      }
+
+      // Compute stats from actual detections
+      var totalSurveys   = gSurveys.length;
+      var verifiedDets   = 0;
+      var pendingCleanup = 0;
+      var cleaned        = 0;
+      var allDets = Array.isArray(gDetections) ? gDetections : [];
+
+      allDets.forEach(function(d) {
+        var isVerified = (d.verification_status || '').toLowerCase() === 'verified';
+        if (isVerified) {
+          verifiedDets++;
+          var cs = (d.clearance_status || '').toLowerCase();
+          if (cs === 'cleared' || cs === 'completed') cleaned++;
+          else pendingCleanup++;
+        }
+      });
+
+      cards.innerHTML =
+        '<div class="marine-card-no-hover rounded-xl p-5 flex flex-col border-t-4 border-t-slate-400">' +
+          '<span class="text-xs font-mono uppercase tracking-wider text-slate-500">Total Surveys</span>' +
+          '<span class="text-3xl font-mono font-bold text-slate-900 mt-2">' + totalSurveys + '</span>' +
+        '</div>' +
+        '<div class="marine-card-no-hover rounded-xl p-5 flex flex-col border-t-4 border-t-teal-500">' +
+          '<span class="text-xs font-mono uppercase tracking-wider text-slate-500">Verified Detections</span>' +
+          '<span class="text-3xl font-mono font-bold text-teal-700 mt-2">' + verifiedDets + '</span>' +
+        '</div>' +
+        '<div class="marine-card-no-hover rounded-xl p-5 flex flex-col border-t-4 border-t-amber-500">' +
+          '<span class="text-xs font-mono uppercase tracking-wider text-slate-500">Pending Cleanup</span>' +
+          '<span class="text-3xl font-mono font-bold text-amber-600 mt-2">' + pendingCleanup + '</span>' +
+        '</div>' +
+        '<div class="marine-card-no-hover rounded-xl p-5 flex flex-col border-t-4 border-t-emerald-500">' +
+          '<span class="text-xs font-mono uppercase tracking-wider text-slate-500">Cleaned</span>' +
+          '<span class="text-3xl font-mono font-bold text-emerald-600 mt-2">' + cleaned + '</span>' +
+        '</div>';
+
+      // Survey Table
+      if (totalSurveys === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-slate-500">No surveys available.</td></tr>';
+        return;
+      }
+
+      // Per-survey detection aggregation
+      var statsMap = {};
+      allDets.forEach(function(d) {
+        var sid = d.survey_id;
+        if (!statsMap[sid]) statsMap[sid] = { total: 0, verified: 0, cleaned: 0 };
+        statsMap[sid].total++;
+        if ((d.verification_status || '').toLowerCase() === 'verified') {
+          statsMap[sid].verified++;
+          if ((d.clearance_status || '').toLowerCase() === 'cleared' || (d.clearance_status || '').toLowerCase() === 'completed') statsMap[sid].cleaned++;
+        }
+      });
+
+      tbody.innerHTML = gSurveys.map(function(s) {
+        var st = statsMap[s.survey_id] || { total: 0, verified: 0, cleaned: 0 };
+        var cLabel = 'Not Required';
+        if (st.verified > 0) {
+          if (st.cleaned >= st.verified) cLabel = 'Completed';
+          else if (st.cleaned > 0)      cLabel = 'In Progress';
+          else                            cLabel = 'Pending';
+        }
+        var cColor = cLabel === 'Completed' ? 'text-emerald-600' : (cLabel === 'Pending' ? 'text-amber-600' : 'text-slate-600');
+        var sBg    = (s.status || '').toUpperCase() === 'ACTIVE' ? 'bg-teal-50 text-teal-700 border-teal-200' : 'bg-slate-100 text-slate-600 border-slate-200';
+
+        return '<tr class="hover:bg-slate-50 cursor-pointer transition-colors" onclick="goToSurvey(\'' + s.survey_id + '\')">' +
+          '<td class="p-4 font-bold text-slate-900">' + (s.survey_name || s.survey_id) + '</td>' +
+          '<td class="p-4 text-slate-600">' + (s.survey_type || '–') + '</td>' +
+          '<td class="p-4 text-slate-600">' + st.total + '</td>' +
+          '<td class="p-4 font-semibold text-teal-700">' + st.verified + '</td>' +
+          '<td class="p-4 font-semibold ' + cColor + '">' + cLabel + '</td>' +
+          '<td class="p-4"><span class="px-2 py-0.5 rounded text-[10px] font-bold ' + sBg + ' border">' + (s.status || '–').toUpperCase() + '</span></td>' +
+        '</tr>';
+      }).join('');
+    }
+
+    function goToSurvey(id) {
+      var sel = document.getElementById('survey-selector');
+      sel.value = id;
+      switchTab('survey-details');
+      renderSurveyDetail(id);
+    }
+
+    // ────────────────────────────────────────────────────────
+    //  VIEW 2 — HOTSPOT REGION
+    // ────────────────────────────────────────────────────────
+    function renderHotspots() {
+      var tbody    = document.getElementById('hotspots-tbody');
+      var mapEmpty = document.getElementById('hotspot-map-empty');
+
+      if (gHotspots === null) {
+        tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-rose-500">Unable to load hotspot data.</td></tr>';
+        mapEmpty.textContent = 'Error loading map data.';
+        return;
+      }
+
+      if (!Array.isArray(gHotspots) || gHotspots.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-slate-500">No verified hotspot regions available.</td></tr>';
+        mapEmpty.textContent = 'No verified hotspot regions available.';
+        return;
+      }
+
+      tbody.innerHTML = gHotspots.map(function(h) {
+        return '<tr class="hover:bg-slate-50 transition-colors">' +
+          '<td class="p-4 font-bold text-slate-900">' + (h.region || h.name || '–') + '</td>' +
+          '<td class="p-4 text-slate-600">' + (h.surveys_count != null ? h.surveys_count : '–') + '</td>' +
+          '<td class="p-4 font-semibold text-teal-700">' + (h.verified_detections != null ? h.verified_detections : '–') + '</td>' +
+          '<td class="p-4 text-slate-600">' + (h.major_targets || h.target_types || '–') + '</td>' +
+          '<td class="p-4 text-slate-600" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + (h.basis || h.hotspot_basis || '–') + '">' + (h.basis || h.hotspot_basis || '–') + '</td>' +
+          '<td class="p-4 text-slate-600">' + (h.cleanup_status || '–') + '</td>' +
+        '</tr>';
+      }).join('');
+
+      // Map
+      mapEmpty.classList.add('hidden');
+      mapHotspot = L.map('hotspot-map').setView([13.0, 80.2], 5);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: 'TARANG' }).addTo(mapHotspot);
+
+      var bounds = L.latLngBounds();
+      var hasCoords = false;
+      gHotspots.forEach(function(h) {
+        var lat = h.latitude || h.center_lat;
+        var lng = h.longitude || h.center_lon;
+        if (lat && lng) {
+          hasCoords = true;
+          L.circleMarker([lat, lng], { radius: 10, fillColor: '#ef4444', color: '#b91c1c', weight: 1.5, opacity: 1, fillOpacity: 0.55 })
+           .bindPopup('<b>' + (h.name || h.region || 'Hotspot') + '</b><br>Basis: ' + (h.basis || h.hotspot_basis || 'N/A'))
+           .addTo(mapHotspot);
+          bounds.extend([lat, lng]);
+        }
+      });
+      if (hasCoords) mapHotspot.fitBounds(bounds, { padding: [50, 50] });
+    }
+
+    // ────────────────────────────────────────────────────────
+    //  VIEW 3 — SURVEY DETAILS
+    // ────────────────────────────────────────────────────────
+    function initSurveySelector() {
+      var sel = document.getElementById('survey-selector');
+      if (!gSurveys || gSurveys.length === 0) {
+        sel.innerHTML = '<option value="">No surveys available.</option>';
+        sel.disabled = true;
+        return;
+      }
+      sel.innerHTML = '<option value="">— Select a survey —</option>' +
+        gSurveys.map(function(s) {
+          return '<option value="' + s.survey_id + '">' + (s.survey_name || s.survey_id) + '</option>';
+        }).join('');
+    }
+
+    function renderSurveyDetail(id) {
+      var empty   = document.getElementById('sd-empty');
+      var content = document.getElementById('sd-content');
+      if (!id) { empty.classList.remove('hidden'); content.classList.add('hidden'); return; }
+      empty.classList.add('hidden');
+      content.classList.remove('hidden');
+
+      var survey = gSurveys.find(function(s) { return s.survey_id === id; });
+      if (!survey) { empty.textContent = 'Survey not found.'; empty.classList.remove('hidden'); content.classList.add('hidden'); return; }
+
+      var allDets = Array.isArray(gDetections) ? gDetections : [];
+      var dets     = allDets.filter(function(d) { return d.survey_id === id; });
+      var verified = dets.filter(function(d) { return (d.verification_status || '').toLowerCase() === 'verified'; });
+
+      // 1. Survey Info
+      document.getElementById('sd-info').innerHTML =
+        dlRow('Survey Name / ID', survey.survey_name || survey.survey_id) +
+        dlRow('Survey Type', survey.survey_type) +
+        dlRow('Operator', survey.created_by) +
+        dlRow('Vessel / Platform', survey.platform || survey.vessel) +
+        dlRow('Region', survey.region) +
+        dlRow('Start Time', (survey.survey_date || '') + ' ' + (survey.survey_time || '')) +
+        dlRow('End Time', survey.end_time || survey.end_date) +
+        dlRow('Status', survey.status ? survey.status.toUpperCase() : '–');
+
+      // 2. Sonar / XTF Metadata
+      document.getElementById('sd-meta').innerHTML =
+        dlRow('XTF Source File', survey.xtf_file || survey.xtf_filename) +
+        dlRow('Sonar Device', survey.sonar_device) +
+        dlRow('Channel', survey.channel) +
+        dlRow('Port / Starboard', survey.port_starboard) +
+        dlRow('Frequency', survey.sonar_frequency) +
+        dlRow('Sonar Altitude', survey.sonar_altitude) +
+        dlRow('Water Depth', survey.water_depth) +
+        dlRow('Slant Range', survey.slant_range) +
+        dlRow('Ping Info', survey.ping_count || survey.ping_info) +
+        dlRow('Navigation', survey.navigation);
+
+      // 3. Detections
+      var typeSet = {};
+      verified.forEach(function(d) { if (d.class_name) typeSet[d.class_name] = true; });
+      var typeList = Object.keys(typeSet).join(', ') || '–';
+      document.getElementById('sd-dets').innerHTML =
+        dlRow('Total AI Detections', dets.length) +
+        dlRow('Verified Detections', verified.length) +
+        dlRow('Pending Review', dets.length - verified.length) +
+        dlRow('Detected Target Types', typeList);
+
+      // 4. Cleanup
+      var cr = null;
+      if (Array.isArray(gClearance)) {
+        cr = gClearance.find(function(c) { return c.survey_id === id; });
+      }
+      var cleanupEl  = document.getElementById('sd-cleanup');
+      var evidenceEl = document.getElementById('sd-evidence');
+      if (!cr) {
+        cleanupEl.innerHTML = '<div class="text-slate-500 py-2">No cleanup records available for this survey.</div>';
+        evidenceEl.innerHTML = '';
+      } else {
+        cleanupEl.innerHTML =
+          dlRow('Cleanup Required?', cr.required != null ? (cr.required ? 'Yes' : 'No') : '–') +
+          dlRow('Cleanup Assigned?', cr.assigned != null ? (cr.assigned ? 'Yes' : 'No') : '–') +
+          dlRow('Cleanup Team', cr.team_name || cr.team) +
+          dlRow('Cleanup Status', cr.status) +
+          dlRow('Start Date', cr.started_at || cr.start_date) +
+          dlRow('Completion Date', cr.completed_at || cr.completion_date);
+        if (cr.evidence_url || cr.photo_url) {
+          evidenceEl.innerHTML = '<span class="block text-slate-500 mb-1 text-xs font-mono">Cleanup Evidence:</span><img src="' + (cr.evidence_url || cr.photo_url) + '" class="h-40 object-cover rounded border border-slate-200" alt="Cleanup evidence">';
+        } else {
+          evidenceEl.innerHTML = '<span class="block text-slate-400 text-xs font-mono mt-2">No cleanup evidence available.</span>';
+        }
+      }
+
+      // 5. Map
+      var mapEl    = document.getElementById('survey-detail-map');
+      var mapEm    = document.getElementById('survey-detail-map-empty');
+      if (mapDetail) { mapDetail.remove(); mapDetail = null; }
+
+      var validDets = verified.filter(function(d) { return d.latitude && d.longitude; });
+      if (validDets.length === 0) {
+        mapEm.classList.remove('hidden');
+      } else {
+        mapEm.classList.add('hidden');
+        mapDetail = L.map('survey-detail-map').setView([validDets[0].latitude, validDets[0].longitude], 13);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(mapDetail);
+        var bounds = L.latLngBounds();
+        validDets.forEach(function(d) {
+          L.circleMarker([d.latitude, d.longitude], { radius: 6, fillColor: '#0f766e', color: '#fff', weight: 1, opacity: 1, fillOpacity: 0.8 })
+           .bindPopup('<b>' + (d.class_name || 'Target') + '</b><br>' + d.latitude.toFixed(5) + ', ' + d.longitude.toFixed(5))
+           .addTo(mapDetail);
+          bounds.extend([d.latitude, d.longitude]);
+        });
+        mapDetail.fitBounds(bounds, { padding: [30, 30] });
+      }
+    }
+  </script>
+</body>
+</html>

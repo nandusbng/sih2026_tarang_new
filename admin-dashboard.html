@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html class="h-full bg-slate-50" lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>TARANG — Admin Portal</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            seafoam: '#14B8A6',
+            'ocean-navy': '#031326',
+            'tactical-border': 'rgba(20, 184, 166, 0.25)',
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            headline: ['Plus Jakarta Sans', 'sans-serif'],
+            mono: ['Space Grotesk', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body { background-color: #f8fafc; color: #0f172a; font-family: 'Inter', sans-serif; }
+    .marine-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); border-color: #e2e8f0; }
+    .marine-card { background: #ffffff; border: 1px solid #e2e8f0; transition: all 0.2s ease-in-out; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04); }
+    .marine-card:hover { border-color: #cbd5e1; box-shadow: 0 6px 18px -4px rgba(15, 23, 42, 0.06); cursor: pointer; }
+    .marine-card-no-hover { background: #ffffff; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04); }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+  </style>
+
+  <script src="js/auth.js"></script>
+  <script>
+    (function() {
+      const user = getCurrentUser();
+      if (!user) { window.location.href = 'login.html'; }
+    })();
+  </script>
+</head>
+<body class="h-full flex flex-col text-slate-900 antialiased font-sans bg-slate-50 overflow-hidden">
+
+  <!-- TOP NAVBAR -->
+  <header class="h-20 w-full marine-panel border-b border-tactical-border z-40 flex items-center justify-between px-6 sm:px-8 shrink-0">
+    <div class="flex items-center gap-4">
+      <div id="back-btn-container" class="hidden mr-2">
+        <button onclick="switchView('dashboard')" class="flex items-center gap-1 text-slate-500 hover:text-slate-900 transition-colors text-sm font-bold">
+          <span class="material-symbols-outlined text-[18px]">arrow_back</span> Back
+        </button>
+      </div>
+      <div class="w-12 h-12 rounded-full overflow-hidden border border-teal-500/30 bg-slate-50 p-1 flex items-center justify-center shrink-0 shadow-lg">
+        <img src="logoimage.jpg" class="w-full h-full object-contain rounded-full" alt="TARANG" />
+      </div>
+      <div class="flex flex-col">
+        <div class="flex items-center gap-2">
+          <span class="font-headline font-black text-xl text-slate-900 tracking-wider leading-none">TARANG</span>
+          <span id="header-page-title" class="text-xs font-mono font-semibold text-teal-700 tracking-wide border-l border-slate-300 pl-2">Admin Dashboard</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Admin Profile & Logout -->
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-mono">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span class="text-slate-900 font-bold" id="admin-user-name">Admin Control</span>
+        <span class="px-1.5 py-0.5 rounded text-[10px] bg-teal-50 text-teal-700 font-bold border border-teal-200">SYSTEM ADMIN</span>
+      </div>
+      <a href="login.html" onclick="sessionStorage.clear(); localStorage.clear();" class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-50 hover:bg-rose-50 text-slate-700 hover:text-rose-600 font-mono text-xs font-bold transition-all border border-slate-200 shadow-sm">
+        <span class="material-symbols-outlined text-[16px]">logout</span>
+        <span class="hidden sm:inline">LOGOUT</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- MAIN APP CONTAINER -->
+  <main class="flex-1 overflow-y-auto custom-scrollbar p-6 sm:p-8" id="main-content">
+    
+    <!-- DASHBOARD VIEW -->
+    <div id="view-dashboard" class="admin-view max-w-7xl mx-auto space-y-8">
+      
+      <!-- Survey Summary -->
+      <section>
+        <h2 class="text-lg font-headline font-bold mb-4 text-slate-900">Survey Summary</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-4" id="survey-summary-cards">
+          <!-- Populated by JS -->
+          <div class="col-span-4 p-6 text-center text-slate-500 text-sm font-mono marine-card-no-hover rounded-xl">Loading survey data...</div>
+        </div>
+      </section>
+
+      <!-- Survey Trend -->
+      <section>
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-headline font-bold text-slate-900">Survey Trend</h2>
+          <select id="trend-period-select" onchange="loadSurveyTrend()" class="text-xs font-mono border border-slate-200 rounded-lg px-2 py-1 bg-white focus:outline-none focus:border-teal-500">
+            <option value="week">Last Week</option>
+            <option value="month">Last Month</option>
+            <option value="year">Last Year</option>
+          </select>
+        </div>
+        <div class="marine-card-no-hover rounded-xl p-4 h-72 flex items-center justify-center relative">
+          <canvas id="trendChart"></canvas>
+          <div id="trend-empty-state" class="absolute inset-0 flex items-center justify-center text-slate-500 text-sm font-mono hidden">No survey history available for this period.</div>
+        </div>
+      </section>
+
+      <!-- Survey Breakdown -->
+      <section>
+        <h2 class="text-lg font-headline font-bold mb-4 text-slate-900">Survey Breakdown</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="marine-card-no-hover rounded-xl p-4 flex flex-col h-72">
+            <h3 class="text-xs font-mono font-bold text-slate-500 mb-2 uppercase">By Purpose</h3>
+            <div class="flex-1 relative flex items-center justify-center">
+              <canvas id="breakdownPurposeChart"></canvas>
+              <div id="purpose-empty-state" class="absolute inset-0 flex items-center justify-center text-slate-500 text-sm font-mono hidden">No survey purpose data available.</div>
+            </div>
+          </div>
+          <div class="marine-card-no-hover rounded-xl p-4 flex flex-col h-72">
+            <h3 class="text-xs font-mono font-bold text-slate-500 mb-2 uppercase">By Region</h3>
+            <div class="flex-1 relative flex items-center justify-center">
+              <canvas id="breakdownRegionChart"></canvas>
+              <div id="region-empty-state" class="absolute inset-0 flex items-center justify-center text-slate-500 text-sm font-mono hidden">No regional survey data available.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Management -->
+      <section>
+        <h2 class="text-lg font-headline font-bold mb-4 text-slate-900">Management</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div onclick="switchView('manage-operators')" class="marine-card rounded-xl p-5 flex flex-col items-center justify-center gap-3 h-32">
+            <div class="w-10 h-10 rounded-full bg-teal-50 text-teal-600 flex items-center justify-center"><span class="material-symbols-outlined">support_agent</span></div>
+            <span class="font-bold text-sm text-slate-800 text-center">Manage Operators</span>
+          </div>
+          <div onclick="switchView('manage-analysts')" class="marine-card rounded-xl p-5 flex flex-col items-center justify-center gap-3 h-32">
+            <div class="w-10 h-10 rounded-full bg-teal-50 text-teal-600 flex items-center justify-center"><span class="material-symbols-outlined">troubleshoot</span></div>
+            <span class="font-bold text-sm text-slate-800 text-center">Manage Expert Analysts</span>
+          </div>
+          <div onclick="switchView('manage-cleanup')" class="marine-card rounded-xl p-5 flex flex-col items-center justify-center gap-3 h-32">
+            <div class="w-10 h-10 rounded-full bg-teal-50 text-teal-600 flex items-center justify-center"><span class="material-symbols-outlined">cleaning_services</span></div>
+            <span class="font-bold text-sm text-slate-800 text-center">Manage Cleanup Teams</span>
+          </div>
+          <div onclick="switchView('manage-gov')" class="marine-card rounded-xl p-5 flex flex-col items-center justify-center gap-3 h-32">
+            <div class="w-10 h-10 rounded-full bg-teal-50 text-teal-600 flex items-center justify-center"><span class="material-symbols-outlined">account_balance</span></div>
+            <span class="font-bold text-sm text-slate-800 text-center">Manage Government Users</span>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- MANAGE OPERATORS VIEW -->
+    <div id="view-manage-operators" class="admin-view hidden max-w-7xl mx-auto space-y-6">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-4">
+        <h2 class="font-headline font-extrabold text-[24px] sm:text-[28px] text-slate-900 tracking-tight">Manage Operators</h2>
+        <button class="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-mono text-xs font-bold transition-all shadow-sm">
+          + Add Operator
+        </button>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4" id="operators-stats"></div>
+      <div class="flex items-center gap-3 text-xs font-mono" id="operators-filters"></div>
+      <div class="marine-card-no-hover rounded-xl overflow-x-auto">
+        <table class="w-full text-left text-xs font-mono whitespace-nowrap">
+          <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[10px]">
+            <tr><th class="p-3.5">Name</th><th class="p-3.5">Base</th><th class="p-3.5">Vessel</th><th class="p-3.5">Surveys</th><th class="p-3.5">Images</th><th class="p-3.5">Status</th></tr>
+          </thead>
+          <tbody id="operators-tbody" class="divide-y divide-slate-200">
+            <tr><td colspan="6" class="p-6 text-center text-slate-500">Loading operators...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- MANAGE EXPERT ANALYSTS VIEW -->
+    <div id="view-manage-analysts" class="admin-view hidden max-w-7xl mx-auto space-y-6">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-4">
+        <h2 class="font-headline font-extrabold text-[24px] sm:text-[28px] text-slate-900 tracking-tight">Manage Expert Analysts</h2>
+        <button class="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-mono text-xs font-bold transition-all shadow-sm">
+          + Add Expert Analyst
+        </button>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4" id="analysts-stats"></div>
+      <div class="flex items-center gap-3 text-xs font-mono" id="analysts-filters"></div>
+      <div class="marine-card-no-hover rounded-xl overflow-x-auto">
+        <table class="w-full text-left text-xs font-mono whitespace-nowrap">
+          <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[10px]">
+            <tr><th class="p-3.5">Name</th><th class="p-3.5">Base</th><th class="p-3.5">Vessel</th><th class="p-3.5">Surveys</th><th class="p-3.5">Images</th><th class="p-3.5">Status</th></tr>
+          </thead>
+          <tbody id="analysts-tbody" class="divide-y divide-slate-200">
+            <tr><td colspan="6" class="p-6 text-center text-slate-500">Loading analysts...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- MANAGE CLEANUP TEAMS VIEW -->
+    <div id="view-manage-cleanup" class="admin-view hidden max-w-7xl mx-auto space-y-6">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-4">
+        <h2 class="font-headline font-extrabold text-[24px] sm:text-[28px] text-slate-900 tracking-tight">Manage Cleanup Teams</h2>
+        <button class="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-mono text-xs font-bold transition-all shadow-sm">
+          + Add Team
+        </button>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4" id="cleanup-stats"></div>
+      <div class="flex items-center gap-3 text-xs font-mono" id="cleanup-filters"></div>
+      <div class="marine-card-no-hover rounded-xl overflow-x-auto">
+        <table class="w-full text-left text-xs font-mono whitespace-nowrap">
+          <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[10px]">
+            <tr><th class="p-3.5">Team</th><th class="p-3.5">Region</th><th class="p-3.5">Members</th><th class="p-3.5">Surveys/Targets</th><th class="p-3.5">Completed</th><th class="p-3.5">Status</th></tr>
+          </thead>
+          <tbody id="cleanup-tbody" class="divide-y divide-slate-200">
+            <tr><td colspan="6" class="p-6 text-center text-slate-500">Loading cleanup teams...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- MANAGE GOVERNMENT USERS VIEW -->
+    <div id="view-manage-gov" class="admin-view hidden max-w-7xl mx-auto space-y-6">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-4">
+        <h2 class="font-headline font-extrabold text-[24px] sm:text-[28px] text-slate-900 tracking-tight">Manage Government Users</h2>
+        <button class="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-mono text-xs font-bold transition-all shadow-sm">
+          + Add Government User
+        </button>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4" id="gov-stats"></div>
+      <div class="flex items-center gap-3 text-xs font-mono" id="gov-filters"></div>
+      <div class="marine-card-no-hover rounded-xl overflow-x-auto">
+        <table class="w-full text-left text-xs font-mono whitespace-nowrap">
+          <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[10px]">
+            <tr><th class="p-3.5">Name</th><th class="p-3.5">Department</th><th class="p-3.5">Region/Jurisdiction</th><th class="p-3.5">Access</th><th class="p-3.5">Status</th></tr>
+          </thead>
+          <tbody id="gov-tbody" class="divide-y divide-slate-200">
+            <tr><td colspan="5" class="p-6 text-center text-slate-500">Loading government users...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // --- Data Store ---
+    let globalSurveys = null;
+    let globalUsers = null;
+
+    // --- Chart Instances ---
+    let trendChartInst = null;
+    let breakdownPurposeChartInst = null;
+    let breakdownRegionChartInst = null;
+
+    // --- Endpoints ---
+    const API = {
+      surveys: '/api/v1/surveys',
+      users: '/api/admin/users',
+      cleanupTeams: '/api/admin/cleanup-teams',
+      governmentUsers: '/api/admin/government-users'
+    };
+
+    // --- Initialization ---
+    document.addEventListener('DOMContentLoaded', async () => {
+      const user = getCurrentUser();
+      if (user && user.full_name) {
+        document.getElementById('admin-user-name').textContent = user.full_name;
+      }
+      
+      // Load all views data
+      await Promise.allSettled([
+        loadSurveyData(),
+        loadUsersData(),
+        loadCleanupTeams()
+      ]);
+    });
+
+    async function fetchData(url) {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(\`HTTP error \${res.status}\`);
+        return await res.json();
+      } catch (e) {
+        console.error('Fetch error for', url, e);
+        return null; // Signals error state
+      }
+    }
+
+    // --- View Switching ---
+    function switchView(viewId) {
+      document.querySelectorAll('.admin-view').forEach(v => v.classList.add('hidden'));
+      const target = document.getElementById(\`view-\${viewId}\`);
+      if (target) {
+        target.classList.remove('hidden');
+        target.style.opacity = 0;
+        setTimeout(() => {
+          target.style.transition = 'opacity 0.3s ease';
+          target.style.opacity = 1;
+        }, 10);
+      }
+
+      const backBtn = document.getElementById('back-btn-container');
+      const title = document.getElementById('header-page-title');
+      
+      if (viewId === 'dashboard') {
+        backBtn.classList.add('hidden');
+        title.textContent = 'Admin Dashboard';
+      } else {
+        backBtn.classList.remove('hidden');
+        const viewTitles = {
+          'manage-operators': 'Manage Operators',
+          'manage-analysts': 'Manage Expert Analysts',
+          'manage-cleanup': 'Manage Cleanup Teams',
+          'manage-gov': 'Manage Government Users'
+        };
+        title.textContent = viewTitles[viewId] || 'Admin Dashboard';
+      }
+    }
+
+    // --- Survey Data Flow ---
+    async function loadSurveyData() {
+      globalSurveys = await fetchData(API.surveys);
+      loadSurveySummary();
+      loadSurveyTrend();
+      loadSurveyBreakdown();
+    }
+
+    function loadSurveySummary() {
+      const container = document.getElementById('survey-summary-cards');
+      
+      if (globalSurveys === null) {
+        container.innerHTML = \`<div class="col-span-4 p-6 text-center text-rose-500 text-sm font-mono marine-card-no-hover rounded-xl">Unable to load data. Please try again.</div>\`;
+        return;
+      }
+      
+      const total = globalSurveys.length;
+      const active = globalSurveys.filter(s => (s.status || '').toUpperCase() === 'ACTIVE').length;
+      const completed = globalSurveys.filter(s => (s.status || '').toUpperCase() === 'COMPLETED').length;
+      const pending = globalSurveys.filter(s => (s.status || '').toUpperCase() === 'PENDING').length;
+
+      container.innerHTML = \`
+        <div class="marine-card-no-hover rounded-xl p-5 flex flex-col justify-between">
+          <span class="text-xs font-mono uppercase tracking-wider text-slate-500">Total Surveys</span>
+          <span class="text-3xl font-mono font-bold text-slate-900 mt-2">\${total}</span>
+        </div>
+        <div class="marine-card-no-hover rounded-xl p-5 flex flex-col justify-between">
+          <span class="text-xs font-mono uppercase tracking-wider text-slate-500">Active Surveys</span>
+          <span class="text-3xl font-mono font-bold text-teal-600 mt-2">\${active}</span>
+        </div>
+        <div class="marine-card-no-hover rounded-xl p-5 flex flex-col justify-between">
+          <span class="text-xs font-mono uppercase tracking-wider text-slate-500">Completed Surveys</span>
+          <span class="text-3xl font-mono font-bold text-emerald-600 mt-2">\${completed}</span>
+        </div>
+        <div class="marine-card-no-hover rounded-xl p-5 flex flex-col justify-between">
+          <span class="text-xs font-mono uppercase tracking-wider text-slate-500">Pending Surveys</span>
+          <span class="text-3xl font-mono font-bold text-amber-600 mt-2">\${pending}</span>
+        </div>
+      \`;
+    }
+
+    function loadSurveyTrend() {
+      const emptyState = document.getElementById('trend-empty-state');
+      const canvas = document.getElementById('trendChart');
+      const period = document.getElementById('trend-period-select').value;
+      
+      if (trendChartInst) {
+        trendChartInst.destroy();
+        trendChartInst = null;
+      }
+      
+      if (globalSurveys === null) {
+        emptyState.textContent = "Unable to load data. Please try again.";
+        emptyState.classList.remove('hidden');
+        canvas.classList.add('hidden');
+        return;
+      }
+
+      // Filter surveys by period
+      const now = new Date();
+      let cutoff = new Date();
+      if (period === 'week') cutoff.setDate(now.getDate() - 7);
+      else if (period === 'month') cutoff.setMonth(now.getMonth() - 1);
+      else if (period === 'year') cutoff.setFullYear(now.getFullYear() - 1);
+
+      const filtered = globalSurveys.filter(s => {
+        if (!s.created_at) return false;
+        const d = new Date(s.created_at);
+        return d >= cutoff;
+      });
+
+      if (filtered.length === 0) {
+        emptyState.textContent = "No survey history available for this period.";
+        emptyState.classList.remove('hidden');
+        canvas.classList.add('hidden');
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+      canvas.classList.remove('hidden');
+
+      // Group by date for the chart
+      const datesMap = {};
+      filtered.forEach(s => {
+        const dateStr = s.created_at.split('T')[0];
+        if(!datesMap[dateStr]) datesMap[dateStr] = { total: 0, active: 0, completed: 0, pending: 0 };
+        datesMap[dateStr].total++;
+        const status = (s.status || '').toUpperCase();
+        if(status === 'ACTIVE') datesMap[dateStr].active++;
+        else if(status === 'COMPLETED') datesMap[dateStr].completed++;
+        else if(status === 'PENDING') datesMap[dateStr].pending++;
+      });
+
+      const sortedDates = Object.keys(datesMap).sort();
+      
+      const ctx = canvas.getContext('2d');
+      trendChartInst = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: sortedDates,
+          datasets: [
+            { label: 'Total', data: sortedDates.map(d => datesMap[d].total), borderColor: '#64748b', tension: 0.3 },
+            { label: 'Active', data: sortedDates.map(d => datesMap[d].active), borderColor: '#0d9488', tension: 0.3 },
+            { label: 'Completed', data: sortedDates.map(d => datesMap[d].completed), borderColor: '#059669', tension: 0.3 },
+            { label: 'Pending', data: sortedDates.map(d => datesMap[d].pending), borderColor: '#d97706', tension: 0.3 }
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { family: 'Space Grotesk' } } } },
+          scales: {
+            y: { beginAtZero: true, ticks: { stepSize: 1, font: { family: 'Space Grotesk' } } },
+            x: { ticks: { font: { family: 'Space Grotesk' } } }
+          }
+        }
+      });
+    }
+
+    function loadSurveyBreakdown() {
+      if (breakdownPurposeChartInst) breakdownPurposeChartInst.destroy();
+      if (breakdownRegionChartInst) breakdownRegionChartInst.destroy();
+
+      const pEmpty = document.getElementById('purpose-empty-state');
+      const rEmpty = document.getElementById('region-empty-state');
+      const pCanvas = document.getElementById('breakdownPurposeChart');
+      const rCanvas = document.getElementById('breakdownRegionChart');
+
+      if (globalSurveys === null) {
+        pEmpty.textContent = rEmpty.textContent = "Unable to load data. Please try again.";
+        pEmpty.classList.remove('hidden'); rEmpty.classList.remove('hidden');
+        pCanvas.classList.add('hidden'); rCanvas.classList.add('hidden');
+        return;
+      }
+
+      if (globalSurveys.length === 0) {
+        pEmpty.textContent = "No survey purpose data available.";
+        rEmpty.textContent = "No regional survey data available.";
+        pEmpty.classList.remove('hidden'); rEmpty.classList.remove('hidden');
+        pCanvas.classList.add('hidden'); rCanvas.classList.add('hidden');
+        return;
+      }
+
+      // Purpose
+      const purposeMap = {};
+      let hasPurpose = false;
+      
+      // Region
+      const regionMap = {};
+      let hasRegion = false;
+
+      globalSurveys.forEach(s => {
+        if (s.purpose) {
+          hasPurpose = true;
+          purposeMap[s.purpose] = (purposeMap[s.purpose] || 0) + 1;
+        }
+        if (s.region) {
+          hasRegion = true;
+          regionMap[s.region] = (regionMap[s.region] || 0) + 1;
+        }
+      });
+
+      if (!hasPurpose) {
+        pEmpty.textContent = "No survey purpose data available.";
+        pEmpty.classList.remove('hidden'); pCanvas.classList.add('hidden');
+      } else {
+        pEmpty.classList.add('hidden'); pCanvas.classList.remove('hidden');
+        breakdownPurposeChartInst = new Chart(pCanvas.getContext('2d'), {
+          type: 'doughnut',
+          data: {
+            labels: Object.keys(purposeMap),
+            datasets: [{ data: Object.values(purposeMap), backgroundColor: ['#0f766e', '#0369a1', '#6b21a8', '#be123c', '#b45309'] }]
+          },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { font: { family: 'Space Grotesk', size: 10 } } } } }
+        });
+      }
+
+      if (!hasRegion) {
+        rEmpty.textContent = "No regional survey data available.";
+        rEmpty.classList.remove('hidden'); rCanvas.classList.add('hidden');
+      } else {
+        rEmpty.classList.add('hidden'); rCanvas.classList.remove('hidden');
+        breakdownRegionChartInst = new Chart(rCanvas.getContext('2d'), {
+          type: 'bar',
+          data: {
+            labels: Object.keys(regionMap),
+            datasets: [{ label: 'Surveys', data: Object.values(regionMap), backgroundColor: '#0d9488' }]
+          },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1, font: {family: 'Space Grotesk'} } }, x: { ticks: {font: {family: 'Space Grotesk', size: 10}}} } }
+        });
+      }
+    }
+
+    // --- Users Data Flow ---
+    async function loadUsersData() {
+      globalUsers = await fetchData(API.users);
+      loadOperators();
+      loadAnalysts();
+      loadGovernmentUsers();
+    }
+
+    function buildStatCards(containerId, stats) {
+      const c = document.getElementById(containerId);
+      if(!c) return;
+      c.innerHTML = stats.map(st => \`
+        <div class="marine-card-no-hover rounded-xl p-4 flex flex-col justify-between">
+          <span class="text-[10px] font-mono uppercase tracking-wider text-slate-500">\${st.label}</span>
+          <span class="text-2xl font-mono font-bold text-slate-900 mt-1">\${st.value}</span>
+        </div>
+      \`).join('');
+    }
+
+    function buildFilters(containerId, filters) {
+      const c = document.getElementById(containerId);
+      if(!c || filters.length === 0) return;
+      c.innerHTML = '<span class="text-slate-500">Filters:</span>' + filters.map(f => \`
+        <select class="border border-slate-200 rounded-md px-2 py-1 bg-white focus:outline-none">
+          <option value="">\${f.label}</option>
+          \${f.options.map(o => \`<option value="\${o}">\${o}</option>\`).join('')}
+        </select>
+      \`).join('');
+    }
+
+    function getUnique(arr, key) {
+      return [...new Set(arr.map(x => x[key]).filter(x => x))];
+    }
+
+    function loadOperators() {
+      const tbody = document.getElementById('operators-tbody');
+      if (globalUsers === null) {
+        tbody.innerHTML = \`<tr><td colspan="6" class="p-6 text-center text-rose-500">Unable to load data. Please try again.</td></tr>\`;
+        return;
+      }
+
+      const ops = globalUsers.filter(u => u.role === 'survey_operator');
+      const active = ops.filter(u => (u.status || '').toLowerCase() === 'active').length;
+      
+      buildStatCards('operators-stats', [
+        {label: 'Total Operators', value: ops.length},
+        {label: 'Active Operators', value: active},
+        {label: 'Inactive Operators', value: ops.length - active}
+      ]);
+
+      if (ops.length === 0) {
+        tbody.innerHTML = \`<tr><td colspan="6" class="p-6 text-center text-slate-500">No operators available.</td></tr>\`;
+        return;
+      }
+
+      buildFilters('operators-filters', [
+        {label: 'Status', options: getUnique(ops, 'status')},
+        {label: 'Base', options: getUnique(ops, 'base')},
+        {label: 'Region', options: getUnique(ops, 'region')}
+      ]);
+
+      tbody.innerHTML = ops.map(u => \`
+        <tr class="hover:bg-slate-100 transition-colors">
+          <td class="p-3.5 font-bold text-slate-900">\${u.full_name || '-'}</td>
+          <td class="p-3.5 text-slate-600">\${u.base || '-'}</td>
+          <td class="p-3.5 text-slate-600">\${u.vessel || '-'}</td>
+          <td class="p-3.5 text-slate-600">\${u.surveys || '-'}</td>
+          <td class="p-3.5 text-slate-600">\${u.images || '-'}</td>
+          <td class="p-3.5">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold \${u.status === 'active' ? 'bg-teal-50 text-teal-700 border border-teal-200' : 'bg-slate-100 text-slate-600 border border-slate-200'}">
+              \${(u.status || 'UNKNOWN').toUpperCase()}
+            </span>
+          </td>
+        </tr>
+      \`).join('');
+    }
+
+    function loadAnalysts() {
+      const tbody = document.getElementById('analysts-tbody');
+      if (globalUsers === null) {
+        tbody.innerHTML = \`<tr><td colspan="6" class="p-6 text-center text-rose-500">Unable to load data. Please try again.</td></tr>\`;
+        return;
+      }
+
+      const analysts = globalUsers.filter(u => u.role === 'sonar_analyst' || u.role === 'marine_analyst');
+      const active = analysts.filter(u => (u.status || '').toLowerCase() === 'active').length;
+      
+      buildStatCards('analysts-stats', [
+        {label: 'Total Analysts', value: analysts.length},
+        {label: 'Active Analysts', value: active},
+        {label: 'Inactive Analysts', value: analysts.length - active}
+      ]);
+
+      if (analysts.length === 0) {
+        tbody.innerHTML = \`<tr><td colspan="6" class="p-6 text-center text-slate-500">No expert analysts available.</td></tr>\`;
+        return;
+      }
+
+      buildFilters('analysts-filters', [
+        {label: 'Status', options: getUnique(analysts, 'status')},
+        {label: 'Base', options: getUnique(analysts, 'base')},
+        {label: 'Region', options: getUnique(analysts, 'region')}
+      ]);
+
+      tbody.innerHTML = analysts.map(u => \`
+        <tr class="hover:bg-slate-100 transition-colors">
+          <td class="p-3.5 font-bold text-slate-900">\${u.full_name || '-'}</td>
+          <td class="p-3.5 text-slate-600">\${u.base || '-'}</td>
+          <td class="p-3.5 text-slate-600">\${u.vessel || '-'}</td>
+          <td class="p-3.5 text-slate-600">\${u.surveys || '-'}</td>
+          <td class="p-3.5 text-slate-600">\${u.images || '-'}</td>
+          <td class="p-3.5">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold \${u.status === 'active' ? 'bg-teal-50 text-teal-700 border border-teal-200' : 'bg-slate-100 text-slate-600 border border-slate-200'}">
+              \${(u.status || 'UNKNOWN').toUpperCase()}
+            </span>
+          </td>
+        </tr>
+      \`).join('');
+    }
+
+    function loadGovernmentUsers() {
+      const tbody = document.getElementById('gov-tbody');
+      if (globalUsers === null) {
+        tbody.innerHTML = \`<tr><td colspan="5" class="p-6 text-center text-rose-500">Unable to load data. Please try again.</td></tr>\`;
+        return;
+      }
+
+      const govUsers = globalUsers.filter(u => u.role === 'gov_authority');
+      const active = govUsers.filter(u => (u.status || '').toLowerCase() === 'active').length;
+      
+      buildStatCards('gov-stats', [
+        {label: 'Total Users', value: govUsers.length},
+        {label: 'Active Users', value: active},
+        {label: 'Pending Users', value: govUsers.filter(u => (u.status || '').toLowerCase() === 'pending').length}
+      ]);
+
+      if (govUsers.length === 0) {
+        tbody.innerHTML = \`<tr><td colspan="5" class="p-6 text-center text-slate-500">No government users available.</td></tr>\`;
+        return;
+      }
+
+      buildFilters('gov-filters', [
+        {label: 'Department', options: getUnique(govUsers, 'department')},
+        {label: 'Region/Jurisdiction', options: getUnique(govUsers, 'region')},
+        {label: 'Status', options: getUnique(govUsers, 'status')}
+      ]);
+
+      tbody.innerHTML = govUsers.map(u => \`
+        <tr class="hover:bg-slate-100 transition-colors">
+          <td class="p-3.5 font-bold text-slate-900">\${u.full_name || '-'}</td>
+          <td class="p-3.5 text-slate-600">\${u.department || '-'}</td>
+          <td class="p-3.5 text-slate-600">\${u.region || '-'}</td>
+          <td class="p-3.5 text-slate-600">\${u.access || '-'}</td>
+          <td class="p-3.5">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold \${u.status === 'active' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600 border border-slate-200'}">
+              \${(u.status || 'UNKNOWN').toUpperCase()}
+            </span>
+          </td>
+        </tr>
+      \`).join('');
+    }
+
+    // --- Cleanup Teams Data Flow ---
+    async function loadCleanupTeams() {
+      const data = await fetchData(API.cleanupTeams);
+      const tbody = document.getElementById('cleanup-tbody');
+      
+      if (data === null) {
+        tbody.innerHTML = \`<tr><td colspan="6" class="p-6 text-center text-rose-500">Unable to load data. Please try again.</td></tr>\`;
+        return;
+      }
+
+      if (data.length === 0) {
+        buildStatCards('cleanup-stats', [{label: 'Total Teams', value: 0}, {label: 'Active Teams', value: 0}, {label: 'Inactive/Idle Teams', value: 0}]);
+        tbody.innerHTML = \`<tr><td colspan="6" class="p-6 text-center text-slate-500">No cleanup teams available.</td></tr>\`;
+        return;
+      }
+
+      const active = data.filter(t => (t.status || '').toLowerCase() === 'active').length;
+      buildStatCards('cleanup-stats', [
+        {label: 'Total Teams', value: data.length},
+        {label: 'Active Teams', value: active},
+        {label: 'Inactive/Idle Teams', value: data.length - active}
+      ]);
+
+      buildFilters('cleanup-filters', [
+        {label: 'Region', options: getUnique(data, 'region')},
+        {label: 'Status', options: getUnique(data, 'status')}
+      ]);
+
+      tbody.innerHTML = data.map(t => \`
+        <tr class="hover:bg-slate-100 transition-colors">
+          <td class="p-3.5 font-bold text-slate-900">\${t.team_name || '-'}</td>
+          <td class="p-3.5 text-slate-600">\${t.region || '-'}</td>
+          <td class="p-3.5 text-slate-600">\${t.members || '-'}</td>
+          <td class="p-3.5 text-slate-600">\${t.surveys || '-'}</td>
+          <td class="p-3.5 text-slate-600">\${t.completed || '-'}</td>
+          <td class="p-3.5">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold \${t.status === 'active' ? 'bg-teal-50 text-teal-700 border border-teal-200' : 'bg-slate-100 text-slate-600 border border-slate-200'}">
+              \${(t.status || 'UNKNOWN').toUpperCase()}
+            </span>
+          </td>
+        </tr>
+      \`).join('');
+    }
+
+  </script>
+</body>
+</html>

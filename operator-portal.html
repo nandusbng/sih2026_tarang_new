@@ -1,0 +1,2615 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TARANG // तरंग - Survey Operator Workspace</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  
+  <!-- Leaflet CSS & JS for Tactical GIS Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Three.js & GLTFLoader for Local 3D Drone Survey Simulation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <!-- TARANG Shared Map Engine -->
+  <script src="js/tarang-map.js"></script>
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            'ocean-navy': '#020b15',
+            'deep-abyss': '#041324',
+            'panel-bg': '#071d34',
+            'panel-card': '#08223f',
+            'seafoam': '#14b8a6',
+            'seafoam-hover': '#0d9488',
+            'sonar-cyan': '#38bdf8',
+            'marine-blue': '#0284c7',
+            'tactical-border': 'rgba(20, 184, 166, 0.22)',
+            'muted-slate': '#94a3b8',
+            'sonar-amber': '#f59e0b',
+            'sonar-red': '#ef4444'
+          },
+          fontFamily: {
+            headline: ['Plus Jakarta Sans', 'sans-serif'],
+            body: ['Inter', 'sans-serif'],
+            mono: ['Space Grotesk', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+
+    <style>
+    body {
+      background-color: #f8fafc;
+      background-image: 
+        radial-gradient(circle at 10% 20%, rgba(2, 132, 199, 0.04) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(13, 148, 136, 0.04) 0%, transparent 40%),
+        linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+      color: #0f172a;
+      font-family: 'Inter', sans-serif;
+    }
+    .marine-panel {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04);
+    }
+    .marine-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      transition: all 0.2s ease-in-out;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04);
+    }
+    .marine-card:hover {
+      border-color: #cbd5e1;
+      box-shadow: 0 6px 18px -4px rgba(15, 23, 42, 0.06);
+    }
+    .waterfall-grid {
+      background-size: 32px 32px;
+      background-image: 
+        linear-gradient(to right, rgba(226, 232, 240, 0.6) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(226, 232, 240, 0.6) 1px, transparent 1px);
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+  </style>
+
+  <!-- RBAC & Auth Engine -->
+  <script src="js/auth.js"></script>
+  <script>protectRoute();</script>
+</head>
+<body class="h-full flex flex-col antialiased selection:bg-seafoam selection:text-ocean-navy overflow-hidden">
+
+  <!-- ========================================================================= -->
+  <!-- 10. OPERATOR PORTAL — TOP NAVIGATION                                      -->
+  <!-- ========================================================================= -->
+  <header class="h-20 w-full marine-panel border-b border-tactical-border z-40 flex items-center justify-between px-6 sm:px-8 shrink-0">
+    <!-- Left: Identity -->
+    <div class="flex items-center gap-4">
+      <button type="button" onclick="toggleSidebar()" class="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-100">
+        <span class="material-symbols-outlined text-[24px]">menu</span>
+      </button>
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-full overflow-hidden border border-teal-500/30 bg-white p-1 flex items-center justify-center shrink-0 shadow-lg">
+          <img src="logoimage.jpg" class="w-full h-full object-contain rounded-full" alt="TARANG" />
+        </div>
+        <div class="flex flex-col">
+          <div class="flex items-center gap-2">
+            <span class="font-headline font-black text-xl text-slate-900 tracking-wider leading-none">TARANG</span>
+            <span class="text-xs font-mono font-semibold text-teal-700 tracking-wide border-l border-slate-300 pl-2">Survey Operator</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Controls: Status, Notifications, Operator Profile, Account -->
+    <div class="flex items-center gap-2 sm:gap-3">
+      <!-- Dynamic Online / Offline Status Badge -->
+      <div id="conn-status-badge" class="flex items-center gap-2 px-3 py-1 rounded-full bg-teal-950/70 border border-teal-500/30 text-teal-300 text-xs font-mono font-medium shadow-inner">
+        <span class="w-2 h-2 rounded-full bg-teal-400 animate-pulse" id="conn-status-dot"></span>
+        <span id="conn-status-text">ONLINE — GPS SYNC</span>
+      </div>
+
+      <!-- Notification Bell with Counter -->
+      <button 
+        type="button" 
+        onclick="switchView('notifications')" 
+        class="relative p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 transition-colors"
+        title="View Notifications"
+      >
+        <span class="material-symbols-outlined text-[20px]">notifications</span>
+        <span id="nav-unread-badge" class="hidden absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-white text-[10px] font-mono font-bold flex items-center justify-center">
+          0
+        </span>
+      </button>
+
+      <!-- Operator Name & ID Pill -->
+      <div class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200">
+        <div class="w-6 h-6 rounded-full bg-teal-500/20 text-teal-700 flex items-center justify-center font-mono font-bold text-xs">
+          OP
+        </div>
+        <div class="flex flex-col text-left">
+          <span class="text-xs font-bold text-slate-900 leading-tight" id="header-op-name">Cmdr. Rajesh Verma</span>
+          <span class="text-[10px] font-mono text-teal-700 font-semibold leading-tight" id="header-op-id">INST-OP-409</span>
+        </div>
+      </div>
+
+      <!-- Profile / Account Dropdown -->
+      <div class="relative">
+        <button 
+          type="button" 
+          onclick="toggleAccountMenu()" 
+          class="flex items-center gap-1 p-1.5 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 transition-colors"
+        >
+          <span class="material-symbols-outlined text-[20px]">account_circle</span>
+          <span class="material-symbols-outlined text-[16px] text-slate-500">expand_more</span>
+        </button>
+        <!-- Dropdown Menu -->
+        <div id="account-menu" class="hidden absolute right-0 mt-2 w-48 rounded-xl bg-white border border-slate-200 shadow-xl py-1 z-50">
+          <div class="px-4 py-2 border-b border-slate-100">
+            <p class="text-xs text-slate-500 font-mono">Signed in as</p>
+            <p class="text-xs font-bold text-slate-900 truncate" id="menu-op-role">Survey Operator</p>
+          </div>
+          <a href="#settings" onclick="switchView('settings'); toggleAccountMenu()" class="flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 hover:text-teal-700 hover:bg-teal-50/70 transition-colors">
+            <span class="material-symbols-outlined text-[16px] text-teal-600">settings</span> Settings
+          </a>
+          <a href="#documents" onclick="switchView('documents'); toggleAccountMenu()" class="flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 hover:text-teal-700 hover:bg-teal-50/70 transition-colors">
+            <span class="material-symbols-outlined text-[16px] text-teal-600">folder</span> Survey Documents
+          </a>
+          <button type="button" onclick="logout()" class="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-rose-600 hover:bg-rose-50 hover:text-rose-700 border-t border-slate-100 transition-colors">
+            <span class="material-symbols-outlined text-[16px]">logout</span> Sign Out
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================================================= -->
+  <!-- MAIN WORKSPACE LAYOUT (SIDEBAR + CONTENT AREA)                             -->
+  <!-- ========================================================================= -->
+  <div class="flex-1 flex overflow-hidden relative">
+
+    <!-- 11. OPERATOR PORTAL — LEFT SIDEBAR -->
+    <aside 
+      id="portal-sidebar" 
+      class="w-60 marine-panel border-r border-tactical-border flex flex-col justify-between p-3 shrink-0 z-30 transition-all duration-200 absolute lg:static inset-y-0 left-0 -translate-x-full lg:translate-x-0"
+    >
+      <div class="flex flex-col gap-1">
+        <div class="px-3 py-2 text-[10px] font-mono uppercase tracking-widest text-slate-400">
+          Operator Console
+        </div>
+        
+                <nav class="flex flex-col gap-1" id="nav-item-list">
+          <button type="button" onclick="switchView('dashboard')" data-view="dashboard" class="nav-btn flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-mono font-bold tracking-wide transition-all bg-teal-600 text-white shadow-sm">
+            <span class="material-symbols-outlined text-[20px]">dashboard</span>
+            <span>Dashboard</span>
+          </button>
+
+          <button type="button" onclick="switchView('active-mission')" data-view="active-mission" class="nav-btn flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-mono font-medium tracking-wide transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+            <span class="material-symbols-outlined text-[20px] text-teal-600">satellite_alt</span>
+            <span>Active Mission</span>
+          </button>
+
+          <button type="button" onclick="switchView('new-survey')" data-view="new-survey" class="nav-btn flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-mono font-medium tracking-wide transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+            <span class="material-symbols-outlined text-[20px] text-sky-600">add_circle</span>
+            <span>New Survey</span>
+          </button>
+
+          <button type="button" onclick="switchView('surveys')" data-view="surveys" class="nav-btn flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-mono font-medium tracking-wide transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+            <span class="material-symbols-outlined text-[20px] text-indigo-600">travel_explore</span>
+            <span>Existing Surveys</span>
+          </button>
+
+          <button type="button" onclick="switchView('results')" data-view="results" class="nav-btn flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-mono font-medium tracking-wide transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+            <span class="material-symbols-outlined text-[20px] text-sky-600">analytics</span>
+            <span>Results</span>
+          </button>
+
+          <button type="button" onclick="switchView('verification-queue')" data-view="verification-queue" class="nav-btn flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-mono font-medium tracking-wide transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+            <span class="material-symbols-outlined text-[20px] text-amber-600">verified</span>
+            <span>Verification Queue</span>
+          </button>
+
+          <button type="button" onclick="switchView('reports')" data-view="reports" class="nav-btn flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-mono font-medium tracking-wide transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+            <span class="material-symbols-outlined text-[20px] text-purple-600">description</span>
+            <span>Reports</span>
+          </button>
+
+          <button type="button" onclick="switchView('notifications')" data-view="notifications" class="nav-btn flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-mono font-medium tracking-wide transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+            <div class="flex items-center gap-3">
+              <span class="material-symbols-outlined text-[20px] text-amber-500">notifications</span>
+              <span>Notifications</span>
+            </div>
+            <span id="sidebar-unread-count" class="px-1.5 py-0.2 rounded-full bg-slate-200 text-slate-700 text-[10px] font-bold">0</span>
+          </button>
+
+          <button type="button" onclick="switchView('documents')" data-view="documents" class="nav-btn flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-mono font-medium tracking-wide transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+            <span class="material-symbols-outlined text-[20px] text-emerald-600">folder</span>
+            <span>Documents</span>
+          </button>
+
+          <button type="button" onclick="switchView('settings')" data-view="settings" class="nav-btn flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-mono font-medium tracking-wide transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+            <span class="material-symbols-outlined text-[20px] text-slate-500">settings</span>
+            <span>Settings</span>
+          </button>
+        </nav>
+      </div>
+
+      <!-- Bottom Mini Telemetry / Link -->
+      <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 flex flex-col gap-2">
+        <div class="flex items-center justify-between">
+          <span class="text-[10px] font-mono text-slate-400 uppercase">AUV Link</span>
+          <span class="text-[10px] font-mono text-teal-400 font-bold flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse"></span>
+            ACTIVE
+          </span>
+        </div>
+        <div class="flex items-center justify-between text-xs">
+          <span class="text-slate-400">AI Engine</span>
+          <span class="font-mono font-semibold text-teal-300">TARANG AI Detection</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Content Viewport -->
+    <main class="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 lg:p-8 relative waterfall-grid" id="main-content">
+      
+      <!-- ===================================================================== -->
+      <!-- VIEW 1: DASHBOARD (Primary Focus on 3 Cards + Compact Readiness)      -->
+      <!-- ===================================================================== -->
+      <div id="view-dashboard" class="view-panel flex flex-col gap-6 max-w-7xl mx-auto">
+        
+        <!-- Header Strip -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 class="font-headline font-extrabold text-2xl sm:text-3xl text-slate-900 tracking-tight">
+              Survey Operator Dashboard
+            </h2>
+            <p class="font-body text-xs sm:text-sm text-slate-400 mt-1">
+              Command, deploy, and verify autonomous marine acoustic surveys.
+            </p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="switchView('new-survey')" class="py-2.5 px-4 rounded-xl bg-seafoam hover:bg-teal-400 text-ocean-navy font-headline font-bold text-xs tracking-wide shadow-md flex items-center gap-2 transition-all cursor-pointer">
+              <span class="material-symbols-outlined text-[18px]">add</span>
+              <span>New Survey</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 12. PRIMARY DASHBOARD CARDS (3 Critical Actions) -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <!-- CARD 1: ACTIVE MISSION -->
+          <div 
+            onclick="switchView('active-mission')" 
+            class="marine-card rounded-2xl p-6 flex flex-col justify-between cursor-pointer group hover:scale-[1.01] relative overflow-hidden"
+          >
+            <div class="absolute -right-8 -bottom-8 w-32 h-32 rounded-full bg-teal-500/10 pointer-events-none group-hover:scale-125 transition-transform"></div>
+            <div>
+              <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 rounded-xl bg-teal-500/15 text-teal-400 flex items-center justify-center border border-teal-500/30">
+                  <span class="material-symbols-outlined text-[28px]">satellite_alt</span>
+                </div>
+                <span class="px-2.5 py-1 rounded-full bg-teal-500/15 text-teal-300 font-mono text-[11px] font-bold border border-teal-500/30 flex items-center gap-1.5">
+                  <span class="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse"></span>
+                  LIVE RECORDING
+                </span>
+              </div>
+              <h3 class="font-headline font-bold text-xl text-slate-900 group-hover:text-teal-300 transition-colors">ACTIVE MISSION</h3>
+              <p class="font-body text-xs text-slate-400 mt-1.5 leading-relaxed">
+                Monitor real-time survey coordinates, AUV heading, live sonar acoustic stream, and target detections in progress.
+              </p>
+            </div>
+            <div class="mt-6 pt-4 border-t border-slate-200 flex items-center justify-between text-xs font-mono font-bold text-teal-400">
+              <span>Open Active Mission</span>
+              <span class="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+            </div>
+          </div>
+
+          <!-- CARD 2: NEW SURVEY -->
+          <div 
+            onclick="switchView('new-survey')" 
+            class="marine-card rounded-2xl p-6 flex flex-col justify-between cursor-pointer group hover:scale-[1.01] relative overflow-hidden"
+          >
+            <div class="absolute -right-8 -bottom-8 w-32 h-32 rounded-full bg-sky-500/10 pointer-events-none group-hover:scale-125 transition-transform"></div>
+            <div>
+              <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 rounded-xl bg-sky-500/15 text-sky-400 flex items-center justify-center border border-sky-500/30">
+                  <span class="material-symbols-outlined text-[28px]">add_circle</span>
+                </div>
+                <span class="px-2.5 py-1 rounded-full bg-sky-500/15 text-sky-300 font-mono text-[11px] font-bold border border-sky-500/30">
+                  CREATE CAMPAIGN
+                </span>
+              </div>
+              <h3 class="font-headline font-bold text-xl text-slate-900 group-hover:text-sky-300 transition-colors">NEW SURVEY</h3>
+              <p class="font-body text-xs text-slate-400 mt-1.5 leading-relaxed">
+                Initialize survey identification, select geographic region, define precise coastal sectors, and upload sonar data.
+              </p>
+            </div>
+            <div class="mt-6 pt-4 border-t border-slate-200 flex items-center justify-between text-xs font-mono font-bold text-sky-400">
+              <span>Create Survey</span>
+              <span class="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+            </div>
+          </div>
+
+          <!-- CARD 3: EXISTING SURVEYS -->
+          <div 
+            onclick="switchView('surveys')" 
+            class="marine-card rounded-2xl p-6 flex flex-col justify-between cursor-pointer group hover:scale-[1.01] relative overflow-hidden"
+          >
+            <div class="absolute -right-8 -bottom-8 w-32 h-32 rounded-full bg-indigo-500/10 pointer-events-none group-hover:scale-125 transition-transform"></div>
+            <div>
+              <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 rounded-xl bg-indigo-500/15 text-indigo-400 flex items-center justify-center border border-indigo-500/30">
+                  <span class="material-symbols-outlined text-[28px]">folder_open</span>
+                </div>
+                <span class="px-2.5 py-1 rounded-full bg-indigo-500/15 text-indigo-300 font-mono text-[11px] font-bold border border-indigo-500/30" id="dash-existing-count">
+                  0 ARCHIVES
+                </span>
+              </div>
+              <h3 class="font-headline font-bold text-xl text-slate-900 group-hover:text-indigo-300 transition-colors">EXISTING SURVEYS</h3>
+              <p class="font-body text-xs text-slate-400 mt-1.5 leading-relaxed">
+                Filter, inspect, and analyze previously created surveys by location and creation date with full subdivision support.
+              </p>
+            </div>
+            <div class="mt-6 pt-4 border-t border-slate-200 flex items-center justify-between text-xs font-mono font-bold text-indigo-400">
+              <span>View Survey Archives</span>
+              <span class="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 24. Operator -> Analyst Queue Quick Preview Strip -->
+        <div class="marine-card rounded-2xl p-5">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+            <div>
+              <h4 class="font-headline font-bold text-base text-slate-900 flex items-center gap-2">
+                <span class="material-symbols-outlined text-teal-400 text-[20px]">mark_email_read</span>
+                Operator &rarr; Marine Analyst Verification Queue
+              </h4>
+              <p class="text-xs text-slate-400 mt-0.5">Real-time sync status for surveys submitted for acoustic audit.</p>
+            </div>
+            <button type="button" onclick="switchView('reports')" class="text-xs font-mono font-bold text-teal-400 hover:underline">
+              Open Verification Queue &rarr;
+            </button>
+          </div>
+          <div id="dash-queue-container" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <!-- Populated dynamically by JS -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ===================================================================== -->
+      <!-- VIEW 2: ACTIVE MISSION (Dedicated Interface for Ocean Survey)         -->
+      <!-- ===================================================================== -->
+            <!-- ===================================================================== -->
+      <!-- VIEW 2: ACTIVE MISSION (3D Survey Simulation + Telemetry + Map)       -->
+      <!-- ===================================================================== -->
+      <div id="view-active-mission" class="view-panel hidden flex flex-col gap-6 max-w-7xl mx-auto">
+        <!-- Top Bar with Mission Title and Simulation Control Buttons -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+          <div class="flex items-center gap-3">
+            <button type="button" onclick="switchView('dashboard')" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200 hover:border-teal-500 text-xs font-mono font-bold text-slate-700 hover:text-slate-900 transition-all shadow-sm shrink-0">
+              <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+              <span>Back</span>
+            </button>
+            <div>
+              <div class="flex items-center gap-2 text-xs font-mono text-teal-600 uppercase tracking-wider mb-0.5">
+                <span class="inline-block w-2 h-2 rounded-full bg-teal-500 animate-ping"></span>
+                Autonomous Marine Survey Platform
+              </div>
+              <h2 class="font-headline font-extrabold text-[26px] sm:text-[28px] text-slate-900 tracking-tight leading-tight" id="active-mission-title">
+                Offshore Acoustic Survey Simulation
+              </h2>
+            </div>
+          </div>
+          <div class="flex items-center gap-2.5">
+            <button type="button" id="btn-start-survey" onclick="startSurveySimulation()" class="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-mono text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer">
+              <span class="material-symbols-outlined text-[18px]">play_arrow</span>
+              <span>Start Survey</span>
+            </button>
+            <button type="button" id="btn-stop-survey" onclick="stopSurveySimulation()" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-mono text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer">
+              <span class="material-symbols-outlined text-[18px]">pause</span>
+              <span>Stop Survey</span>
+            </button>
+            <button type="button" onclick="resetSurveySimulation()" class="px-3 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 font-mono text-xs font-bold transition-all cursor-pointer">
+              <span class="material-symbols-outlined text-[18px]">replay</span>
+            </button>
+            <span class="px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 font-mono text-[11px] font-bold">
+              SIMULATION DATA
+            </span>
+          </div>
+        </div>
+
+        <!-- Main Row: Left 3D Viewport (8 cols) + Right Telemetry Panel (4 cols) -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+          <!-- LEFT / MAIN: 3D Survey Platform Simulation -->
+          <div class="lg:col-span-8 marine-card rounded-2xl p-4 flex flex-col justify-between relative overflow-hidden">
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-teal-600 text-[20px]">view_in_ar</span>
+                <h4 class="font-headline font-bold text-sm text-slate-900">3D Survey Platform Simulation (static/models/drone.glb)</h4>
+              </div>
+              <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-100 text-slate-600 border border-slate-200" id="sim-status-pill">
+                STANDBY
+              </span>
+            </div>
+            <!-- 3D Canvas Container -->
+            <div id="drone-3d-viewport" class="w-full h-[380px] rounded-xl bg-[#071e3d] relative overflow-hidden flex items-center justify-center">
+              <div id="drone-loader-spinner" class="absolute z-10 flex flex-col items-center gap-2 text-white font-mono text-xs">
+                <span class="material-symbols-outlined text-[32px] animate-spin text-teal-400">autorenew</span>
+                <span>Initializing 3D Seabed &amp; Loading static/models/drone.glb...</span>
+              </div>
+            </div>
+            <div class="flex items-center justify-between text-[11px] font-mono text-slate-500 mt-2 px-1">
+              <span>Interactive Controls: Left-click rotate • Scroll zoom • Right-click pan</span>
+              <span class="text-teal-600 font-bold" id="sim-waypoint-counter">Waypoint: 0 / 12</span>
+            </div>
+          </div>
+
+          <!-- RIGHT / INFO: Mission Telemetry (SIMULATION DATA) -->
+          <div class="lg:col-span-4 marine-card rounded-2xl p-5 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
+                <div>
+                  <h4 class="font-headline font-bold text-sm text-slate-900">Mission Telemetry</h4>
+                  <p class="text-[11px] font-mono text-slate-400">Live platform sensor stream</p>
+                </div>
+                <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                  SIMULATION DATA
+                </span>
+              </div>
+              <div class="space-y-2 text-xs font-mono">
+                <div class="flex justify-between py-1 border-b border-slate-100">
+                  <span class="text-slate-500">Mission ID:</span>
+                  <strong class="text-slate-900" id="telemetry-mission-id">MSN-2026-SRV-01</strong>
+                </div>
+                <div class="flex justify-between py-1 border-b border-slate-100">
+                  <span class="text-slate-500">Survey ID:</span>
+                  <strong class="text-teal-700" id="telemetry-survey-id">TRG-SRV-001</strong>
+                </div>
+                <div class="flex justify-between py-1 border-b border-slate-100">
+                  <span class="text-slate-500">Latitude:</span>
+                  <strong class="text-slate-900" id="telemetry-lat">13.0827°N</strong>
+                </div>
+                <div class="flex justify-between py-1 border-b border-slate-100">
+                  <span class="text-slate-500">Longitude:</span>
+                  <strong class="text-slate-900" id="telemetry-lon">80.2707°E</strong>
+                </div>
+                <div class="flex justify-between py-1 border-b border-slate-100">
+                  <span class="text-slate-500">Platform Heading:</span>
+                  <strong class="text-slate-900" id="telemetry-heading">045° NE</strong>
+                </div>
+                <div class="flex justify-between py-1 border-b border-slate-100">
+                  <span class="text-slate-500">Speed:</span>
+                  <strong class="text-slate-900" id="telemetry-speed">3.4 knots</strong>
+                </div>
+                <div class="flex justify-between py-1 border-b border-slate-100">
+                  <span class="text-slate-500">Sonar Altitude:</span>
+                  <strong class="text-teal-700" id="telemetry-altitude">8.2 m</strong>
+                </div>
+                <div class="flex justify-between py-1 border-b border-slate-100">
+                  <span class="text-slate-500">Water Depth:</span>
+                  <strong class="text-sky-700" id="telemetry-depth">34.6 m</strong>
+                </div>
+                <div class="flex justify-between py-1 border-b border-slate-100">
+                  <span class="text-slate-500">Survey Distance:</span>
+                  <strong class="text-slate-900" id="telemetry-distance">1.82 km</strong>
+                </div>
+                <div class="flex justify-between py-1">
+                  <span class="text-slate-500">Coverage:</span>
+                  <strong class="text-teal-700" id="telemetry-coverage">0.45 km²</strong>
+                </div>
+              </div>
+            </div>
+
+            <!-- Survey Progress Bar -->
+            <div class="mt-4 pt-3 border-t border-slate-100">
+              <div class="flex justify-between text-xs font-mono mb-1">
+                <span class="text-slate-500">Mission Progress:</span>
+                <strong class="text-teal-700" id="telemetry-progress-pct">0%</strong>
+              </div>
+              <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                <div id="telemetry-progress-bar" class="bg-teal-600 h-2 rounded-full transition-all duration-300" style="width: 0%;"></div>
+              </div>
+              <div class="flex justify-between text-[10px] font-mono text-slate-400 mt-2">
+                <span>State: <strong class="text-slate-700" id="telemetry-state">STANDBY</strong></span>
+                <span>Chirp: <strong>400/900 kHz</strong></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Lower Row: Active Mission Tactical Map (TarangMap Leaflet) -->
+        <div class="marine-card rounded-2xl p-5">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-teal-600 text-[20px]">map</span>
+              <h4 class="font-headline font-bold text-sm text-slate-900">Survey Route &amp; Acoustic Targets Map</h4>
+            </div>
+            <div class="flex items-center gap-2 text-xs font-mono">
+              <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
+                Synchronized with 3D Platform Position
+              </span>
+            </div>
+          </div>
+          <div id="active-mission-map" class="w-full h-[360px] rounded-xl border border-slate-200 overflow-hidden relative"></div>
+        </div>
+      </div>
+
+      <!-- ===================================================================== -->
+      <!-- VIEW 3: NEW SURVEY (Creation Form)                                    -->
+      <!-- ===================================================================== -->
+      <div id="view-new-survey" class="view-panel hidden flex flex-col gap-6 max-w-4xl mx-auto">
+        <div class="flex items-center justify-between border-b border-slate-200 pb-4">
+          <div class="flex items-center gap-3">
+            <button type="button" onclick="switchView('dashboard')" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-700 hover:border-teal-400 text-xs font-mono font-bold text-slate-300 hover:text-slate-900 transition-all shadow-sm shrink-0">
+              <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+              <span>Back</span>
+            </button>
+            <div>
+              <h2 class="font-headline font-extrabold text-[28px] sm:text-[30px] text-slate-900 tracking-tight leading-tight">Create New Marine Survey</h2>
+              <p class="font-body text-xs text-slate-400 mt-1">Configure mission identifier, geographic region, precise coastal sector, and platform profile.</p>
+            </div>
+          </div>
+        </div>
+
+        <form id="new-survey-form" class="marine-card rounded-2xl p-6 sm:p-8 flex flex-col gap-5">
+          <!-- 1. Survey Name -->
+          <div>
+            <label class="block font-mono text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+              1. Survey Name <span class="text-rose-400">*</span>
+            </label>
+            <input 
+              type="text" 
+              id="input-survey-name" 
+              class="w-full bg-slate-50 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-900 placeholder-slate-500 focus:outline-none focus:border-seafoam focus:ring-1 focus:ring-seafoam font-body"
+              placeholder="e.g. Andaman Basin Hydrographic Survey 2026" 
+              required 
+            />
+          </div>
+
+          <!-- 2. Survey ID (Auto-Generated) -->
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="block font-mono text-xs font-bold text-slate-300 uppercase tracking-wider">
+                2. Survey ID (Auto-Generated)
+              </label>
+              <button type="button" onclick="regenerateSurveyId()" class="text-[11px] font-mono text-teal-400 hover:underline">
+                Generate New ID
+              </button>
+            </div>
+            <input 
+              type="text" 
+              id="input-survey-id" 
+              class="w-full bg-[#020e1d] border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-mono text-teal-300 focus:outline-none"
+              readonly 
+            />
+          </div>
+
+          <!-- 3. Survey Region / Water Body -->
+          <div>
+            <label class="block font-mono text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+              3. Survey Region / Water Body <span class="text-rose-400">*</span>
+            </label>
+            <input 
+              type="text" 
+              id="input-survey-region" 
+              class="w-full bg-slate-50 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-900 placeholder-slate-500 focus:outline-none focus:border-seafoam font-body"
+              placeholder="e.g. Andaman Sea / Indian Ocean" 
+              required 
+            />
+          </div>
+
+          <!-- 4. Specific Survey Area (Sector) -->
+          <div>
+            <label class="block font-mono text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+              4. Specific Survey Area <span class="text-rose-400">*</span>
+            </label>
+            <input 
+              type="text" 
+              id="input-survey-area" 
+              class="w-full bg-slate-50 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-900 placeholder-slate-500 focus:outline-none focus:border-seafoam font-body"
+              placeholder="e.g. Havelock Coastal Trench – Sector 01" 
+              required 
+            />
+            <span class="text-[11px] text-slate-400 font-mono mt-1 block">
+              A broad survey campaign can contain multiple specific survey areas/subdivisions.
+            </span>
+          </div>
+
+          <!-- 5. Survey Platform -->
+          <div>
+            <label class="block font-mono text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+              5. Survey Platform <span class="text-rose-400">*</span>
+            </label>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <label class="flex items-center gap-3 p-3.5 rounded-xl bg-slate-50 border border-teal-500/30 cursor-pointer hover:border-teal-400 transition-colors">
+                <input type="radio" name="platform-choice" value="AUV" checked class="text-seafoam focus:ring-seafoam" />
+                <div class="flex flex-col">
+                  <span class="text-xs font-bold text-slate-900">AUV</span>
+                  <span class="text-[10px] text-slate-400 font-mono">Autonomous Underwater</span>
+                </div>
+              </label>
+
+              <label class="flex items-center gap-3 p-3.5 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer hover:border-teal-400 transition-colors">
+                <input type="radio" name="platform-choice" value="Vessel" class="text-seafoam focus:ring-seafoam" />
+                <div class="flex flex-col">
+                  <span class="text-xs font-bold text-slate-900">Vessel</span>
+                  <span class="text-[10px] text-slate-400 font-mono">Hydrographic Surface Ship</span>
+                </div>
+              </label>
+
+              <label class="flex items-center gap-3 p-3.5 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer hover:border-teal-400 transition-colors">
+                <input type="radio" name="platform-choice" value="Towed Platform" class="text-seafoam focus:ring-seafoam" />
+                <div class="flex flex-col">
+                  <span class="text-xs font-bold text-slate-900">Towed Platform</span>
+                  <span class="text-[10px] text-slate-400 font-mono">Side-Scan Sonar Towfish</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-200">
+            <button type="button" onclick="switchView('dashboard')" class="px-5 py-2.5 rounded-xl border border-slate-700 text-xs font-mono font-bold text-slate-300 hover:text-slate-900">
+              Cancel
+            </button>
+            <button type="submit" class="px-6 py-2.5 rounded-xl bg-seafoam hover:bg-teal-400 text-ocean-navy font-headline font-bold text-xs shadow-lg flex items-center gap-2">
+              <span>Save &amp; Proceed to Data Input</span>
+              <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- ===================================================================== -->
+      <!-- VIEW 4: SURVEY DATA INPUT (Upload & Ingestion)                        -->
+      <!-- ===================================================================== -->
+      <div id="view-data-input" class="view-panel hidden flex flex-col gap-6 max-w-4xl mx-auto">
+        <div class="flex items-center justify-between border-b border-slate-200 pb-4">
+          <div class="flex items-center gap-3">
+            <button type="button" onclick="switchView('dashboard')" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-700 hover:border-teal-400 text-xs font-mono font-bold text-slate-300 hover:text-slate-900 transition-all shadow-sm shrink-0">
+              <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+              <span>Back</span>
+            </button>
+            <div>
+              <h2 class="font-headline font-extrabold text-[28px] sm:text-[30px] text-slate-900 tracking-tight leading-tight">Survey Data Input</h2>
+              <p class="font-body text-xs text-slate-400 mt-1">Upload survey data for automated AI acoustic detection.</p>
+            </div>
+          </div>
+          <span class="px-3 py-1 rounded-lg bg-teal-500/15 border border-teal-500/30 text-teal-300 font-mono text-xs font-bold" id="upload-survey-context">
+            SURVEY: TRG-2026-SRV-409
+          </span>
+        </div>
+
+        <!-- 17. SURVEY DATA INPUT INTERFACE -->
+        <div class="marine-card rounded-2xl p-8 flex flex-col items-center text-center">
+          <input type="file" id="survey-file-input" accept=".png,.jpg,.jpeg,.xtf,.jsf,.mp4" class="hidden" onchange="handleSurveyFileUpload(event)" />
+          
+          <div 
+            onclick="document.getElementById('survey-file-input').click()"
+            class="w-full max-w-lg p-10 rounded-2xl border-2 border-dashed border-teal-500/30 hover:border-teal-400 bg-slate-50/60 cursor-pointer flex flex-col items-center gap-4 transition-all group"
+          >
+            <div class="w-16 h-16 rounded-2xl bg-teal-500/15 flex items-center justify-center text-teal-400 group-hover:scale-110 transition-transform">
+              <span class="material-symbols-outlined text-[36px]">cloud_upload</span>
+            </div>
+            <div>
+              <h3 class="font-headline font-bold text-lg text-slate-900">Upload Sonar Survey Data</h3>
+              <p class="text-xs text-slate-400 mt-1 font-body">Drag and drop file here, or click to browse</p>
+            </div>
+            
+            <!-- Supported Formats Indicator (Section 17) -->
+            <div class="pt-3 border-t border-slate-200 w-full">
+              <span class="text-[11px] font-mono font-bold text-teal-300 tracking-wider">
+                Supported formats: PNG, JPG, XTF, JSF, MP4
+              </span>
+            </div>
+          </div>
+
+          <!-- Upload Status / Progress -->
+          <div id="upload-progress-box" class="hidden w-full max-w-lg mt-6 p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col gap-2">
+            <div class="flex items-center justify-between text-xs font-mono">
+              <span class="text-slate-300 truncate" id="upload-filename">Processing file...</span>
+              <span class="text-teal-400 font-bold" id="upload-pct">0%</span>
+            </div>
+            <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+              <div id="upload-progress-bar" class="bg-seafoam h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+            <span class="text-[10px] font-mono text-slate-400 mt-1" id="upload-status-text">Uploading to neural pipeline...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================================================================== -->
+      <!-- VIEW 5: EXISTING SURVEYS (List & Filters)                             -->
+      <!-- ===================================================================== -->
+      <div id="view-surveys" class="view-panel hidden flex flex-col gap-6 max-w-7xl mx-auto">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+          <div class="flex items-center gap-3">
+            <button type="button" onclick="switchView('dashboard')" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-700 hover:border-teal-400 text-xs font-mono font-bold text-slate-300 hover:text-slate-900 transition-all shadow-sm shrink-0">
+              <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+              <span>Back</span>
+            </button>
+            <div>
+              <h2 class="font-headline font-extrabold text-[28px] sm:text-[30px] text-slate-900 tracking-tight leading-tight">Existing Surveys</h2>
+              <p class="font-body text-xs text-slate-400 mt-1">Review all deployed and archived hydrographic surveys across marine sectors.</p>
+            </div>
+          </div>
+          <button type="button" onclick="switchView('new-survey')" class="px-4 py-2 rounded-xl bg-seafoam text-ocean-navy font-headline font-bold text-xs flex items-center gap-1.5 shadow-md">
+            <span class="material-symbols-outlined text-[18px]">add</span> New Survey
+          </button>
+        </div>
+
+        <!-- 18. Filters: Location and Date of Creation -->
+        <div class="marine-card rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4">
+          <div class="flex flex-wrap items-center gap-3">
+            <!-- Filter by Location -->
+            <div class="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
+              <span class="material-symbols-outlined text-[18px] text-teal-400">location_on</span>
+              <span class="text-xs font-mono text-slate-400 uppercase">Location:</span>
+              <select id="filter-location" onchange="applySurveyFilters()" class="bg-transparent text-xs font-mono text-slate-900 focus:outline-none cursor-pointer">
+                <option value="ALL">All Regions</option>
+                <option value="Madagascar Island">Madagascar Island</option>
+                <option value="Bay of Bengal">Bay of Bengal</option>
+                <option value="Arabian Sea">Arabian Sea</option>
+                <option value="Andaman">Andaman Basin</option>
+              </select>
+            </div>
+
+            <!-- Filter by Date of Creation -->
+            <div class="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
+              <span class="material-symbols-outlined text-[18px] text-sky-400">calendar_today</span>
+              <span class="text-xs font-mono text-slate-400 uppercase">Date:</span>
+              <input type="date" id="filter-date" onchange="applySurveyFilters()" class="bg-transparent text-xs font-mono text-slate-900 focus:outline-none cursor-pointer" />
+              <button type="button" onclick="document.getElementById('filter-date').value=''; applySurveyFilters()" class="text-[10px] font-mono text-slate-400 hover:text-slate-900">Clear</button>
+            </div>
+          </div>
+
+          <span class="text-xs font-mono text-slate-400" id="surveys-count-badge">Loading surveys...</span>
+        </div>
+
+        <!-- Surveys Table / Grid -->
+        <div class="marine-card rounded-2xl overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs font-mono">
+              <thead class="bg-slate-50 text-slate-400 border-b border-slate-200 uppercase tracking-wider text-[11px]">
+                <tr>
+                  <th class="p-4">Survey Name</th>
+                  <th class="p-4">Survey ID</th>
+                  <th class="p-4">Region</th>
+                  <th class="p-4">Specific Area</th>
+                  <th class="p-4">Created Date</th>
+                  <th class="p-4">Platform</th>
+                  <th class="p-4">Status</th>
+                  <th class="p-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="surveys-table-body" class="divide-y divide-slate-800/60">
+                <!-- Populated dynamically via JS from /api/v1/surveys -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================================================================== -->
+      <!-- VIEW 6: SURVEY DETAILS (With Subdivisions / Multiple Areas)           -->
+      <!-- ===================================================================== -->
+      <div id="view-survey-details" class="view-panel hidden flex flex-col gap-6 max-w-7xl mx-auto">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+          <div class="flex items-center gap-3">
+            <button type="button" onclick="switchView('surveys')" class="p-2 rounded-xl bg-slate-50 text-slate-400 hover:text-slate-900 border border-slate-200">
+              <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+            </button>
+            <div>
+              <h2 class="font-headline font-extrabold text-2xl text-slate-900 tracking-tight" id="detail-survey-name">
+                Survey Detail
+              </h2>
+              <span class="text-xs font-mono text-teal-400" id="detail-survey-id">ID: --</span>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="submitToAnalystQueue()" class="px-4 py-2 rounded-xl bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 border border-teal-500/40 text-xs font-mono font-bold flex items-center gap-1.5 transition-colors">
+              <span class="material-symbols-outlined text-[16px]">send</span> Submit to Analyst
+            </button>
+            <button type="button" onclick="switchView('reports')" class="px-4 py-2 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/40 text-xs font-mono font-bold flex items-center gap-1.5 transition-colors">
+              <span class="material-symbols-outlined text-[16px]">print</span> Export Report
+            </button>
+          </div>
+        </div>
+
+        <!-- 19. Survey Overview & Subdivisions -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          <!-- Metadata Summary -->
+          <div class="marine-card rounded-2xl p-5 space-y-3 text-xs font-mono">
+            <h4 class="font-headline font-bold text-sm text-slate-900 mb-2">Campaign Parameters</h4>
+            <div class="flex justify-between border-b border-slate-200 pb-2">
+              <span class="text-slate-400">Region:</span>
+              <span class="text-slate-900 font-bold" id="detail-region">--</span>
+            </div>
+            <div class="flex justify-between border-b border-slate-200 pb-2">
+              <span class="text-slate-400">Specific Area:</span>
+              <span class="text-teal-300 font-bold" id="detail-specific-area">--</span>
+            </div>
+            <div class="flex justify-between border-b border-slate-200 pb-2">
+              <span class="text-slate-400">Platform:</span>
+              <span class="text-slate-900 font-bold" id="detail-platform">--</span>
+            </div>
+            <div class="flex justify-between border-b border-slate-200 pb-2">
+              <span class="text-slate-400">Creation Date:</span>
+              <span class="text-slate-900 font-bold" id="detail-created-at">16 Sep 2026</span>
+            </div>
+            <div class="flex justify-between border-b border-slate-200 pb-2">
+              <span class="text-slate-400">Status:</span>
+              <span class="text-teal-400 font-bold" id="detail-status">ACTIVE</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-400">AI Detections:</span>
+              <span class="text-amber-400 font-bold" id="detail-det-count">14 Targets</span>
+            </div>
+          </div>
+
+          <!-- 19. Subdivisions / Multiple Survey Areas -->
+          <div class="marine-card rounded-2xl p-5 lg:col-span-2 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-3 border-b border-slate-200 pb-2">
+                <h4 class="font-headline font-bold text-sm text-slate-900 flex items-center gap-2">
+                  <span class="material-symbols-outlined text-teal-400 text-[18px]">account_tree</span>
+                  Survey Area Subdivisions / Sectors
+                </h4>
+                <button type="button" onclick="showAddSectorModal()" class="text-xs font-mono text-teal-400 hover:underline flex items-center gap-1">
+                  <span class="material-symbols-outlined text-[14px]">add</span> Add Sector
+                </button>
+              </div>
+
+              <!-- Hierarchy Diagram / Sector List -->
+              <div class="space-y-2 text-xs font-mono" id="subdivision-list">
+                <!-- Example hierarchy -->
+                <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="text-teal-400">├──</span>
+                    <span class="text-slate-900 font-bold">Northern Coastal Sector – Sector A</span>
+                  </div>
+                  <span class="px-2 py-0.5 rounded bg-teal-500/15 text-teal-300 text-[10px]">ACTIVE / MAPPED</span>
+                </div>
+                <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="text-teal-400">├──</span>
+                    <span class="text-slate-900 font-bold">Eastern Coastal Sector – Sector B</span>
+                  </div>
+                  <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-400 text-[10px]">SCHEDULED</span>
+                </div>
+                <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="text-teal-400">└──</span>
+                    <span class="text-slate-900 font-bold">Southern Coastal Sector – Sector C</span>
+                  </div>
+                  <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-400 text-[10px]">STANDBY</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Uploaded Files & Analyst Queue -->
+            <div class="mt-4 pt-3 border-t border-slate-200 flex items-center justify-between text-xs font-mono">
+              <span class="text-slate-400">Analyst Status: <strong class="text-teal-300" id="detail-analyst-status">Analyst Reviewed</strong></span>
+              <button type="button" onclick="switchView('results')" class="text-sky-400 hover:underline">
+                View AI Findings &rarr;
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================================================================== -->
+      <!-- VIEW 7: RESULTS (AI / Technical Findings)                             -->
+      <!-- ===================================================================== -->
+      <div id="view-results" class="view-panel hidden flex flex-col gap-6 max-w-7xl mx-auto">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+          <div class="flex items-center gap-3">
+            <button type="button" onclick="switchView('dashboard')" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 hover:border-teal-400 text-xs font-mono font-bold text-slate-600 hover:text-slate-900 transition-all shadow-sm shrink-0">
+              <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+              <span>Back</span>
+            </button>
+            <div>
+              <h2 class="font-headline font-extrabold text-[28px] sm:text-[30px] text-slate-900 tracking-tight leading-tight">
+                Acoustic AI Results &amp; Technical Findings
+              </h2>
+              <p class="font-body text-xs text-slate-400 mt-1">
+                TARANG Class A/B/C detection classification, sonar evidence, and multi-factor assessment results.
+              </p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="exportFindingsCSV()" class="px-3.5 py-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 text-xs font-mono font-bold flex items-center gap-1.5 transition-colors">
+              <span class="material-symbols-outlined text-[16px]">file_download</span> Export CSV
+            </button>
+            <button type="button" onclick="exportFindingsGeoJSON()" class="px-3.5 py-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 text-xs font-mono font-bold flex items-center gap-1.5 transition-colors">
+              <span class="material-symbols-outlined text-[16px]">public</span> Export GeoJSON
+            </button>
+          </div>
+        </div>
+
+        <!-- Survey Selector -->
+        <div class="marine-card rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center gap-4">
+          <div class="flex items-center gap-2 text-xs font-mono text-slate-500 shrink-0">
+            <span class="material-symbols-outlined text-teal-500 text-[18px]">travel_explore</span>
+            <span class="font-bold uppercase tracking-wide">Select Survey</span>
+          </div>
+          <select id="results-survey-selector" onchange="onResultsSurveyChange(this.value)"
+            class="flex-1 bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm font-mono focus:outline-none focus:border-teal-500 shadow-sm">
+            <option value="">— Select a survey to view detections —</option>
+          </select>
+        </div>
+
+        <!-- Class Tier Filter Strip -->
+        <div class="marine-card rounded-2xl p-4 flex flex-wrap items-center gap-2" id="results-tier-strip">
+          <button type="button" onclick="filterResultsTier('ALL')" data-tier="ALL"
+            class="results-tier-btn px-3 py-1.5 rounded-lg text-xs font-mono font-bold bg-teal-600 text-white border border-teal-600">
+            All <span class="ml-1 opacity-70" id="tier-count-ALL">–</span>
+          </button>
+          <button type="button" onclick="filterResultsTier('A')" data-tier="A"
+            class="results-tier-btn px-3 py-1.5 rounded-lg text-xs font-mono font-bold bg-white border border-slate-200 text-slate-600 hover:text-slate-900 hover:border-emerald-400">
+            Class A — Auto Verified <span class="ml-1 font-mono" id="tier-count-A">–</span>
+          </button>
+          <button type="button" onclick="filterResultsTier('B')" data-tier="B"
+            class="results-tier-btn px-3 py-1.5 rounded-lg text-xs font-mono font-bold bg-white border border-slate-200 text-slate-600 hover:text-slate-900 hover:border-sky-400">
+            Class B — Verification Required <span class="ml-1 font-mono" id="tier-count-B">–</span>
+          </button>
+          <button type="button" onclick="filterResultsTier('C')" data-tier="C"
+            class="results-tier-btn px-3 py-1.5 rounded-lg text-xs font-mono font-bold bg-white border border-slate-200 text-slate-600 hover:text-slate-900 hover:border-amber-400">
+            Class C — Verification Required <span class="ml-1 font-mono" id="tier-count-C">–</span>
+          </button>
+          <button type="button" onclick="filterResultsTier('unknown')" data-tier="unknown"
+            class="results-tier-btn px-3 py-1.5 rounded-lg text-xs font-mono font-bold bg-white border border-slate-200 text-slate-600 hover:text-slate-900 hover:border-rose-400">
+            Unknown / Review Required <span class="ml-1 font-mono" id="tier-count-unknown">–</span>
+          </button>
+          <span class="ml-auto text-xs font-mono text-slate-400" id="results-count-text"></span>
+        </div>
+
+        <!-- Tier context banner -->
+        <div id="results-tier-banner" class="hidden rounded-xl px-4 py-3 text-xs font-mono border"></div>
+
+        <!-- Results Evidence Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" id="results-cards-container">
+          <div class="col-span-3 p-8 text-center text-slate-400 font-mono text-xs">
+            Select a survey above to view Class A / B / C detection results.
+          </div>
+        </div>
+      </div>
+
+
+      <!-- ===================================================================== -->
+      <!-- VIEW 8: REPORTS (Compiled Formal Survey Output)                       -->
+      <!-- ===================================================================== -->
+      <div id="view-reports" class="view-panel hidden flex flex-col gap-6 max-w-5xl mx-auto">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+          <div class="flex items-center gap-3">
+            <button type="button" onclick="switchView('dashboard')" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-700 hover:border-teal-400 text-xs font-mono font-bold text-slate-300 hover:text-slate-900 transition-all shadow-sm shrink-0">
+              <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+              <span>Back</span>
+            </button>
+            <div>
+              <h2 class="font-headline font-extrabold text-[28px] sm:text-[30px] text-slate-900 tracking-tight leading-tight">Formal Survey Reports</h2>
+              <p class="font-body text-xs text-slate-400 mt-1">Compiled hydrographic briefing and verification report for marine authorities.</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="window.print()" class="px-4 py-2 rounded-xl bg-seafoam text-ocean-navy font-headline font-bold text-xs flex items-center gap-2 shadow-md">
+              <span class="material-symbols-outlined text-[18px]">print</span> Print / Export PDF
+            </button>
+          </div>
+        </div>
+
+        <!-- Dynamic Reports Container -->
+        <div id="reports-content-container" class="space-y-6">
+          <div class="marine-card rounded-2xl p-12 text-center max-w-xl mx-auto space-y-4">
+            <div class="w-16 h-16 rounded-2xl bg-teal-500/10 border border-teal-500/20 text-teal-400 flex items-center justify-center mx-auto">
+              <span class="material-symbols-outlined text-[36px]">description</span>
+            </div>
+            <h3 class="font-headline font-bold text-xl text-slate-900">No Reports Available</h3>
+            <p class="font-body text-xs text-slate-400 max-w-md mx-auto">
+              Formal hydrographic briefing reports are dynamically generated from actual database surveys and acoustic detections. No surveys or detections have been recorded yet.
+            </p>
+            <button type="button" onclick="switchView('new-survey')" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-seafoam text-ocean-navy font-mono text-xs font-bold shadow-md hover:bg-teal-300 transition-all">
+              <span class="material-symbols-outlined text-[16px]">add</span>
+              <span>Create New Survey</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================================================================== -->
+      <!-- VIEW: VERIFICATION QUEUE (Operator Tracking of Findings)              -->
+      <!-- ===================================================================== -->
+      <div id="view-verification-queue" class="view-panel hidden flex flex-col gap-6 max-w-7xl mx-auto">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+          <div class="flex items-center gap-3">
+            <button type="button" onclick="switchView('dashboard')" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 hover:border-teal-400 text-xs font-mono font-bold text-slate-600 hover:text-slate-900 transition-all shadow-sm shrink-0">
+              <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+              <span>Back</span>
+            </button>
+            <div>
+              <h2 class="font-headline font-extrabold text-[28px] sm:text-[30px] text-slate-900 tracking-tight leading-tight">
+                Detection Verification Queue
+              </h2>
+              <p class="font-body text-xs text-slate-400 mt-1">
+                Class B, Class C, and Unknown detections awaiting analyst review. Class A is automatically verified.
+              </p>
+            </div>
+          </div>
+          <button type="button" onclick="loadVerificationQueue()" class="py-2 px-3.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-mono text-xs font-bold flex items-center gap-1.5 transition-all">
+            <span class="material-symbols-outlined text-[16px]">refresh</span>
+            <span>Refresh Queue</span>
+          </button>
+        </div>
+
+        <!-- Survey Selector for Queue -->
+        <div class="marine-card rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center gap-4">
+          <div class="flex items-center gap-2 text-xs font-mono text-slate-500 shrink-0">
+            <span class="material-symbols-outlined text-amber-500 text-[18px]">travel_explore</span>
+            <span class="font-bold uppercase tracking-wide">Select Survey</span>
+          </div>
+          <select id="queue-survey-selector" onchange="onQueueSurveyChange(this.value)"
+            class="flex-1 bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm font-mono focus:outline-none focus:border-amber-500 shadow-sm">
+            <option value="">— Select a survey to inspect its verification queue —</option>
+          </select>
+        </div>
+
+        <!-- Queue Summary: B / C / Unknown counts -->
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-4" id="queue-tier-summary">
+          <div class="marine-card rounded-2xl p-4 flex items-center gap-4 border-t-4 border-t-emerald-400">
+            <div class="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600">
+              <span class="material-symbols-outlined text-[20px]">check_circle</span>
+            </div>
+            <div>
+              <span class="text-[11px] font-mono text-slate-400 uppercase block">Class A — Auto Verified</span>
+              <p class="text-xl font-bold font-mono text-emerald-600" id="q-count-A">–</p>
+            </div>
+          </div>
+          <div class="marine-card rounded-2xl p-4 flex items-center gap-4 border-t-4 border-t-sky-400">
+            <div class="w-10 h-10 rounded-xl bg-sky-50 border border-sky-200 flex items-center justify-center text-sky-600">
+              <span class="material-symbols-outlined text-[20px]">manage_search</span>
+            </div>
+            <div>
+              <span class="text-[11px] font-mono text-slate-400 uppercase block">Class B — Requires Verification</span>
+              <p class="text-xl font-bold font-mono text-sky-600" id="q-count-B">–</p>
+            </div>
+          </div>
+          <div class="marine-card rounded-2xl p-4 flex items-center gap-4 border-t-4 border-t-amber-400">
+            <div class="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600">
+              <span class="material-symbols-outlined text-[20px]">hourglass_top</span>
+            </div>
+            <div>
+              <span class="text-[11px] font-mono text-slate-400 uppercase block">Class C — Requires Verification</span>
+              <p class="text-xl font-bold font-mono text-amber-600" id="q-count-C">–</p>
+            </div>
+          </div>
+          <div class="marine-card rounded-2xl p-4 flex items-center gap-4 border-t-4 border-t-rose-400">
+            <div class="w-10 h-10 rounded-xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-600">
+              <span class="material-symbols-outlined text-[20px]">help</span>
+            </div>
+            <div>
+              <span class="text-[11px] font-mono text-slate-400 uppercase block">Unknown / Review Required</span>
+              <p class="text-xl font-bold font-mono text-rose-600" id="q-count-unknown">–</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Class A info note -->
+        <div class="rounded-xl px-4 py-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-mono flex items-start gap-2">
+          <span class="material-symbols-outlined text-emerald-500 text-[16px] mt-0.5 shrink-0">info</span>
+          <span><strong>Class A detections are automatically verified by TARANG</strong> based on multi-factor evidence. They do not appear in the manual verification queue. The counts above are for reference only.</span>
+        </div>
+
+        <!-- Tier filter tabs for queue -->
+        <div class="flex flex-wrap items-center gap-2">
+          <button onclick="filterQueueTier('BC_unknown')" data-qtier="BC_unknown"
+            class="queue-tier-btn px-3 py-1.5 rounded-lg text-xs font-mono font-bold bg-amber-600 text-white border border-amber-600">
+            All Pending
+          </button>
+          <button onclick="filterQueueTier('B')" data-qtier="B"
+            class="queue-tier-btn px-3 py-1.5 rounded-lg text-xs font-mono font-bold bg-white border border-slate-200 text-slate-600 hover:text-slate-900 hover:border-sky-400">
+            Class B Only
+          </button>
+          <button onclick="filterQueueTier('C')" data-qtier="C"
+            class="queue-tier-btn px-3 py-1.5 rounded-lg text-xs font-mono font-bold bg-white border border-slate-200 text-slate-600 hover:text-slate-900 hover:border-amber-400">
+            Class C Only
+          </button>
+          <button onclick="filterQueueTier('unknown')" data-qtier="unknown"
+            class="queue-tier-btn px-3 py-1.5 rounded-lg text-xs font-mono font-bold bg-white border border-slate-200 text-slate-600 hover:text-slate-900 hover:border-rose-400">
+            Unknown / Review Required
+          </button>
+        </div>
+
+        <!-- Queue detection table -->
+        <div class="marine-card rounded-2xl overflow-hidden">
+          <div class="p-4 bg-slate-50 border-b border-slate-200 flex items-center gap-2">
+            <span class="material-symbols-outlined text-amber-500 text-[20px]">fact_check</span>
+            <h3 class="font-headline font-bold text-sm text-slate-900">Detections Awaiting Review</h3>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs font-mono border-collapse">
+              <thead class="bg-slate-50 border-b border-slate-200 text-slate-400 uppercase text-[10px]">
+                <tr>
+                  <th class="py-3 px-3">Evidence</th>
+                  <th class="py-3 px-3">Target ID</th>
+                  <th class="py-3 px-3">Candidate</th>
+                  <th class="py-3 px-3">Class</th>
+                  <th class="py-3 px-3">Confidence</th>
+                  <th class="py-3 px-3">Coordinates</th>
+                  <th class="py-3 px-3">Verification Status</th>
+                  <th class="py-3 px-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="op-queue-tbody">
+                <tr><td colspan="8" class="p-8 text-center text-slate-400">Select a survey to load the verification queue.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+
+
+      <!-- ===================================================================== -->
+      <!-- VIEW 9: NOTIFICATIONS                                                 -->
+      <!-- ===================================================================== -->
+      <div id="view-notifications" class="view-panel hidden flex flex-col gap-6 max-w-4xl mx-auto">
+        <div class="flex items-center justify-between border-b border-slate-200 pb-4">
+          <div class="flex items-center gap-3">
+            <button type="button" onclick="switchView('dashboard')" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-700 hover:border-teal-400 text-xs font-mono font-bold text-slate-300 hover:text-slate-900 transition-all shadow-sm shrink-0">
+              <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+              <span>Back</span>
+            </button>
+            <div>
+              <h2 class="font-headline font-extrabold text-[28px] sm:text-[30px] text-slate-900 tracking-tight leading-tight">Operational Notifications</h2>
+              <p class="font-body text-xs text-slate-400 mt-1">Meaningful alerts on weather warnings, processing results, and analyst verifications.</p>
+            </div>
+          </div>
+          <button type="button" onclick="markAllNotificationsRead()" class="text-xs font-mono text-teal-400 hover:underline">
+            Mark all as read
+          </button>
+        </div>
+
+        <div class="space-y-3" id="notifications-list-container">
+          <!-- Populated dynamically via JS from /api/v1/notifications -->
+        </div>
+      </div>
+
+      <!-- ===================================================================== -->
+      <!-- VIEW 10: DOCUMENTS                                                    -->
+      <!-- ===================================================================== -->
+      <div id="view-documents" class="view-panel hidden flex flex-col gap-6 max-w-5xl mx-auto">
+        <div class="flex items-center justify-between border-b border-slate-200 pb-4">
+          <div class="flex items-center gap-3">
+            <button type="button" onclick="switchView('dashboard')" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-700 hover:border-teal-400 text-xs font-mono font-bold text-slate-300 hover:text-slate-900 transition-all shadow-sm shrink-0">
+              <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+              <span>Back</span>
+            </button>
+            <div>
+              <h2 class="font-headline font-extrabold text-[28px] sm:text-[30px] text-slate-900 tracking-tight leading-tight">Survey Documents &amp; Exports</h2>
+              <p class="font-body text-xs text-slate-400 mt-1">Raw sonar binaries, processed outputs, GeoJSON GIS layers, and formal survey dossiers.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="marine-card rounded-2xl p-4 overflow-x-auto">
+          <table class="w-full text-left text-xs font-mono">
+            <thead class="bg-slate-50 text-slate-400 border-b border-slate-200 uppercase tracking-wider text-[11px]">
+              <tr>
+                <th class="p-3.5">Document Name</th>
+                <th class="p-3.5">Format Type</th>
+                <th class="p-3.5">Associated Survey</th>
+                <th class="p-3.5">File Size</th>
+                <th class="p-3.5 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="documents-table-body" class="divide-y divide-slate-800/60">
+              <!-- Populated dynamically via JS from /api/v1/documents -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ===================================================================== -->
+      <!-- VIEW 11: SETTINGS                                                     -->
+      <!-- ===================================================================== -->
+      <div id="view-settings" class="view-panel hidden flex flex-col gap-6 max-w-4xl mx-auto">
+        <div class="flex items-center justify-between border-b border-slate-200 pb-4">
+          <div class="flex items-center gap-3">
+            <button type="button" onclick="switchView('dashboard')" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-700 hover:border-teal-400 text-xs font-mono font-bold text-slate-300 hover:text-slate-900 transition-all shadow-sm shrink-0">
+              <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+              <span>Back</span>
+            </button>
+            <div>
+              <h2 class="font-headline font-extrabold text-[28px] sm:text-[30px] text-slate-900 tracking-tight leading-tight">Operator Workspace Settings</h2>
+              <p class="font-body text-xs text-slate-400 mt-1">Configure operator profile, regional units, connectivity synchronization, and system parameters.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 26. SETTINGS SECTIONS -->
+        <div class="space-y-5">
+          <!-- Account Section -->
+          <div class="marine-card rounded-2xl p-6">
+            <h4 class="font-headline font-bold text-sm text-slate-900 mb-4 flex items-center gap-2">
+              <span class="material-symbols-outlined text-teal-400 text-[18px]">person</span>
+              Account Information
+            </h4>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono">
+              <div>
+                <span class="text-slate-400 block text-[11px] mb-1">Full Name</span>
+                <input type="text" id="settings-name" class="w-full bg-slate-50 border border-slate-700 rounded-xl px-3 py-2 text-slate-900 font-body" value="Cmdr. Rajesh Verma" />
+              </div>
+              <div>
+                <span class="text-slate-400 block text-[11px] mb-1">Institution ID</span>
+                <input type="text" id="settings-id" class="w-full bg-[#020e1d] border border-slate-200 rounded-xl px-3 py-2 text-teal-300 font-mono" value="INCOIS-OP-409" readonly />
+              </div>
+              <div>
+                <span class="text-slate-400 block text-[11px] mb-1">Assigned Role</span>
+                <input type="text" class="w-full bg-[#020e1d] border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-mono" value="Survey Operator" readonly />
+              </div>
+              <div>
+                <span class="text-slate-400 block text-[11px] mb-1">Organization</span>
+                <input type="text" class="w-full bg-slate-50 border border-slate-700 rounded-xl px-3 py-2 text-slate-900 font-body" value="National Maritime Intelligence Command" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Survey Preferences -->
+          <div class="marine-card rounded-2xl p-6">
+            <h4 class="font-headline font-bold text-sm text-slate-900 mb-4 flex items-center gap-2">
+              <span class="material-symbols-outlined text-sky-400 text-[18px]">tune</span>
+              Survey &amp; Map Preferences
+            </h4>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono">
+              <div>
+                <span class="text-slate-400 block text-[11px] mb-1">Default Region</span>
+                <select class="w-full bg-slate-50 border border-slate-700 rounded-xl px-3 py-2 text-slate-900">
+                  <option>Madagascar Island / Indian Ocean</option>
+                  <option>Bay of Bengal</option>
+                  <option>Arabian Sea</option>
+                </select>
+              </div>
+              <div>
+                <span class="text-slate-400 block text-[11px] mb-1">Measurement Units</span>
+                <select class="w-full bg-slate-50 border border-slate-700 rounded-xl px-3 py-2 text-slate-900">
+                  <option>Metric &amp; Nautical (Meters, Knots, NM)</option>
+                  <option>Metric Pure (Meters, km/h)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Connectivity & Sync -->
+          <div class="marine-card rounded-2xl p-6">
+            <h4 class="font-headline font-bold text-sm text-slate-900 mb-4 flex items-center gap-2">
+              <span class="material-symbols-outlined text-emerald-400 text-[18px]">sync</span>
+              Connectivity &amp; Offline Sync
+            </h4>
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs font-mono">
+              <div>
+                <p class="text-slate-900 font-bold">Local Datastore Status</p>
+                <p class="text-slate-400">All survey points cached locally. Sync triggers automatically on network reconnect.</p>
+                <span class="text-[10px] text-teal-400 mt-1 block" id="last-sync-time">Last synchronized: Today 15:45</span>
+              </div>
+              <button type="button" onclick="triggerManualSync()" class="px-4 py-2 rounded-xl bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 border border-teal-500/40 font-bold transition-colors">
+                Synchronize Now
+              </button>
+            </div>
+          </div>
+
+          <!-- System Info -->
+          <div class="marine-card rounded-2xl p-6 text-xs font-mono space-y-2">
+            <h4 class="font-headline font-bold text-sm text-slate-900 mb-2">System Parameters</h4>
+            <div class="flex justify-between border-b border-slate-200 pb-2">
+              <span class="text-slate-400">Application Core:</span>
+              <span class="text-slate-900 font-bold">TARANG Maritime AI Platform</span>
+            </div>
+            <div class="flex justify-between border-b border-slate-200 pb-2">
+              <span class="text-slate-400">AI Detection Engine:</span>
+              <span class="text-teal-300 font-bold">Active TARANG AI Detection Engine</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-400">Database Engine:</span>
+              <span class="text-sky-300 font-bold">SQLite 3 (tarang.db) — 7 Tables Verified</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Toast Notification System -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 transform transition-all duration-300 translate-y-12 opacity-0 pointer-events-none marine-panel rounded-xl px-4 py-3 border border-teal-500/30 text-xs font-mono flex items-center gap-2.5 shadow-2xl">
+    <span class="material-symbols-outlined text-[18px] text-teal-400" id="toast-icon">check_circle</span>
+    <span class="text-slate-900 font-medium" id="toast-msg">Notification</span>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- APPLICATION SCRIPTS & WORKFLOW LOGIC                                      -->
+  <!-- ========================================================================= -->
+  <script>
+    let currentSurvey = null;
+    let allSurveys = [];
+    let allDetections = [];
+    let activeTarangMap = null;
+
+    // =========================================================================
+    // 1. NAVIGATION & VIEW SWITCHING
+    // =========================================================================
+    function switchView(viewKey) {
+      const navButtons = document.querySelectorAll('.nav-btn');
+      navButtons.forEach(btn => {
+        if (btn.getAttribute('data-view') === viewKey) {
+          btn.className = "nav-btn flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-mono font-bold tracking-wide transition-all bg-teal-600 text-white shadow-sm";
+        } else {
+          btn.className = "nav-btn flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-mono font-medium tracking-wide transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-100";
+        }
+      });
+
+      const panels = document.querySelectorAll('.view-panel');
+      panels.forEach(p => p.classList.add('hidden'));
+
+      const targetPanel = document.getElementById(`view-${viewKey}`);
+      if (targetPanel) {
+        targetPanel.classList.remove('hidden');
+      }
+
+      const sidebar = document.getElementById('portal-sidebar');
+      if (sidebar) {
+        sidebar.classList.add('-translate-x-full');
+      }
+
+      // View Initializers
+      if (viewKey === 'active-mission') {
+        init3DDroneSimulation();
+        initActiveMissionMap();
+      } else if (viewKey === 'surveys') {
+        loadSurveys();
+      } else if (viewKey === 'results') {
+        loadResults();
+      } else if (viewKey === 'verification-queue') {
+        loadVerificationQueue();
+      } else if (viewKey === 'notifications') {
+        loadNotifications();
+      } else if (viewKey === 'documents') {
+        loadDocuments();
+      } else if (viewKey === 'reports') {
+        loadReportsView();
+      } else if (viewKey === 'new-survey') {
+        regenerateSurveyId();
+      }
+    }
+
+    function toggleSidebar() {
+      const sidebar = document.getElementById('portal-sidebar');
+      if (sidebar) sidebar.classList.toggle('-translate-x-full');
+    }
+
+    function toggleAccountMenu() {
+      const menu = document.getElementById('account-menu');
+      if (menu) menu.classList.toggle('hidden');
+    }
+
+    function showToast(msg, icon='check_circle') {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toast-msg');
+      const toastIcon = document.getElementById('toast-icon');
+      if (!toast) return;
+      toastMsg.textContent = msg;
+      toastIcon.textContent = icon;
+      toast.classList.remove('translate-y-12', 'opacity-0', 'pointer-events-none');
+      setTimeout(() => {
+        toast.classList.add('translate-y-12', 'opacity-0', 'pointer-events-none');
+      }, 3500);
+    }
+
+    // =========================================================================
+    // 2. THREE.JS 3D DRONE SURVEY PLATFORM SIMULATION (drone.glb)
+    // =========================================================================
+    let threeScene, threeCamera, threeRenderer, threeDrone, threeControls;
+    let is3DInitialized = false;
+    let simRunning = false;
+    let simStep = 0;
+    let simTimer = null;
+
+    const SURVEY_WAYPOINTS = [
+      { lat: 13.0827, lon: 80.2707, heading: 45, depth: 34.2, alt: 8.4, dist: 0.0, speed: 3.4 },
+      { lat: 13.0855, lon: 80.2735, heading: 45, depth: 35.1, alt: 8.2, dist: 0.42, speed: 3.5 },
+      { lat: 13.0880, lon: 80.2760, heading: 90, depth: 36.4, alt: 8.0, dist: 0.86, speed: 3.2 },
+      { lat: 13.0882, lon: 80.2800, heading: 135, depth: 37.0, alt: 7.9, dist: 1.30, speed: 3.4 },
+      { lat: 13.0850, lon: 80.2830, heading: 180, depth: 38.2, alt: 8.1, dist: 1.75, speed: 3.3 },
+      { lat: 13.0815, lon: 80.2832, heading: 225, depth: 39.0, alt: 8.3, dist: 2.20, speed: 3.5 },
+      { lat: 13.0780, lon: 80.2800, heading: 270, depth: 38.5, alt: 8.5, dist: 2.65, speed: 3.4 },
+      { lat: 13.0782, lon: 80.2750, heading: 315, depth: 37.1, alt: 8.2, dist: 3.10, speed: 3.3 },
+      { lat: 13.0820, lon: 80.2715, heading: 0, depth: 35.8, alt: 8.0, dist: 3.55, speed: 3.4 },
+      { lat: 13.0860, lon: 80.2718, heading: 45, depth: 36.2, alt: 8.1, dist: 4.00, speed: 3.5 },
+      { lat: 13.0890, lon: 80.2750, heading: 90, depth: 37.5, alt: 8.0, dist: 4.45, speed: 3.4 },
+      { lat: 13.0892, lon: 80.2820, heading: 120, depth: 38.0, alt: 8.2, dist: 5.00, speed: 3.4 }
+    ];
+
+    function init3DDroneSimulation() {
+      const container = document.getElementById('drone-3d-viewport');
+      if (!container || is3DInitialized) return;
+
+      const width = container.clientWidth || 700;
+      const height = container.clientHeight || 380;
+
+      // 1. Scene & Underwater Atmospheric Fog
+      threeScene = new THREE.Scene();
+      threeScene.background = new THREE.Color(0x071e3d);
+      threeScene.fog = new THREE.FogExp2(0x071e3d, 0.035);
+
+      // 2. Camera
+      threeCamera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+      threeCamera.position.set(0, 4, 8);
+
+      // 3. Renderer
+      threeRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      threeRenderer.setSize(width, height);
+      threeRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      threeRenderer.shadowMap.enabled = true;
+      container.appendChild(threeRenderer.domElement);
+
+      // 4. OrbitControls
+      if (typeof THREE.OrbitControls !== 'undefined') {
+        threeControls = new THREE.OrbitControls(threeCamera, threeRenderer.domElement);
+        threeControls.enableDamping = true;
+        threeControls.dampingFactor = 0.05;
+        threeControls.maxPolarAngle = Math.PI / 2 - 0.05;
+      }
+
+      // 5. Lighting
+      const ambientLight = new THREE.AmbientLight(0x14b8a6, 0.9);
+      threeScene.add(ambientLight);
+
+      const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+      dirLight.position.set(5, 12, 7);
+      threeScene.add(dirLight);
+
+      const waterLight = new THREE.PointLight(0x38bdf8, 1.5, 30);
+      waterLight.position.set(0, 6, 0);
+      threeScene.add(waterLight);
+
+      // 6. Seabed Terrain (Textured/Wireframe plane)
+      const seabedGeo = new THREE.PlaneGeometry(60, 60, 40, 40);
+      const pos = seabedGeo.attributes.position;
+      for (let i = 0; i < pos.count; i++) {
+        const vx = pos.getX(i);
+        const vy = pos.getY(i);
+        pos.setZ(i, Math.sin(vx * 0.3) * Math.cos(vy * 0.3) * 0.6);
+      }
+      seabedGeo.computeVertexNormals();
+
+      const seabedMat = new THREE.MeshStandardMaterial({
+        color: 0x03254c,
+        roughness: 0.85,
+        wireframe: false,
+        flatShading: true
+      });
+      const seabed = new THREE.Mesh(seabedGeo, seabedMat);
+      seabed.rotation.x = -Math.PI / 2;
+      seabed.position.y = -2;
+      threeScene.add(seabed);
+
+      // 7. Ambient Particle Marine Dust / Bubbles
+      const particleGeo = new THREE.BufferGeometry();
+      const particleCount = 150;
+      const pPositions = new Float32Array(particleCount * 3);
+      for (let i = 0; i < particleCount * 3; i += 3) {
+        pPositions[i] = (Math.random() - 0.5) * 30;
+        pPositions[i + 1] = Math.random() * 8 - 2;
+        pPositions[i + 2] = (Math.random() - 0.5) * 30;
+      }
+      particleGeo.setAttribute('position', new THREE.BufferAttribute(pPositions, 3));
+      const particleMat = new THREE.PointsMaterial({
+        color: 0x5eead4,
+        size: 0.12,
+        transparent: true,
+        opacity: 0.6
+      });
+      const particles = new THREE.Points(particleGeo, particleMat);
+      threeScene.add(particles);
+
+      // 8. Load Real drone.glb Model
+      const spinner = document.getElementById('drone-loader-spinner');
+      const loader = new THREE.GLTFLoader();
+
+      loader.load(
+        'static/models/drone.glb',
+        (gltf) => {
+          threeDrone = gltf.scene;
+          threeDrone.scale.set(0.8, 0.8, 0.8);
+          threeDrone.position.set(0, 0.5, 0);
+          threeScene.add(threeDrone);
+          if (spinner) spinner.classList.add('hidden');
+          console.log("Successfully loaded local static/models/drone.glb into 3D scene!");
+        },
+        undefined,
+        (err) => {
+          console.warn("GLTFLoader fallback for static/models/drone.glb:", err);
+          // Procedural AUV Fallback geometry so simulation is 100% rock-solid
+          const auvGroup = new THREE.Group();
+          const bodyGeo = new THREE.CylinderGeometry(0.4, 0.4, 2.5, 16);
+          const bodyMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.5, roughness: 0.3 });
+          const body = new THREE.Mesh(bodyGeo, bodyMat);
+          body.rotation.z = Math.PI / 2;
+          auvGroup.add(body);
+
+          const noseGeo = new THREE.SphereGeometry(0.4, 16, 16);
+          const noseMat = new THREE.MeshStandardMaterial({ color: 0x0d9488 });
+          const nose = new THREE.Mesh(noseGeo, noseMat);
+          nose.position.x = 1.25;
+          auvGroup.add(nose);
+
+          const finGeo = new THREE.BoxGeometry(0.1, 0.8, 0.6);
+          const finMat = new THREE.MeshStandardMaterial({ color: 0x0f172a });
+          const fin = new THREE.Mesh(finGeo, finMat);
+          fin.position.x = -1.0;
+          auvGroup.add(fin);
+
+          threeDrone = auvGroup;
+          threeDrone.position.set(0, 0.5, 0);
+          threeScene.add(threeDrone);
+          if (spinner) spinner.classList.add('hidden');
+        }
+      );
+
+      // Render Loop
+      function animate() {
+        requestAnimationFrame(animate);
+        if (threeControls) threeControls.update();
+
+        // Subtle idle bobbing & propeller spin
+        if (threeDrone) {
+          if (simRunning) {
+            threeDrone.position.y = 0.5 + Math.sin(Date.now() * 0.003) * 0.15;
+            threeDrone.rotation.y += 0.005;
+          } else {
+            threeDrone.position.y = 0.5 + Math.sin(Date.now() * 0.001) * 0.05;
+          }
+        }
+
+        // Drift particles
+        const pPos = particles.geometry.attributes.position.array;
+        for (let i = 1; i < particleCount * 3; i += 3) {
+          pPos[i] += 0.01;
+          if (pPos[i] > 6) pPos[i] = -2;
+        }
+        particles.geometry.attributes.position.needsUpdate = true;
+
+        threeRenderer.render(threeScene, threeCamera);
+      }
+      animate();
+
+      window.addEventListener('resize', () => {
+        if (!container || !threeRenderer || !threeCamera) return;
+        const w = container.clientWidth;
+        const h = container.clientHeight;
+        threeCamera.aspect = w / h;
+        threeCamera.updateProjectionMatrix();
+        threeRenderer.setSize(w, h);
+      });
+
+      is3DInitialized = true;
+    }
+
+    function startSurveySimulation() {
+      simRunning = true;
+      document.getElementById('sim-status-pill').textContent = 'SURVEY ACTIVE';
+      document.getElementById('sim-status-pill').className = 'px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-teal-100 text-teal-800 border border-teal-200';
+      document.getElementById('telemetry-state').textContent = 'SURVEY IN PROGRESS';
+
+      document.getElementById('btn-start-survey').classList.add('opacity-50', 'pointer-events-none');
+      document.getElementById('btn-stop-survey').classList.remove('opacity-50', 'pointer-events-none');
+
+      if (simTimer) clearInterval(simTimer);
+
+      simTimer = setInterval(() => {
+        if (!simRunning) return;
+
+        simStep = (simStep + 1) % SURVEY_WAYPOINTS.length;
+        const wp = SURVEY_WAYPOINTS[simStep];
+
+        // Update Telemetry Panel
+        document.getElementById('telemetry-lat').textContent = `${wp.lat.toFixed(4)}°N`;
+        document.getElementById('telemetry-lon').textContent = `${wp.lon.toFixed(4)}°E`;
+        document.getElementById('telemetry-heading').textContent = `${String(wp.heading).padStart(3, '0')}°`;
+        document.getElementById('telemetry-speed').textContent = `${wp.speed.toFixed(1)} knots`;
+        document.getElementById('telemetry-altitude').textContent = `${wp.alt.toFixed(1)} m`;
+        document.getElementById('telemetry-depth').textContent = `${wp.depth.toFixed(1)} m`;
+        document.getElementById('telemetry-distance').textContent = `${wp.dist.toFixed(2)} km`;
+        document.getElementById('telemetry-coverage').textContent = `${(wp.dist * 0.22).toFixed(2)} km²`;
+
+        const pct = Math.round(((simStep + 1) / SURVEY_WAYPOINTS.length) * 100);
+        document.getElementById('telemetry-progress-pct').textContent = `${pct}%`;
+        document.getElementById('telemetry-progress-bar').style.width = `${pct}%`;
+        document.getElementById('sim-waypoint-counter').textContent = `Waypoint: ${simStep + 1} / ${SURVEY_WAYPOINTS.length}`;
+
+        // Synchronize with Leaflet Map
+        if (activeTarangMap) {
+          activeTarangMap.setPlatformPosition(wp.lat, wp.lon, wp.heading);
+        }
+
+        if (simStep === SURVEY_WAYPOINTS.length - 1) {
+          stopSurveySimulation();
+          showToast("Survey pattern completed. Telemetry archived.", "task_alt");
+        }
+      }, 1500);
+
+      showToast("Autonomous survey activated: drone.glb navigating sector.", "navigation");
+    }
+
+    function stopSurveySimulation() {
+      simRunning = false;
+      if (simTimer) clearInterval(simTimer);
+      document.getElementById('sim-status-pill').textContent = 'SURVEY PAUSED';
+      document.getElementById('sim-status-pill').className = 'px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-100 text-amber-800 border border-amber-200';
+      document.getElementById('telemetry-state').textContent = 'SURVEY PAUSED';
+
+      document.getElementById('btn-start-survey').classList.remove('opacity-50', 'pointer-events-none');
+      document.getElementById('btn-stop-survey').classList.add('opacity-50', 'pointer-events-none');
+      showToast("Survey simulation paused. Telemetry frozen.", "pause");
+    }
+
+    function resetSurveySimulation() {
+      stopSurveySimulation();
+      simStep = 0;
+      const wp = SURVEY_WAYPOINTS[0];
+      document.getElementById('telemetry-lat').textContent = `${wp.lat.toFixed(4)}°N`;
+      document.getElementById('telemetry-lon').textContent = `${wp.lon.toFixed(4)}°E`;
+      document.getElementById('telemetry-heading').textContent = `${String(wp.heading).padStart(3, '0')}°`;
+      document.getElementById('telemetry-speed').textContent = '0.0 knots';
+      document.getElementById('telemetry-distance').textContent = '0.00 km';
+      document.getElementById('telemetry-coverage').textContent = '0.00 km²';
+      document.getElementById('telemetry-progress-pct').textContent = '0%';
+      document.getElementById('telemetry-progress-bar').style.width = '0%';
+      document.getElementById('sim-status-pill').textContent = 'STANDBY';
+      document.getElementById('sim-status-pill').className = 'px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-100 text-slate-600 border border-slate-200';
+      document.getElementById('telemetry-state').textContent = 'STANDBY';
+      document.getElementById('sim-waypoint-counter').textContent = 'Waypoint: 0 / 12';
+
+      if (activeTarangMap) {
+        activeTarangMap.setPlatformPosition(wp.lat, wp.lon, wp.heading);
+      }
+      showToast("Survey reset to waypoint 0.");
+    }
+
+    // =========================================================================
+    // 3. MAP INTEGRATION (TarangMap)
+    // =========================================================================
+    function initActiveMissionMap() {
+      if (!activeTarangMap) {
+        activeTarangMap = new TarangMap('active-mission-map', {
+          center: [13.0827, 80.2707],
+          zoom: 13
+        });
+      }
+
+      // Draw survey track
+      const trackCoords = SURVEY_WAYPOINTS.map(wp => [wp.lat, wp.lon]);
+      activeTarangMap.setTrack(trackCoords);
+      activeTarangMap.setPlatformPosition(SURVEY_WAYPOINTS[0].lat, SURVEY_WAYPOINTS[0].lon);
+
+      // Load any recorded detections and clusters from backend
+      fetch('/api/v1/surveys/all/detections')
+        .then(r => r.json())
+        .then(dets => {
+          if (dets && dets.length > 0) {
+            activeTarangMap.setDetections(dets);
+          }
+        }).catch(() => {});
+
+      fetch('/api/v1/clusters')
+        .then(r => r.json())
+        .then(clusters => {
+          if (clusters && clusters.clusters && clusters.clusters.length > 0) {
+            activeTarangMap.setClusters(clusters);
+          }
+        }).catch(() => {});
+    }
+
+    // =========================================================================
+    // 4. SURVEY DATA INITIALIZATION & SUBMISSIONS
+    // =========================================================================
+    function regenerateSurveyId() {
+      const el = document.getElementById('input-survey-id');
+      if (el) {
+        const rand = Math.floor(1000 + Math.random() * 9000);
+        el.value = `TRG-2026-SRV-${rand}`;
+      }
+    }
+
+    // Survey Form Submit
+    const sForm = document.getElementById('new-survey-form');
+    if (sForm) {
+      sForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const surveyName = document.getElementById('input-survey-name').value;
+        const surveyId = document.getElementById('input-survey-id').value;
+        const region = document.getElementById('input-survey-region').value;
+        const specificArea = document.getElementById('input-survey-area').value;
+        const platform = document.querySelector('input[name="platform-choice"]:checked')?.value || 'AUV';
+
+        try {
+          const response = await fetch('/api/v1/surveys', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              survey_id: surveyId,
+              survey_name: surveyName,
+              region: region,
+              specific_area: specificArea,
+              platform: platform
+            })
+          });
+
+          if (response.ok) {
+            showToast(`Survey ${surveyId} registered. Proceeding to Upload.`);
+            document.getElementById('upload-survey-context').textContent = `SURVEY: ${surveyId}`;
+            currentSurvey = { survey_id: surveyId, survey_name: surveyName, region: region, specific_area: specificArea, platform: platform };
+            switchView('data-input');
+          } else {
+            showToast("Failed to create survey record on server.", "error");
+          }
+        } catch (err) {
+          showToast("Local survey initialized.", "info");
+          switchView('data-input');
+        }
+      });
+    }
+
+    // Survey File Upload Handler (XTF & TXT & Images)
+    async function handleSurveyFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const progressBox = document.getElementById('upload-progress-box');
+      const progressBar = document.getElementById('upload-progress-bar');
+      const progressPct = document.getElementById('upload-pct');
+      const progressName = document.getElementById('upload-filename');
+      const progressStatus = document.getElementById('upload-status-text');
+
+      if (progressBox) progressBox.classList.remove('hidden');
+      if (progressName) progressName.textContent = file.name;
+      if (progressBar) progressBar.style.width = '30%';
+      if (progressPct) progressPct.textContent = '30%';
+      if (progressStatus) progressStatus.textContent = 'Uploading to TARANG backend...';
+
+      const formData = new FormData();
+      formData.append('file', file);
+      if (currentSurvey && currentSurvey.survey_id) {
+        formData.append('survey_id', currentSurvey.survey_id);
+      }
+
+      const isTxt = file.name.toLowerCase().endsWith('.txt');
+      const endpoint = isTxt ? '/api/v1/txt/upload' : '/api/v1/xtf/upload';
+
+      try {
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          body: formData
+        });
+
+        if (progressBar) progressBar.style.width = '100%';
+        if (progressPct) progressPct.textContent = '100%';
+
+        if (res.ok) {
+          const data = await res.json();
+          if (progressStatus) progressStatus.textContent = 'Upload & Parsing Complete!';
+          showToast(isTxt ? "TXT Metadata parsed & archived." : "Sonar survey ingested & inference complete!", "check_circle");
+          setTimeout(() => {
+            switchView('results');
+          }, 1200);
+        } else {
+          const err = await res.json().catch(() => ({}));
+          if (progressStatus) progressStatus.textContent = `Upload error: ${err.error || 'Server rejected file'}`;
+          showToast(err.error || "File processing error", "error");
+        }
+      } catch (e) {
+        console.error("Upload error:", e);
+        if (progressStatus) progressStatus.textContent = "Network error during upload.";
+        showToast("Upload failed. Verify backend server.", "error");
+      }
+    }
+
+    // =========================================================================
+    // 5. EXISTING SURVEYS ARCHIVE
+    // =========================================================================
+    async function loadSurveys() {
+      const tbody = document.getElementById('surveys-table-body');
+      if (!tbody) return;
+      tbody.innerHTML = '<tr><td colspan="8" class="p-8 text-center text-slate-400 font-mono text-xs">Loading survey catalog from database...</td></tr>';
+
+      try {
+        const res = await fetch('/api/v1/surveys');
+        if (res.ok) {
+          allSurveys = await res.json();
+          renderSurveysTable(allSurveys);
+          const dashCount = document.getElementById('dash-existing-count');
+          if (dashCount) dashCount.textContent = `${allSurveys.length} ARCHIVES`;
+          return;
+        }
+      } catch (e) {
+        console.error("Error loading surveys:", e);
+      }
+
+      tbody.innerHTML = '<tr><td colspan="8" class="p-8 text-center text-slate-400 font-mono text-xs">No surveys created yet.</td></tr>';
+    }
+
+    function renderSurveysTable(surveys) {
+      const tbody = document.getElementById('surveys-table-body');
+      if (!tbody) return;
+
+      if (!surveys || surveys.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="p-8 text-center text-slate-400 font-mono text-xs">No surveys created yet.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = surveys.map(s => {
+        const sId = s.survey_id;
+        const sName = s.survey_name || 'Hydrographic Survey';
+        const region = s.region || s.location_name || 'Offshore Sector';
+        const area = s.specific_area || 'Sector 1';
+        const dateStr = (s.created_at || s.survey_date || '').substring(0, 10);
+        const platform = s.platform || 'AUV';
+        const status = s.status || 'ACTIVE';
+
+        return `
+          <tr class="hover:bg-slate-50 transition-colors cursor-pointer border-b border-slate-100" onclick="openSurveyDetails('${sId}')">
+            <td class="p-4 font-bold text-slate-900 flex items-center gap-2">
+              <span class="material-symbols-outlined text-teal-600 text-[18px]">travel_explore</span>
+              <span>${sName}</span>
+            </td>
+            <td class="p-4 text-teal-700 font-mono font-bold">${sId}</td>
+            <td class="p-4 text-slate-600">${region}</td>
+            <td class="p-4 text-slate-500 font-mono">${area}</td>
+            <td class="p-4 text-slate-500 font-mono">${dateStr}</td>
+            <td class="p-4 text-sky-700 font-mono font-bold">${platform}</td>
+            <td class="p-4">
+              <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-teal-50 text-teal-700 border border-teal-200">
+                ${status}
+              </span>
+            </td>
+            <td class="p-4 text-right">
+              <button type="button" class="text-xs text-teal-600 hover:underline font-mono font-bold">Details &rarr;</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function openSurveyDetails(surveyId) {
+      const s = allSurveys.find(item => item.survey_id === surveyId);
+      if (!s) return;
+
+      currentSurvey = s;
+      document.getElementById('detail-survey-name').textContent = s.survey_name || 'Survey Detail';
+      document.getElementById('detail-survey-id').textContent = `ID: ${s.survey_id}`;
+      document.getElementById('detail-region').textContent = s.region || s.location_name || 'N/A';
+      document.getElementById('detail-specific-area').textContent = s.specific_area || 'Sector 1';
+      document.getElementById('detail-platform').textContent = s.platform || 'N/A';
+      document.getElementById('detail-created-at').textContent = (s.created_at || '').substring(0, 10) || 'N/A';
+      document.getElementById('detail-status').textContent = s.status || 'ACTIVE';
+      document.getElementById('detail-det-count').textContent = `${s.detection_count || 0} Targets`;
+
+      switchView('survey-details');
+    }
+
+    // =========================================================================
+    // 6. RESULTS VIEW — Survey-scoped, Class A/B/C tier-filtered
+    // =========================================================================
+    let resultsSurveyDetections = []; // detections for currently selected survey in results
+    let resultsActiveTier = 'ALL';
+
+    async function loadResults() {
+      // Populate survey selector
+      const sel = document.getElementById('results-survey-selector');
+      if (!sel) return;
+      if (allSurveys.length === 0) {
+        try {
+          const r = await fetch('/api/v1/surveys');
+          if (r.ok) allSurveys = await r.json();
+        } catch(e) {}
+      }
+      const current = sel.value;
+      sel.innerHTML = '<option value="">— Select a survey to view detections —</option>';
+      allSurveys.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s.survey_id;
+        opt.textContent = (s.survey_name || s.survey_id) + ' [' + s.survey_id + ']';
+        if (s.survey_id === current) opt.selected = true;
+        sel.appendChild(opt);
+      });
+
+      // If a survey was already selected, reload it
+      if (sel.value) {
+        await onResultsSurveyChange(sel.value);
+      } else {
+        resetResultsTierCounts();
+      }
+    }
+
+    function resetResultsTierCounts() {
+      ['ALL','A','B','C','unknown'].forEach(t => {
+        const el = document.getElementById('tier-count-' + t);
+        if (el) el.textContent = '–';
+      });
+      const ct = document.getElementById('results-count-text');
+      if (ct) ct.textContent = '';
+    }
+
+    async function onResultsSurveyChange(surveyId) {
+      const container = document.getElementById('results-cards-container');
+      if (!surveyId) {
+        resultsSurveyDetections = [];
+        resetResultsTierCounts();
+        if (container) container.innerHTML = '<div class="col-span-3 p-8 text-center text-slate-400 font-mono text-xs">Select a survey above to view Class A / B / C detection results.</div>';
+        return;
+      }
+
+      if (container) container.innerHTML = '<div class="col-span-3 p-8 text-center text-slate-400 font-mono text-xs animate-pulse">Loading detections from TARANG AI Detection Engine…</div>';
+
+      try {
+        const res = await fetch('/api/v1/surveys/all/detections');
+        if (res.ok) {
+          const all = await res.json();
+          resultsSurveyDetections = all.filter(d => d.survey_id === surveyId);
+        } else {
+          resultsSurveyDetections = [];
+        }
+      } catch(e) {
+        resultsSurveyDetections = [];
+        if (container) container.innerHTML = '<div class="col-span-3 p-8 text-center text-rose-500 font-mono text-xs">Error loading detections.</div>';
+        return;
+      }
+
+      // Compute tier counts
+      const counts = { A:0, B:0, C:0, unknown:0 };
+      resultsSurveyDetections.forEach(d => {
+        const t = (d.classification_tier || '').toUpperCase();
+        if (t === 'A') counts.A++;
+        else if (t === 'B') counts.B++;
+        else if (t === 'C') counts.C++;
+        else counts.unknown++;
+      });
+      const total = resultsSurveyDetections.length;
+
+      document.getElementById('tier-count-ALL').textContent = '(' + total + ')';
+      document.getElementById('tier-count-A').textContent = '(' + counts.A + ')';
+      document.getElementById('tier-count-B').textContent = '(' + counts.B + ')';
+      document.getElementById('tier-count-C').textContent = '(' + counts.C + ')';
+      document.getElementById('tier-count-unknown').textContent = '(' + counts.unknown + ')';
+      const ct = document.getElementById('results-count-text');
+      if (ct) ct.textContent = total + ' detection' + (total !== 1 ? 's' : '') + ' recorded';
+
+      // Reset tier to ALL on new survey selection
+      resultsActiveTier = 'ALL';
+      document.querySelectorAll('.results-tier-btn').forEach(b => {
+        const t = b.getAttribute('data-tier');
+        if (t === 'ALL') {
+          b.className = 'results-tier-btn px-3 py-1.5 rounded-lg text-xs font-mono font-bold bg-teal-600 text-white border border-teal-600';
+        } else {
+          b.className = 'results-tier-btn px-3 py-1.5 rounded-lg text-xs font-mono font-bold bg-white border border-slate-200 text-slate-600 hover:text-slate-900';
+        }
+      });
+      hideTierBanner();
+      renderResultsByTier('ALL');
+    }
+
+    function filterResultsTier(tier) {
+      resultsActiveTier = tier;
+      document.querySelectorAll('.results-tier-btn').forEach(b => {
+        const t = b.getAttribute('data-tier');
+        if (t === tier) {
+          const activeClass = tier === 'A' ? 'bg-emerald-600 text-white border-emerald-600'
+            : tier === 'B' ? 'bg-sky-600 text-white border-sky-600'
+            : tier === 'C' ? 'bg-amber-500 text-white border-amber-500'
+            : tier === 'unknown' ? 'bg-rose-500 text-white border-rose-500'
+            : 'bg-teal-600 text-white border-teal-600';
+          b.className = 'results-tier-btn px-3 py-1.5 rounded-lg text-xs font-mono font-bold border ' + activeClass;
+        } else {
+          b.className = 'results-tier-btn px-3 py-1.5 rounded-lg text-xs font-mono font-bold bg-white border border-slate-200 text-slate-600 hover:text-slate-900';
+        }
+      });
+
+      showTierBanner(tier);
+      renderResultsByTier(tier);
+    }
+
+    function showTierBanner(tier) {
+      const el = document.getElementById('results-tier-banner');
+      if (!el) return;
+      const configs = {
+        A: { msg: 'Class A — Automatically Verified. TARANG multi-factor assessment confirms sufficient evidence to accept these detections without manual review.', cls: 'bg-emerald-50 border-emerald-200 text-emerald-800' },
+        B: { msg: 'Class B — Verification Required. Partial structural match or ambiguous evidence. Each detection must be reviewed by an analyst.', cls: 'bg-sky-50 border-sky-200 text-sky-800' },
+        C: { msg: 'Class C — Verification Required. Uncertain or low-evidence anomaly. Physics-based validation and visual inspection mandatory.', cls: 'bg-amber-50 border-amber-200 text-amber-800' },
+        unknown: { msg: 'Unknown / Review Required. The backend could not establish a reliable classification. These detections require analyst review before any further action.', cls: 'bg-rose-50 border-rose-200 text-rose-800' },
+      };
+      if (tier === 'ALL' || !configs[tier]) {
+        el.classList.add('hidden');
+        return;
+      }
+      el.classList.remove('hidden');
+      el.className = 'rounded-xl px-4 py-3 text-xs font-mono border ' + configs[tier].cls;
+      el.textContent = configs[tier].msg;
+    }
+
+    function hideTierBanner() {
+      const el = document.getElementById('results-tier-banner');
+      if (el) el.classList.add('hidden');
+    }
+
+    function renderResultsByTier(tier) {
+      const container = document.getElementById('results-cards-container');
+      if (!container) return;
+
+      let filtered = resultsSurveyDetections;
+      if (tier === 'A') filtered = resultsSurveyDetections.filter(d => (d.classification_tier||'').toUpperCase() === 'A');
+      else if (tier === 'B') filtered = resultsSurveyDetections.filter(d => (d.classification_tier||'').toUpperCase() === 'B');
+      else if (tier === 'C') filtered = resultsSurveyDetections.filter(d => (d.classification_tier||'').toUpperCase() === 'C');
+      else if (tier === 'unknown') filtered = resultsSurveyDetections.filter(d => {
+        const t = (d.classification_tier||'').toUpperCase();
+        return t !== 'A' && t !== 'B' && t !== 'C';
+      });
+
+      if (filtered.length === 0) {
+        const emptyMsgs = {
+          ALL: 'No AI detections available for this survey.',
+          A: 'No automatically verified Class A detections.',
+          B: 'No Class B detections require verification.',
+          C: 'No Class C detections require verification.',
+          unknown: 'No unknown or review-required detections.'
+        };
+        container.innerHTML = `<div class="col-span-3 text-center p-12 text-slate-400 font-mono text-xs"><span class="material-symbols-outlined text-[36px] text-slate-300 block mb-2">radar</span>${emptyMsgs[tier] || 'No detections.'}</div>`;
+        return;
+      }
+
+      // Deduplicate by crop_url: group detections that share the same evidence image
+      const groups = new Map(); // crop_url -> [detections]
+      const noImageKey = '__no_image__';
+      filtered.forEach(d => {
+        const key = d.crop_url || (noImageKey + d.id);
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(d);
+      });
+
+      container.innerHTML = Array.from(groups.entries()).map(([imgKey, dets]) => {
+        const primary = dets[0]; // lead detection for this evidence image
+        const tier_ = (primary.classification_tier || '').toUpperCase();
+        const conf = primary.confidence ? (primary.confidence > 1 ? Math.round(primary.confidence) : Math.round(primary.confidence * 100)) : 0;
+        const hasImg = imgKey !== noImageKey + primary.id && primary.crop_url;
+
+        const tierLabel = tier_ === 'A' ? 'Class A — Automatically Verified'
+          : tier_ === 'B' ? 'Class B — Verification Required'
+          : tier_ === 'C' ? 'Class C — Verification Required'
+          : 'Unknown / Review Required';
+        const tierColor = tier_ === 'A' ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+          : tier_ === 'B' ? 'bg-sky-50 text-sky-700 border-sky-200'
+          : tier_ === 'C' ? 'bg-amber-50 text-amber-700 border-amber-200'
+          : 'bg-rose-50 text-rose-700 border-rose-200';
+        const tierTopBorder = tier_ === 'A' ? 'border-t-4 border-t-emerald-400'
+          : tier_ === 'B' ? 'border-t-4 border-t-sky-400'
+          : tier_ === 'C' ? 'border-t-4 border-t-amber-400'
+          : 'border-t-4 border-t-rose-400';
+
+        const vStatus = primary.verification_status || 'Pending Verification';
+        const vColor = vStatus.toLowerCase().includes('verified') ? 'text-emerald-600' : 'text-amber-600';
+
+        // Multi-detection label
+        const multiLabel = dets.length > 1
+          ? `<div class="text-[10px] font-mono text-slate-500 bg-slate-50 border border-slate-100 rounded px-2 py-0.5 mt-1">${dets.length} detections from this evidence image</div>`
+          : '';
+
+        return `
+          <div class="marine-card rounded-2xl p-4 flex flex-col gap-3 ${tierTopBorder}">
+            <!-- Tier Badge -->
+            <div class="flex items-center justify-between">
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold border ${tierColor}">${tierLabel}</span>
+              <span class="text-[10px] font-mono text-slate-400">${primary.id}</span>
+            </div>
+            <!-- Evidence Image -->
+            <div class="w-full h-44 rounded-xl overflow-hidden bg-[#020b15] border border-slate-200 relative">
+              ${hasImg
+                ? `<img src="${primary.crop_url}" class="w-full h-full object-cover filter contrast-110" alt="Sonar Evidence" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'flex items-center justify-center w-full h-full text-[10px] font-mono text-slate-400\\'>No image available</div>'" />`
+                : `<div class="flex items-center justify-center w-full h-full text-[10px] font-mono text-slate-500">No sonar image available</div>`
+              }
+              <span class="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-black/70 text-white font-mono text-[10px] font-bold">
+                ${conf}% CONF
+              </span>
+              ${tier_ === 'A' ? '<span class="absolute top-2 right-2 px-2 py-0.5 rounded bg-emerald-600/90 text-white text-[10px] font-bold font-mono">AUTO-VERIFIED</span>' : ''}
+            </div>
+            <!-- Detection Info -->
+            <div class="space-y-1 text-xs">
+              <h4 class="font-headline font-bold text-sm text-slate-900">${primary.title || primary.class_name || '–'}</h4>
+              <p class="font-mono text-slate-500 text-[11px]">Depth: ${primary.depth || 'N/A'} • Pings: ${primary.observations_count || 1}</p>
+              <p class="font-mono text-slate-400 text-[10px]">
+                ${primary.latitude && primary.longitude
+                  ? Number(primary.latitude).toFixed(5) + '°N, ' + Number(primary.longitude).toFixed(5) + '°E'
+                  : 'Coordinates not tagged'}
+              </p>
+              ${multiLabel}
+            </div>
+            <!-- Footer -->
+            <div class="pt-2 border-t border-slate-100 flex justify-between items-center text-xs font-mono">
+              <span class="font-bold ${vColor}">${vStatus}</span>
+              ${tier_ !== 'A' ? `<button type="button" onclick="switchView('verification-queue')" class="text-amber-600 font-bold hover:underline">Add to Queue →</button>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Legacy compatibility stub — no longer used for filtering
+    function filterResultsClass(cls) { filterResultsTier('ALL'); }
+
+    // =========================================================================
+    // 7. VERIFICATION QUEUE
+    // =========================================================================
+    let queueSurveyDetections = [];
+    let queueActiveTier = 'BC_unknown';
+
+    async function loadVerificationQueue() {
+      // Populate survey selector
+      const sel = document.getElementById('queue-survey-selector');
+      if (!sel) return;
+      if (allSurveys.length === 0) {
+        try {
+          const r = await fetch('/api/v1/surveys');
+          if (r.ok) allSurveys = await r.json();
+        } catch(e) {}
+      }
+      const current = sel.value;
+      sel.innerHTML = '<option value="">— Select a survey to inspect its verification queue —</option>';
+      allSurveys.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s.survey_id;
+        opt.textContent = (s.survey_name || s.survey_id) + ' [' + s.survey_id + ']';
+        if (s.survey_id === current) opt.selected = true;
+        sel.appendChild(opt);
+      });
+
+      if (sel.value) {
+        await onQueueSurveyChange(sel.value);
+      } else {
+        resetQueueCounts();
+      }
+    }
+
+    function resetQueueCounts() {
+      ['A','B','C','unknown'].forEach(t => {
+        const el = document.getElementById('q-count-' + t);
+        if (el) el.textContent = '–';
+      });
+      const tbody = document.getElementById('op-queue-tbody');
+      if (tbody) tbody.innerHTML = '<tr><td colspan="8" class="p-8 text-center text-slate-400">Select a survey to load the verification queue.</td></tr>';
+    }
+
+    async function onQueueSurveyChange(surveyId) {
+      const tbody = document.getElementById('op-queue-tbody');
+      if (!surveyId) {
+        queueSurveyDetections = [];
+        resetQueueCounts();
+        return;
+      }
+
+      if (tbody) tbody.innerHTML = '<tr><td colspan="8" class="p-8 text-center text-slate-400 animate-pulse">Loading detections for verification...</td></tr>';
+
+      try {
+        const res = await fetch('/api/v1/surveys/all/detections');
+        if (res.ok) {
+          const all = await res.json();
+          queueSurveyDetections = all.filter(d => d.survey_id === surveyId);
+        } else {
+          queueSurveyDetections = [];
+        }
+      } catch(e) {
+        queueSurveyDetections = [];
+        if (tbody) tbody.innerHTML = '<tr><td colspan="8" class="p-8 text-center text-rose-500">Error loading queue.</td></tr>';
+        return;
+      }
+
+      // Compute tier counts
+      const counts = { A:0, B:0, C:0, unknown:0 };
+      queueSurveyDetections.forEach(d => {
+        const t = (d.classification_tier || '').toUpperCase();
+        if (t === 'A') counts.A++;
+        else if (t === 'B') counts.B++;
+        else if (t === 'C') counts.C++;
+        else counts.unknown++;
+      });
+
+      const updateCount = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = val;
+      };
+      updateCount('q-count-A', counts.A);
+      updateCount('q-count-B', counts.B);
+      updateCount('q-count-C', counts.C);
+      updateCount('q-count-unknown', counts.unknown);
+
+      // Default filter
+      queueActiveTier = 'BC_unknown';
+      updateQueueFilterButtons('BC_unknown');
+      renderQueueByTier('BC_unknown');
+    }
+
+    function filterQueueTier(tier) {
+      queueActiveTier = tier;
+      updateQueueFilterButtons(tier);
+      renderQueueByTier(tier);
+    }
+
+    function updateQueueFilterButtons(activeTier) {
+      document.querySelectorAll('.queue-tier-btn').forEach(b => {
+        const t = b.getAttribute('data-qtier');
+        if (t === activeTier) {
+          b.className = 'queue-tier-btn px-3 py-1.5 rounded-lg text-xs font-mono font-bold bg-amber-600 text-white border border-amber-600';
+        } else {
+          b.className = 'queue-tier-btn px-3 py-1.5 rounded-lg text-xs font-mono font-bold bg-white border border-slate-200 text-slate-600 hover:text-slate-900 hover:border-amber-400';
+        }
+      });
+    }
+
+    function renderQueueByTier(tier) {
+      const tbody = document.getElementById('op-queue-tbody');
+      if (!tbody) return;
+
+      let filtered = queueSurveyDetections.filter(d => {
+        const t = (d.classification_tier || '').toUpperCase();
+        if (t === 'A') return false; // Class A NEVER in queue
+
+        if (tier === 'B') return t === 'B';
+        if (tier === 'C') return t === 'C';
+        if (tier === 'unknown') return t !== 'A' && t !== 'B' && t !== 'C';
+        // 'BC_unknown' (All Pending)
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="p-8 text-center text-slate-400 font-mono text-xs"><span class="material-symbols-outlined text-[32px] text-slate-300 block mb-2">rule</span>No detections require verification for this selection.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(d => {
+        const vStatus = d.verification_status || 'Pending Verification';
+        let badgeClass = 'bg-amber-50 text-amber-700 border-amber-200';
+        if (vStatus.toLowerCase().includes('verified')) badgeClass = 'bg-teal-50 text-teal-700 border-teal-200';
+        if (vStatus.toLowerCase().includes('rejected')) badgeClass = 'bg-rose-50 text-rose-700 border-rose-200';
+
+        const coords = (d.latitude && d.longitude) ? `${Number(d.latitude).toFixed(4)}°, ${Number(d.longitude).toFixed(4)}°` : 'Awaiting GPS Tag';
+        const conf = d.confidence ? (d.confidence > 1 ? Math.round(d.confidence) : Math.round(d.confidence * 100)) : 0;
+        
+        const t = (d.classification_tier || '').toUpperCase();
+        const tierBadge = t === 'B' ? '<span class="px-2 py-0.5 rounded-sm bg-sky-100 text-sky-700 font-bold">Class B</span>'
+                        : t === 'C' ? '<span class="px-2 py-0.5 rounded-sm bg-amber-100 text-amber-700 font-bold">Class C</span>'
+                        : '<span class="px-2 py-0.5 rounded-sm bg-rose-100 text-rose-700 font-bold">Unknown</span>';
+
+        return `
+          <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors font-mono text-xs">
+            <td class="py-2 px-3">
+              <div class="w-12 h-12 rounded bg-slate-200 overflow-hidden border border-slate-300">
+                ${d.crop_url ? `<img src="${d.crop_url}" class="w-full h-full object-cover" />` : '<div class="flex items-center justify-center w-full h-full text-[8px] text-slate-400">No Img</div>'}
+              </div>
+            </td>
+            <td class="py-3 px-3 font-bold text-slate-900">${d.id}</td>
+            <td class="py-3 px-3 font-body font-medium text-slate-700">${d.title || d.class_name || '–'}</td>
+            <td class="py-3 px-3">${tierBadge}</td>
+            <td class="py-3 px-3 text-teal-700 font-bold">${conf}%</td>
+            <td class="py-3 px-3 text-slate-500">${coords}</td>
+            <td class="py-3 px-3">
+              <span class="px-2 py-0.5 rounded-full border text-[10px] font-bold ${badgeClass}">
+                ${vStatus}
+              </span>
+            </td>
+            <td class="py-3 px-3 text-right">
+              <button type="button" onclick="switchView('results')" class="px-2.5 py-1 rounded-lg bg-white border border-slate-200 hover:border-teal-500 text-[10px] text-slate-700 hover:text-slate-900 transition-colors">
+                Inspect
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+
+    // =========================================================================
+    // 8. REPORTS VIEW
+    // =========================================================================
+    async function loadReportsView() {
+      const container = document.getElementById('reports-content-container');
+      if (!container) return;
+
+      let targetSurvey = currentSurvey;
+      if (!targetSurvey && allSurveys.length > 0) {
+        targetSurvey = allSurveys[0];
+      }
+
+      if (!targetSurvey) {
+        try {
+          const res = await fetch('/api/v1/surveys');
+          if (res.ok) {
+            const list = await res.json();
+            if (list.length > 0) {
+              targetSurvey = list[0];
+              allSurveys = list;
+            }
+          }
+        } catch (e) {}
+      }
+
+      if (!targetSurvey) {
+        container.innerHTML = `
+          <div class="marine-card rounded-2xl p-12 text-center max-w-xl mx-auto space-y-4">
+            <div class="w-16 h-16 rounded-2xl bg-teal-50 border border-teal-200 text-teal-600 flex items-center justify-center mx-auto">
+              <span class="material-symbols-outlined text-[36px]">description</span>
+            </div>
+            <h3 class="font-headline font-bold text-xl text-slate-900">No Reports Available</h3>
+            <p class="font-body text-xs text-slate-500 max-w-md mx-auto">
+              Formal hydrographic briefing reports are dynamically generated from actual database surveys and acoustic detections. No surveys or detections have been recorded yet.
+            </p>
+            <button type="button" onclick="switchView('new-survey')" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-teal-600 text-white font-mono text-xs font-bold shadow-sm hover:bg-teal-700 transition-all">
+              <span class="material-symbols-outlined text-[16px]">add</span>
+              <span>Create New Survey</span>
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      let dets = [];
+      try {
+        const dRes = await fetch(`/api/v1/surveys/${targetSurvey.survey_id}/detections`);
+        if (dRes.ok) {
+          dets = await dRes.json();
+        }
+      } catch (e) {}
+
+      let ghostNets = 0, shipwrecks = 0, crabPots = 0, pipes = 0, unknowns = 0;
+      let verified = 0, rejected = 0, pending = 0;
+
+      dets.forEach(d => {
+        const cls = (d.class_name || '').toLowerCase();
+        if (cls.includes('net')) ghostNets++;
+        else if (cls.includes('ship') || cls.includes('wreck')) shipwrecks++;
+        else if (cls.includes('pot') || cls.includes('trap')) crabPots++;
+        else if (cls.includes('pipe') || cls.includes('cable')) pipes++;
+        else unknowns++;
+
+        const v = (d.verification_status || '').toLowerCase();
+        if (v === 'verified') verified++;
+        else if (v === 'rejected') rejected++;
+        else pending++;
+      });
+
+      const sDate = (targetSurvey.created_at || targetSurvey.survey_date || '').substring(0, 10) || new Date().toISOString().substring(0, 10);
+
+      container.innerHTML = `
+        <div class="marine-card rounded-2xl p-6 sm:p-10 border border-slate-200 space-y-6" id="report-sheet">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-6">
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 rounded-full overflow-hidden border border-teal-200 bg-white p-1 flex items-center justify-center shrink-0 shadow-sm">
+                <img src="logoimage.jpg" class="w-full h-full object-contain rounded-full" alt="TARANG Logo" />
+              </div>
+              <div>
+                <h3 class="font-headline font-extrabold text-xl text-slate-900 tracking-tight">TARANG HYDROGRAPHIC SURVEY REPORT</h3>
+                <p class="font-mono text-xs text-teal-700">INCOIS National Debris &amp; Anomaly Verification Pipeline</p>
+              </div>
+            </div>
+            <div class="text-right font-mono text-xs text-slate-500">
+              <p>REF: <strong class="text-slate-900">${targetSurvey.survey_id}</strong></p>
+              <p>DATE: <strong class="text-slate-900">${sDate}</strong></p>
+              <p>CLEARANCE: <strong class="text-teal-700">AUTHORIZED (MoES)</strong></p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs font-mono">
+            <div>
+              <span class="text-slate-400 block text-[10px]">Survey Name:</span>
+              <span class="text-slate-900 font-bold">${targetSurvey.survey_name || 'Hydrographic Survey'}</span>
+            </div>
+            <div>
+              <span class="text-slate-400 block text-[10px]">Sector:</span>
+              <span class="text-slate-900 font-bold">${targetSurvey.specific_area || targetSurvey.region || 'Sector 1'}</span>
+            </div>
+            <div>
+              <span class="text-slate-400 block text-[10px]">Platform:</span>
+              <span class="text-teal-700 font-bold">${targetSurvey.platform || 'AUV Autonomous Hydro'}</span>
+            </div>
+            <div>
+              <span class="text-slate-400 block text-[10px]">AI Engine:</span>
+              <span class="text-teal-700 font-bold">TARANG AI Detection</span>
+            </div>
+          </div>
+
+          <div>
+            <h4 class="font-headline font-bold text-sm text-slate-900 mb-3 flex items-center gap-2">
+              <span class="material-symbols-outlined text-teal-600 text-[18px]">bar_chart</span>
+              Detection Summary &amp; Classification Distribution
+            </h4>
+            <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 text-center text-xs font-mono">
+              <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                <span class="text-slate-500 block text-[10px]">Ghost Nets</span>
+                <span class="text-rose-600 font-bold text-lg">${ghostNets}</span>
+              </div>
+              <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                <span class="text-slate-500 block text-[10px]">Shipwrecks</span>
+                <span class="text-sky-600 font-bold text-lg">${shipwrecks}</span>
+              </div>
+              <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                <span class="text-slate-500 block text-[10px]">Derelict Pots</span>
+                <span class="text-amber-600 font-bold text-lg">${crabPots}</span>
+              </div>
+              <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                <span class="text-slate-500 block text-[10px]">Pipe / Cable</span>
+                <span class="text-teal-600 font-bold text-lg">${pipes}</span>
+              </div>
+              <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                <span class="text-slate-500 block text-[10px]">Unknown Anomalies</span>
+                <span class="text-purple-600 font-bold text-lg">${unknowns}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-teal-100 text-teal-800 flex items-center justify-center font-bold">
+                ✓
+              </div>
+              <div>
+                <p class="text-slate-900 font-bold">Analyst Verification Status</p>
+                <p class="text-slate-500">${verified} Targets Validated • ${rejected} Rejected • ${pending} Review Pending</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <a href="/api/v1/export/survey/${targetSurvey.survey_id}/csv" download class="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-bold">
+                Download CSV
+              </a>
+              <a href="/api/v1/export/survey/${targetSurvey.survey_id}/geojson" download class="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-bold">
+                Download GeoJSON
+              </a>
+              <a href="/api/v1/export/survey/${targetSurvey.survey_id}/metadata-txt" download class="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-bold">
+                Download TXT
+              </a>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // =========================================================================
+    // 9. NOTIFICATIONS & DOCUMENTS
+    // =========================================================================
+    async function loadNotifications() {
+      const container = document.getElementById('notifications-list-container');
+      if (!container) return;
+      try {
+        const res = await fetch('/api/v1/notifications');
+        if (res.ok) {
+          const notes = await res.json();
+          if (notes.length > 0) {
+            container.innerHTML = notes.map(n => `
+              <div class="marine-card rounded-2xl p-4 flex items-start gap-3.5">
+                <div class="w-9 h-9 rounded-xl bg-teal-50 text-teal-600 border border-teal-200 flex items-center justify-center shrink-0">
+                  <span class="material-symbols-outlined text-[20px]">notifications</span>
+                </div>
+                <div class="flex-1 text-xs">
+                  <div class="flex items-center justify-between">
+                    <h4 class="font-bold text-slate-900 text-sm">${n.title}</h4>
+                    <span class="font-mono text-[10px] text-slate-400">${n.timestamp}</span>
+                  </div>
+                  <p class="text-slate-600 mt-1 font-body leading-relaxed">${n.message}</p>
+                </div>
+              </div>
+            `).join('');
+            return;
+          }
+        }
+      } catch (e) {}
+
+      container.innerHTML = `
+        <div class="marine-card rounded-2xl p-8 text-center text-slate-400 font-mono text-xs">
+          <span class="material-symbols-outlined text-[32px] text-slate-300 block mb-2">notifications_off</span>
+          No notifications recorded yet.
+        </div>
+      `;
+    }
+
+    async function markAllNotificationsRead() {
+      try {
+        await fetch('/api/v1/notifications/mark-read', { method: 'POST' });
+        const badge = document.getElementById('nav-unread-badge');
+        const sidebarBadge = document.getElementById('sidebar-unread-count');
+        if (badge) badge.classList.add('hidden');
+        if (sidebarBadge) sidebarBadge.textContent = '0';
+        showToast("All notifications marked as read.");
+      } catch (e) {}
+    }
+
+    async function loadDocuments() {
+      const tbody = document.getElementById('documents-table-body');
+      if (!tbody) return;
+      try {
+        const res = await fetch('/api/v1/documents');
+        if (res.ok) {
+          const docs = await res.json();
+          if (docs.length > 0) {
+            tbody.innerHTML = docs.map(d => `
+              <tr class="hover:bg-slate-50 transition-colors border-b border-slate-100 font-mono text-xs">
+                <td class="p-3.5 text-slate-900 font-bold flex items-center gap-2">
+                  <span class="material-symbols-outlined text-teal-600 text-[18px]">description</span>
+                  <span>${d.name}</span>
+                </td>
+                <td class="p-3.5 text-teal-700">${d.survey_id}</td>
+                <td class="p-3.5 text-slate-600">${d.doc_type}</td>
+                <td class="p-3.5 text-slate-500">${(d.file_size / 1024).toFixed(1)} KB</td>
+                <td class="p-3.5 text-right">
+                  <a href="${d.file_path}" download class="text-teal-600 hover:underline font-bold">Download</a>
+                </td>
+              </tr>
+            `).join('');
+            return;
+          }
+        }
+      } catch (e) {}
+
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="5" class="p-8 text-center text-slate-400 font-mono text-xs">
+            No survey documents or binary logs uploaded yet.
+          </td>
+        </tr>
+      `;
+    }
+
+    // =========================================================================
+    // 10. INITIALIZATION
+    // =========================================================================
+    document.addEventListener('DOMContentLoaded', () => {
+      const name = sessionStorage.getItem('currentUserName') || 'Cmdr. Rajesh Verma';
+      const instId = sessionStorage.getItem('currentUser') || 'OP-409';
+
+      const opNameEl = document.getElementById('header-op-name');
+      const opIdEl = document.getElementById('header-op-id');
+      if (opNameEl) opNameEl.textContent = name;
+      if (opIdEl) opIdEl.textContent = instId.toUpperCase();
+
+      regenerateSurveyId();
+      loadSurveys();
+      loadVerificationQueue();
+    });
+  </script>
+</body>
+</html>

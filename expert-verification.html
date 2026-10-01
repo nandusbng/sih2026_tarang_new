@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><script>window.location.replace("sonar-analyst.html?view=verification");</script><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;family=Space+Grotesk:wght@600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={"darkMode":"class","theme":{"extend":{"colors":{"surface-dim":"#c8dcf4","on-surface":"#081d2f","inverse-primary":"#b0c8eb","secondary-container":"#5bb8fe","surface-container-highest":"#d1e4fd","abyssal-navy":"#031B33","sonar-alert":"#E11D48","surface-container-lowest":"#ffffff","on-tertiary-container":"#1f9c8f","on-background":"#081d2f","inverse-surface":"#1f3245","surface-bright":"#f7f9ff","surface-tint":"#49607e","on-primary-container":"#768dad","primary-container":"#0a2540","border-subtle":"#E2E8F0","on-tertiary":"#ffffff","tertiary-fixed-dim":"#6bd8cb","surface-ice":"#F0F4F8","background":"#f7f9ff","tertiary":"#001210","on-secondary-container":"#00476e","on-secondary-fixed":"#001d31","on-error-container":"#93000a","surface-container":"#e3efff","primary-fixed":"#d2e4ff","telemetry-amber":"#D97706","primary-fixed-dim":"#b0c8eb","on-error":"#ffffff","error":"#ba1a1a","outline":"#74777e","seafoam-glow":"#14B8A6","on-secondary-fixed-variant":"#004b73","primary":"#000f22","secondary":"#006398","outline-variant":"#c4c6ce","on-primary-fixed-variant":"#314865","on-tertiary-fixed":"#00201d","on-primary":"#ffffff","on-tertiary-fixed-variant":"#005049","surface-container-low":"#edf4ff","secondary-fixed":"#cce5ff","canvas-base":"#FAFCFF","surface-variant":"#d1e4fd","secondary-fixed-dim":"#93ccff","on-primary-fixed":"#001c37","surface-container-high":"#d9eaff","on-secondary":"#ffffff","tertiary-fixed":"#89f5e7","on-surface-variant":"#43474d","tertiary-container":"#002a26","inverse-on-surface":"#e8f1ff","error-container":"#ffdad6","surface":"#f7f9ff"},"borderRadius":{"DEFAULT":"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},"spacing":{"space-xs":"0.25rem","gutter-desktop":"2rem","space-lg":"1.5rem","margin-desktop":"3rem","space-xl":"2.5rem","space-sm":"0.5rem","gutter":"1.25rem","margin":"1rem","space-md":"1rem"},"fontFamily":{"display-xl-mobile":["Plus Jakarta Sans"],"display-xl":["Plus Jakarta Sans"],"headline-lg":["Plus Jakarta Sans"],"body-md":["Inter"],"body-lg":["Inter"],"telemetry-metric":["Space Grotesk"],"headline-lg-mobile":["Plus Jakarta Sans"],"body-sm":["Inter"],"label-code":["Space Grotesk"],"headline-sm":["Plus Jakarta Sans"],"label-sm":["Inter"]},"fontSize":{"display-xl-mobile":["36px",{"lineHeight":"42px","letterSpacing":"-0.02em","fontWeight":"800"}],"display-xl":["56px",{"lineHeight":"64px","letterSpacing":"-0.03em","fontWeight":"800"}],"headline-lg":["32px",{"lineHeight":"40px","letterSpacing":"-0.02em","fontWeight":"700"}],"body-md":["14px",{"lineHeight":"20px","fontWeight":"400"}],"body-lg":["16px",{"lineHeight":"24px","fontWeight":"400"}],"telemetry-metric":["28px",{"lineHeight":"34px","letterSpacing":"-0.02em","fontWeight":"700"}],"headline-lg-mobile":["24px",{"lineHeight":"32px","letterSpacing":"-0.01em","fontWeight":"700"}],"body-sm":["12px",{"lineHeight":"16px","fontWeight":"400"}],"label-code":["11px",{"lineHeight":"14px","letterSpacing":"0.06em","fontWeight":"600"}],"headline-sm":["20px",{"lineHeight":"28px","fontWeight":"600"}],"label-sm":["11px",{"lineHeight":"14px","letterSpacing":"0.02em","fontWeight":"600"}]}}}}</script><script src="js/supabase-config.js" type="module"></script>
+</head><body class="bg-canvas-base font-body-md text-on-surface antialiased"><header class="fixed top-0 left-0 right-0 z-50 w-full bg-surface-container-lowest/90 backdrop-blur-xl shadow-sm"><div class="h-20 w-full px-gutter-desktop flex items-center justify-between gap-space-md"><div class="flex items-center gap-space-md shrink-0"><img alt="TARANG Logo" class="h-8 w-auto object-contain rounded-lg" src="logoimage.jpg"/></div><nav class="hidden lg:flex items-center gap-space-xs bg-surface-ice/70 p-1 rounded-xl shadow-[0_1px_4px_rgba(10,37,64,0.04)]" data-active-classes="bg-surface-container-low text-secondary font-semibold rounded-xl"><a class="px-space-md py-2 rounded-lg font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all" data-path="dummy" href="dashboard.html">Overview</a><a class="px-space-md py-2 rounded-lg font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all" data-path="dummy" href="sonar-ai.html">Sonar AI Detection</a><a aria-current="page" class="px-space-md py-2 transition-all bg-primary-container text-on-primary font-semibold rounded-lg shadow-sm" data-path="dummy" href="expert-verification.html">Verification Console</a><a class="px-space-md py-2 rounded-lg font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all" data-path="dummy" href="logistics.html">Logistics &amp; Dispatch</a></nav><div class="flex items-center gap-space-md shrink-0"><div class="flex items-center gap-space-xs bg-surface-ice pl-space-xs pr-space-md py-1 rounded-full shadow-[0_1px_4px_rgba(10,37,64,0.04)]"><div class="flex flex-col text-left"><span class="font-label-code text-label-code text-primary font-bold leading-none">INCOIS Ops #409</span><span class="font-label-sm text-label-sm text-on-surface-variant text-[10px] leading-tight">Hydro Command</span></div></div><a class="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-slate-800 hover:bg-red-600 text-white font-bold text-[12px] transition-colors shadow-md cursor-pointer ml-4 border border-slate-700" href="login.html" onclick="sessionStorage.clear()">
+<span class="material-symbols-outlined text-[16px]">logout</span> LOGOUT
+</a></div></div>
+</header><div><main class="w-full pt-20 bg-canvas-base min-h-screen"><div class="flex flex-col w-full">
+<!-- Top Command & Telemetry Workspace Banner -->
+<section class="w-full px-gutter-desktop py-space-md bg-surface-container-lowest shadow-sm">
+<div class="flex flex-col gap-space-sm">
+<!-- Breadcrumb & Workspace Status Meta -->
+<div class="flex flex-wrap items-center justify-between gap-space-sm">
+<div class="flex items-center gap-2">
+<span class="font-label-code text-label-code text-on-surface-variant uppercase tracking-wider">TARANG CONSOLE</span>
+<span class="text-on-surface-variant">/</span>
+<span class="font-label-code text-label-code text-secondary font-bold uppercase tracking-wider">EXPERT INCIDENT VERIFICATION</span>
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-surface-ice text-on-surface text-label-sm font-label-sm">
+<span class="h-1.5 w-1.5 rounded-full bg-seafoam-glow"></span>
+            INCOIS SYNC: 18 FPS
+          </span>
+</div>
+<div class="flex flex-wrap items-center gap-space-xs">
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-surface-ice text-on-surface">
+<span class="material-symbols-outlined text-[16px] text-telemetry-amber">pending_actions</span>
+<span class="font-label-code text-label-code font-bold">28 PENDING AUDIT</span>
+</div>
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-surface-ice text-on-surface">
+<span class="material-symbols-outlined text-[16px] text-seafoam-glow">verified</span>
+<span class="font-label-code text-label-code font-bold">142 CONFIRMED (98.2% PRECISION)</span>
+</div>
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-surface-ice text-on-surface">
+<span class="material-symbols-outlined text-[16px] text-secondary">timer</span>
+<span class="font-label-code text-label-code font-bold">AVG LATENCY: 1.4M</span>
+</div>
+</div>
+</div>
+<!-- Main Action Title & Batch Triggers -->
+<div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-space-md pt-1">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-abyssal-navy tracking-tight">Expert Anomaly Verification Workspace</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-0.5">Dual-sensor acoustic &amp; radar telemetry validation pipeline for national maritime debris interception.</p>
+</div>
+<div class="flex flex-wrap items-center gap-space-xs shrink-0">
+<button class="flex items-center gap-1.5 px-space-md py-2 rounded-xl bg-primary text-on-primary font-body-sm text-body-sm font-semibold shadow-sm hover:bg-primary-container transition-all" id="batch-approve-btn">
+<span class="material-symbols-outlined text-[18px] text-seafoam-glow">done_all</span>
+<span>Batch Approve (&gt;95% Conf)</span>
+</button>
+<button class="flex items-center gap-1.5 px-space-md py-2 rounded-xl bg-surface-ice text-abyssal-navy font-body-sm text-body-sm font-semibold shadow-sm hover:bg-surface-container-high transition-all">
+<span class="material-symbols-outlined text-[18px] text-sonar-alert">flag</span>
+<span>Flag to Coast Guard</span>
+</button>
+<button class="flex items-center gap-1.5 px-space-md py-2 rounded-xl bg-surface-ice text-abyssal-navy font-body-sm text-body-sm font-semibold shadow-sm hover:bg-surface-container-high transition-all">
+<span class="material-symbols-outlined text-[18px] text-secondary">file_download</span>
+<span>Audit Log Export</span>
+</button>
+</div>
+</div>
+<!-- Filter Controls Strip -->
+<div class="mt-space-xs pt-space-xs border-t border-border-subtle/60 flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-space-md">
+<!-- Sensor Modality Pills -->
+<div class="flex flex-wrap items-center gap-1.5">
+<button class="px-3 py-1.5 rounded-lg bg-surface-container-low text-abyssal-navy font-label-code text-label-code tracking-wider uppercase font-bold shadow-sm">All Feeds (28)</button>
+<button class="px-3 py-1.5 rounded-lg bg-surface-ice text-on-surface-variant hover:text-on-surface font-label-code text-label-code tracking-wider uppercase transition-colors">Side-Scan Sonar (11)</button>
+<button class="px-3 py-1.5 rounded-lg bg-surface-ice text-on-surface-variant hover:text-on-surface font-label-code text-label-code tracking-wider uppercase transition-colors">SAR Sentinel-1 (8)</button>
+<button class="px-3 py-1.5 rounded-lg bg-surface-ice text-on-surface-variant hover:text-on-surface font-label-code text-label-code tracking-wider uppercase transition-colors">Multispectral Band-8A (6)</button>
+<button class="px-3 py-1.5 rounded-lg bg-surface-ice text-on-surface-variant hover:text-on-surface font-label-code text-label-code tracking-wider uppercase transition-colors">Drifter Buoy Optical (3)</button>
+</div>
+<!-- Controls: Region, Confidence, Search -->
+<div class="flex flex-wrap items-center gap-space-sm">
+<div class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-ice">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">tune</span>
+<span class="font-label-code text-label-code text-on-surface-variant font-bold">MIN CONF:</span>
+<input class="w-20 accent-secondary cursor-pointer" id="confidence-range" max="99" min="70" oninput="document.getElementById('conf-val').innerText = this.value + '%'" type="range" value="85"/>
+<span class="font-label-code text-label-code text-secondary font-bold" id="conf-val">85%</span>
+</div>
+<div class="relative">
+<select class="appearance-none bg-surface-ice text-on-surface font-label-sm text-label-sm font-semibold pl-3 pr-8 py-2 rounded-xl focus:outline-none cursor-pointer">
+<option>Bay of Bengal (Andaman Basin)</option>
+<option>Arabian Sea (West Shelf)</option>
+<option>Gulf of Mannar Bio-Zone</option>
+<option>Lakshadweep Trench</option>
+</select>
+<span class="material-symbols-outlined absolute right-2 top-2.5 text-[16px] text-on-surface-variant pointer-events-none">expand_more</span>
+</div>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-2.5 text-[16px] text-on-surface-variant">search</span>
+<input class="pl-8 pr-3 py-1.5 bg-surface-ice text-on-surface placeholder:text-on-surface-variant/70 font-body-sm text-body-sm rounded-xl focus:outline-none w-56" placeholder="Search Target ID, Lat/Lon..." type="text"/>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Main Split Canvas -->
+<div class="w-full px-gutter-desktop py-space-lg">
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-space-lg items-start">
+<!-- LEFT 72% COLUMN: Detection Pipeline -->
+<div class="xl:col-span-8 flex flex-col gap-space-md">
+<!-- Pipeline Header Toolbar -->
+<div class="flex items-center justify-between px-space-xs">
+<div class="flex items-center gap-2">
+<span class="font-label-code text-label-code text-secondary uppercase font-bold tracking-wider">QUEUE PIPELINE</span>
+<span class="font-label-code text-label-code text-on-surface-variant">• SORTED BY CORRIDOR RISK</span>
+</div>
+<div class="flex items-center gap-1 bg-surface-ice p-1 rounded-xl">
+<button class="px-2.5 py-1 rounded-lg bg-surface-container-lowest text-abyssal-navy shadow-sm font-label-code text-label-code font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px]">grid_view</span> Dual Inspection
+            </button>
+<button class="px-2.5 py-1 rounded-lg text-on-surface-variant hover:text-on-surface font-label-code text-label-code flex items-center gap-1 transition-colors">
+<span class="material-symbols-outlined text-[15px]">view_stream</span> Streamline
+            </button>
+</div>
+</div>
+<!-- Verification Cards Stack -->
+<div class="flex flex-col gap-space-md">
+<!-- CARD 1: Ghost Fishing Net (Andaman Corridor) -->
+<article class="p-space-lg rounded-xl bg-surface-container-lowest shadow-none hover:shadow-sm border border-border-subtle transition-all flex flex-col gap-space-md group" id="anomaly-trg-8821">
+<div class="flex flex-wrap items-center justify-between gap-space-sm">
+<div class="flex items-center gap-2">
+<span class="px-2.5 py-1 rounded-md bg-surface-container-low text-abyssal-navy font-label-code text-label-code tracking-widest font-bold">TARGET #TRG-8821</span>
+<span class="font-label-code text-label-code text-on-surface-variant">INCOIS-SUBBASIN: AN-04</span>
+<span class="px-2 py-0.5 rounded-full bg-sonar-alert/10 text-sonar-alert font-label-code text-label-code font-bold">HAZARD: CRITICAL</span>
+</div>
+<div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-ice text-abyssal-navy">
+<span class="material-symbols-outlined text-seafoam-glow text-[16px]">verified</span>
+<span class="font-label-code text-label-code font-bold">96.8% AI CERTAINTY</span>
+</div>
+</div>
+<!-- Card Body: Visual Scan & Metrology Specs -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-space-md">
+<!-- Sensor Feed Dual View -->
+<div class="md:col-span-6 flex flex-col gap-2">
+<div class="relative w-full h-52 rounded-lg overflow-hidden bg-abyssal-navy">
+<img alt="TARANG Logo" class="h-8 w-auto object-contain rounded-lg" src="logoimage.jpg"/>
+<div class="absolute inset-0 bg-gradient-to-t from-abyssal-navy/90 via-transparent to-transparent"></div>
+<!-- HUD Sonar Overlays -->
+<div class="absolute top-2 left-2 flex items-center gap-1 px-2 py-0.5 rounded bg-abyssal-navy/80 text-seafoam-glow font-label-code text-[10px] tracking-wider">
+<span class="h-1.5 w-1.5 rounded-full bg-seafoam-glow animate-pulse"></span>
+                    SAR + AUV FUSION • 380 KHZ
+                  </div>
+<div class="absolute bottom-2 left-2 right-2 flex items-center justify-between text-on-primary font-label-code text-label-code">
+<span>RANGE: 120M</span>
+<span>BEARING: 042° NE</span>
+<span>GAIN: +14dB</span>
+</div>
+<!-- Bounding Box Reticle -->
+<div class="absolute top-1/4 left-1/3 w-28 h-24 border-2 border-dashed border-seafoam-glow rounded flex items-start justify-end p-1">
+<span class="font-label-code text-[9px] bg-seafoam-glow text-abyssal-navy font-bold px-1 rounded-xs">T1: GHOST-NET</span>
+</div>
+</div>
+<div class="flex items-center justify-between text-on-surface-variant font-label-code text-label-code px-1">
+<span>SPECTRAL ID: POL-MONO-88</span>
+<button class="text-secondary hover:underline flex items-center gap-0.5">
+<span>Inspect Raw Waterfall</span>
+<span class="material-symbols-outlined text-[14px]">arrow_outward</span>
+</button>
+</div>
+</div>
+<!-- Anomaly Attributes & Eco Risk -->
+<div class="md:col-span-6 flex flex-col justify-between">
+<div class="space-y-space-sm">
+<div>
+<h3 class="font-headline-sm text-headline-sm text-abyssal-navy font-bold">Ghost Fishing Net (Nylon Monofilament Bundle)</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Multi-layered acoustic shadow indicates heavily colonized bio-mass suspended vertically in shallow coral reef passage.</p>
+</div>
+<!-- Telemetry Metric Grid -->
+<div class="grid grid-cols-3 gap-2 p-3 rounded-xl bg-surface-ice">
+<div>
+<span class="font-label-code text-[10px] text-on-surface-variant uppercase block">Est. Mass</span>
+<span class="font-telemetry-metric text-telemetry-metric text-abyssal-navy font-bold leading-none">420<span class="text-label-sm font-label-sm font-normal"> kg</span></span>
+</div>
+<div>
+<span class="font-label-code text-[10px] text-on-surface-variant uppercase block">Sub. Depth</span>
+<span class="font-telemetry-metric text-telemetry-metric text-abyssal-navy font-bold leading-none">-14.2<span class="text-label-sm font-label-sm font-normal"> m</span></span>
+</div>
+<div>
+<span class="font-label-code text-[10px] text-on-surface-variant uppercase block">Acoustic Vol</span>
+<span class="font-telemetry-metric text-telemetry-metric text-secondary font-bold leading-none">38.4<span class="text-label-sm font-label-sm font-normal"> m³</span></span>
+</div>
+</div>
+<div class="space-y-1.5">
+<div class="flex items-center justify-between text-body-sm font-body-sm">
+<span class="text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-secondary">pin_drop</span>
+                        11°48'22"N, 92°44'18"E
+                      </span>
+<a class="text-secondary font-label-code text-label-code font-bold hover:underline flex items-center gap-0.5" href="#drift-model">
+                        VIEW DRIFT TRAJECTORY <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+</a>
+</div>
+<div class="flex items-center gap-1.5 text-body-sm font-body-sm text-sonar-alert bg-sonar-alert/5 px-2.5 py-1.5 rounded-lg">
+<span class="material-symbols-outlined text-[16px]">warning</span>
+<span class="font-semibold">Coral Reef Corridor #12, Andaman Sea (High Entanglement Risk)</span>
+</div>
+</div>
+</div>
+<!-- Expert Verification Actions -->
+<div class="flex items-center gap-2 pt-space-sm mt-space-xs border-t border-border-subtle/50">
+<button class="flex-1 flex items-center justify-center gap-2 py-2.5 px-space-md rounded-xl bg-seafoam-glow text-abyssal-navy font-body-sm text-body-sm font-bold shadow-md hover:bg-seafoam-glow/90 transition-all" onclick="handleAccept('TRG-8821')">
+<span class="material-symbols-outlined text-[18px]">check_circle</span>
+<span>Accept Verification</span>
+</button>
+<div class="relative inline-block text-left">
+<button class="flex items-center gap-1.5 py-2.5 px-3 rounded-xl bg-sonar-alert/10 text-sonar-alert hover:bg-sonar-alert/20 font-body-sm text-body-sm font-bold transition-all" onclick="toggleRejectMenu('reject-menu-1')">
+<span class="material-symbols-outlined text-[18px]">cancel</span>
+<span>Reject</span>
+<span class="material-symbols-outlined text-[16px]">expand_more</span>
+</button>
+<!-- Reject Dropdown -->
+<div class="hidden absolute right-0 bottom-full mb-2 w-48 rounded-xl bg-surface-container-lowest shadow-xl p-1 z-30" id="reject-menu-1">
+<button class="w-full text-left px-3 py-1.5 rounded-lg text-body-sm font-body-sm text-on-surface hover:bg-surface-ice" onclick="handleReject('TRG-8821', 'Bio-bloom')">Bio-bloom / Plankton</button>
+<button class="w-full text-left px-3 py-1.5 rounded-lg text-body-sm font-body-sm text-on-surface hover:bg-surface-ice" onclick="handleReject('TRG-8821', 'Wave Clutter')">Wave / Surface Clutter</button>
+<button class="w-full text-left px-3 py-1.5 rounded-lg text-body-sm font-body-sm text-on-surface hover:bg-surface-ice" onclick="handleReject('TRG-8821', 'Kelp Bed')">Natural Kelp / Seaweed</button>
+</div>
+</div>
+<button class="p-2.5 rounded-xl bg-surface-ice text-abyssal-navy hover:bg-surface-container-high transition-colors" title="Dispatch retrieval drone or vessel">
+<span class="material-symbols-outlined text-[18px]">directions_boat</span>
+</button>
+</div>
+</div>
+</div>
+</article>
+<!-- CARD 2: High-Density Microplastic Slick (Goa Shelf) -->
+<article class="p-space-lg rounded-xl bg-surface-container-lowest shadow-none hover:shadow-sm border border-border-subtle transition-all flex flex-col gap-space-md group" id="anomaly-trg-8822">
+<div class="flex flex-wrap items-center justify-between gap-space-sm">
+<div class="flex items-center gap-2">
+<span class="px-2.5 py-1 rounded-md bg-surface-container-low text-abyssal-navy font-label-code text-label-code tracking-widest font-bold">TARGET #TRG-8822</span>
+<span class="font-label-code text-label-code text-on-surface-variant">INCOIS-SUBBASIN: AS-02</span>
+<span class="px-2 py-0.5 rounded-full bg-telemetry-amber/10 text-telemetry-amber font-label-code text-label-code font-bold">DIFFUSE SLICK</span>
+</div>
+<div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-ice text-abyssal-navy">
+<span class="material-symbols-outlined text-secondary text-[16px]">radar</span>
+<span class="font-label-code text-label-code font-bold">91.4% AI CONFIDENCE</span>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-space-md">
+<div class="md:col-span-6 flex flex-col gap-2">
+<div class="relative w-full h-52 rounded-lg overflow-hidden bg-abyssal-navy">
+<img alt="TARANG Logo" class="h-8 w-auto object-contain rounded-lg" src="logoimage.jpg"/>
+<div class="absolute inset-0 bg-gradient-to-t from-abyssal-navy/90 via-transparent to-transparent"></div>
+<div class="absolute top-2 left-2 flex items-center gap-1 px-2 py-0.5 rounded bg-abyssal-navy/80 text-secondary font-label-code text-[10px] tracking-wider">
+<span class="h-1.5 w-1.5 rounded-full bg-secondary"></span>
+                    SENTINEL-2 • SWIR BAND 8A
+                  </div>
+<div class="absolute bottom-2 left-2 right-2 flex items-center justify-between text-on-primary font-label-code text-label-code">
+<span>RES: 10M / PIXEL</span>
+<span>NDVI: -0.42</span>
+<span>DRIFT: 1.8 kn SSW</span>
+</div>
+</div>
+<div class="flex items-center justify-between text-on-surface-variant font-label-code text-label-code px-1">
+<span>SIGNATURE: POLYMER CONC. C4</span>
+<button class="text-secondary hover:underline flex items-center gap-0.5">
+<span>Calibrate Spectral Bands</span>
+<span class="material-symbols-outlined text-[14px]">tune</span>
+</button>
+</div>
+</div>
+<div class="md:col-span-6 flex flex-col justify-between">
+<div class="space-y-space-sm">
+<div>
+<h3 class="font-headline-sm text-headline-sm text-abyssal-navy font-bold">High-Density Polymer Debris &amp; Microplastic Slick</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">SWIR absorption dip at 1215 nm confirms high accumulation of floating thermoplastics moving with tidal eddy.</p>
+</div>
+<div class="grid grid-cols-3 gap-2 p-3 rounded-xl bg-surface-ice">
+<div>
+<span class="font-label-code text-[10px] text-on-surface-variant uppercase block">Surface Area</span>
+<span class="font-telemetry-metric text-telemetry-metric text-abyssal-navy font-bold leading-none">1,840<span class="text-label-sm font-label-sm font-normal"> m²</span></span>
+</div>
+<div>
+<span class="font-label-code text-[10px] text-on-surface-variant uppercase block">Drift Velocity</span>
+<span class="font-telemetry-metric text-telemetry-metric text-abyssal-navy font-bold leading-none">1.8<span class="text-label-sm font-label-sm font-normal"> kn</span></span>
+</div>
+<div>
+<span class="font-label-code text-[10px] text-on-surface-variant uppercase block">Heading</span>
+<span class="font-telemetry-metric text-telemetry-metric text-secondary font-bold leading-none">SSW<span class="text-label-sm font-label-sm font-normal"> (205°)</span></span>
+</div>
+</div>
+<div class="space-y-1">
+<div class="flex items-center justify-between text-body-sm font-body-sm">
+<span class="text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-secondary">pin_drop</span>
+                        15°18'40"N, 73°46'12"E (Goa Coastal Shelf)
+                      </span>
+</div>
+<span class="inline-block font-label-code text-[11px] text-on-surface-variant">Depth: Surface Film • Bathymetry: -42.0m</span>
+</div>
+</div>
+<div class="flex items-center gap-2 pt-space-sm mt-space-xs border-t border-border-subtle/50">
+<button class="flex-1 flex items-center justify-center gap-2 py-2.5 px-space-md rounded-xl bg-seafoam-glow text-abyssal-navy font-body-sm text-body-sm font-bold shadow-md hover:bg-seafoam-glow/90 transition-all" onclick="handleAccept('TRG-8822')">
+<span class="material-symbols-outlined text-[18px]">check_circle</span>
+<span>Accept Verification</span>
+</button>
+<button class="flex items-center gap-1.5 py-2.5 px-3 rounded-xl bg-surface-ice text-abyssal-navy hover:bg-surface-container-high font-body-sm text-body-sm font-semibold transition-all">
+<span class="material-symbols-outlined text-[18px] text-secondary">flight_takeoff</span>
+<span>Request AUV Pass</span>
+</button>
+<button class="p-2.5 rounded-xl bg-sonar-alert/10 text-sonar-alert hover:bg-sonar-alert/20 transition-colors" onclick="handleReject('TRG-8822', 'Surface Clutter')">
+<span class="material-symbols-outlined text-[18px]">cancel</span>
+</button>
+</div>
+</div>
+</div>
+</article>
+<!-- CARD 3: Submerged Cargo Container Flotsam (Cochin Approach) -->
+<article class="p-space-lg rounded-xl bg-surface-container-lowest shadow-none hover:shadow-sm border border-border-subtle transition-all flex flex-col gap-space-md group" id="anomaly-trg-8823">
+<div class="flex flex-wrap items-center justify-between gap-space-sm">
+<div class="flex items-center gap-2">
+<span class="px-2.5 py-1 rounded-md bg-surface-container-low text-abyssal-navy font-label-code text-label-code tracking-widest font-bold">TARGET #TRG-8823</span>
+<span class="font-label-code text-label-code text-on-surface-variant">INCOIS-SUBBASIN: AR-07</span>
+<span class="px-2 py-0.5 rounded-full bg-sonar-alert text-on-primary font-label-code text-label-code font-bold">NAV HAZARD</span>
+</div>
+<div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-ice text-abyssal-navy">
+<span class="material-symbols-outlined text-seafoam-glow text-[16px]">radar</span>
+<span class="font-label-code text-label-code font-bold">88.7% CONFIDENCE</span>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-space-md">
+<div class="md:col-span-6 flex flex-col gap-2">
+<div class="relative w-full h-52 rounded-lg overflow-hidden bg-abyssal-navy">
+<img alt="TARANG Logo" class="h-8 w-auto object-contain rounded-lg" src="logoimage.jpg"/>
+<div class="absolute inset-0 bg-gradient-to-t from-abyssal-navy/90 via-transparent to-transparent"></div>
+<div class="absolute top-2 left-2 flex items-center gap-1 px-2 py-0.5 rounded bg-abyssal-navy/80 text-seafoam-glow font-label-code text-[10px] tracking-wider">
+                    AUV GLIDER 04 • SIDE-SCAN ACOUSTIC
+                  </div>
+<div class="absolute bottom-2 left-2 right-2 flex items-center justify-between text-on-primary font-label-code text-label-code">
+<span>DIM: 6.1m x 2.4m</span>
+<span>ORIENTATION: 118°</span>
+<span>DEPTH: -4.8m</span>
+</div>
+</div>
+<div class="flex items-center justify-between text-on-surface-variant font-label-code text-label-code px-1">
+<span>METALLIC ECHO CORRELATION: 0.94</span>
+<button class="text-secondary hover:underline flex items-center gap-0.5">
+<span>Bathymetric Slice</span>
+<span class="material-symbols-outlined text-[14px]">layers</span>
+</button>
+</div>
+</div>
+<div class="md:col-span-6 flex flex-col justify-between">
+<div class="space-y-space-sm">
+<div>
+<h3 class="font-headline-sm text-headline-sm text-abyssal-navy font-bold">Abandoned Semi-Submerged Container / Flotsam</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">High acoustic specular bounce consistent with ISO 20ft steel container drafting 4.8m below waterline in active shipping lane.</p>
+</div>
+<div class="grid grid-cols-3 gap-2 p-3 rounded-xl bg-surface-ice">
+<div>
+<span class="font-label-code text-[10px] text-on-surface-variant uppercase block">Length x Width</span>
+<span class="font-telemetry-metric text-telemetry-metric text-abyssal-navy font-bold leading-none">6.1<span class="text-label-sm font-label-sm font-normal"> x 2.4m</span></span>
+</div>
+<div>
+<span class="font-label-code text-[10px] text-on-surface-variant uppercase block">Submerged</span>
+<span class="font-telemetry-metric text-telemetry-metric text-sonar-alert font-bold leading-none">-4.8<span class="text-label-sm font-label-sm font-normal"> m</span></span>
+</div>
+<div>
+<span class="font-label-code text-[10px] text-on-surface-variant uppercase block">Channel Dist</span>
+<span class="font-telemetry-metric text-telemetry-metric text-abyssal-navy font-bold leading-none">0.8<span class="text-label-sm font-label-sm font-normal"> NM</span></span>
+</div>
+</div>
+<div class="space-y-1">
+<div class="flex items-center justify-between text-body-sm font-body-sm">
+<span class="text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-secondary">pin_drop</span>
+                        09°58'02"N, 76°12'34"E (Cochin Approach Channel)
+                      </span>
+</div>
+<div class="text-sonar-alert font-label-code text-label-code font-bold uppercase flex items-center gap-1">
+<span class="h-2 w-2 rounded-full bg-sonar-alert animate-ping"></span>
+                      IMMINENT COLLISION RISK FOR DRAFT &gt; 5M
+                    </div>
+</div>
+</div>
+<div class="flex items-center gap-2 pt-space-sm mt-space-xs border-t border-border-subtle/50">
+<button class="flex-1 flex items-center justify-center gap-2 py-2.5 px-space-md rounded-xl bg-seafoam-glow text-abyssal-navy font-body-sm text-body-sm font-bold shadow-md hover:bg-seafoam-glow/90 transition-all" onclick="handleAccept('TRG-8823')">
+<span class="material-symbols-outlined text-[18px]">check_circle</span>
+<span>Accept Verification</span>
+</button>
+<button class="flex items-center gap-1.5 py-2.5 px-3 rounded-xl bg-sonar-alert text-on-primary font-body-sm text-body-sm font-bold shadow-sm hover:bg-sonar-alert/90 transition-all">
+<span class="material-symbols-outlined text-[18px]">report</span>
+<span>Escalate to DG Shipping</span>
+</button>
+<button class="p-2.5 rounded-xl bg-surface-ice text-on-surface-variant hover:bg-surface-container-high transition-colors" onclick="handleReject('TRG-8823', 'False Echo')">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+</div>
+</div>
+</article>
+<!-- CARD 4: Polypropylene Trawl Rig (Gahirmatha Marine Sanctuary) -->
+<article class="p-space-lg rounded-xl bg-surface-container-lowest shadow-none hover:shadow-sm border border-border-subtle transition-all flex flex-col gap-space-md group" id="anomaly-trg-8824">
+<div class="flex flex-wrap items-center justify-between gap-space-sm">
+<div class="flex items-center gap-2">
+<span class="px-2.5 py-1 rounded-md bg-surface-container-low text-abyssal-navy font-label-code text-label-code tracking-widest font-bold">TARGET #TRG-8824</span>
+<span class="font-label-code text-label-code text-on-surface-variant">INCOIS-SUBBASIN: BB-09</span>
+<span class="px-2 py-0.5 rounded-full bg-sonar-alert/10 text-sonar-alert font-label-code text-label-code font-bold">BIO SANCTUARY ALERT</span>
+</div>
+<div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-ice text-abyssal-navy">
+<span class="material-symbols-outlined text-seafoam-glow text-[16px]">verified</span>
+<span class="font-label-code text-label-code font-bold">94.2% AI CONFIDENCE</span>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-space-md">
+<div class="md:col-span-6 flex flex-col gap-2">
+<div class="relative w-full h-52 rounded-lg overflow-hidden bg-abyssal-navy">
+<img alt="TARANG Logo" class="h-8 w-auto object-contain rounded-lg" src="logoimage.jpg"/>
+<div class="absolute inset-0 bg-gradient-to-t from-abyssal-navy/90 via-transparent to-transparent"></div>
+<div class="absolute top-2 left-2 flex items-center gap-1 px-2 py-0.5 rounded bg-abyssal-navy/80 text-seafoam-glow font-label-code text-[10px] tracking-wider">
+                    COAST GUARD DRONE PATROL • SECTOR D
+                  </div>
+<div class="absolute bottom-2 left-2 right-2 flex items-center justify-between text-on-primary font-label-code text-label-code">
+<span>ALT: 250M</span>
+<span>OPTICAL ZOOM: 12X</span>
+<span>BUOYS: 14 DETECTED</span>
+</div>
+</div>
+<div class="flex items-center justify-between text-on-surface-variant font-label-code text-label-code px-1">
+<span>CLASS: HEAVY COMMERCIAL TRAWL</span>
+<button class="text-secondary hover:underline flex items-center gap-0.5">
+<span>Examine Telephoto EXIF</span>
+<span class="material-symbols-outlined text-[14px]">photo_camera</span>
+</button>
+</div>
+</div>
+<div class="md:col-span-6 flex flex-col justify-between">
+<div class="space-y-space-sm">
+<div>
+<h3 class="font-headline-sm text-headline-sm text-abyssal-navy font-bold">Discarded Industrial Polypropylene Trawl Rig</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">High-buoyancy trawl gear adrift within the core nesting transit zone of Olive Ridley sea turtles during annual breeding cycle.</p>
+</div>
+<div class="grid grid-cols-3 gap-2 p-3 rounded-xl bg-surface-ice">
+<div>
+<span class="font-label-code text-[10px] text-on-surface-variant uppercase block">Rig Diameter</span>
+<span class="font-telemetry-metric text-telemetry-metric text-abyssal-navy font-bold leading-none">22.4<span class="text-label-sm font-label-sm font-normal"> m</span></span>
+</div>
+<div>
+<span class="font-label-code text-[10px] text-on-surface-variant uppercase block">Entangle Risk</span>
+<span class="font-telemetry-metric text-telemetry-metric text-sonar-alert font-bold leading-none">HIGH<span class="text-label-sm font-label-sm font-normal"> (Fauna)</span></span>
+</div>
+<div>
+<span class="font-label-code text-[10px] text-on-surface-variant uppercase block">Est. Float life</span>
+<span class="font-telemetry-metric text-telemetry-metric text-secondary font-bold leading-none">&gt;180<span class="text-label-sm font-label-sm font-normal"> d</span></span>
+</div>
+</div>
+<div class="space-y-1">
+<div class="flex items-center justify-between text-body-sm font-body-sm">
+<span class="text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-secondary">pin_drop</span>
+                        19°48'11"N, 85°49'20"E (Gahirmatha Marine Sanctuary)
+                      </span>
+</div>
+<span class="font-label-code text-label-code text-telemetry-amber font-bold">ACTION: Priority Interception for Coastal Interceptor Boat (C-142)</span>
+</div>
+</div>
+<div class="flex items-center gap-2 pt-space-sm mt-space-xs border-t border-border-subtle/50">
+<button class="flex-1 flex items-center justify-center gap-2 py-2.5 px-space-md rounded-xl bg-seafoam-glow text-abyssal-navy font-body-sm text-body-sm font-bold shadow-md hover:bg-seafoam-glow/90 transition-all" onclick="handleAccept('TRG-8824')">
+<span class="material-symbols-outlined text-[18px]">check_circle</span>
+<span>Accept Verification</span>
+</button>
+<button class="flex items-center gap-1.5 py-2.5 px-3 rounded-xl bg-sonar-alert/10 text-sonar-alert hover:bg-sonar-alert/20 font-body-sm text-body-sm font-bold transition-all" onclick="handleReject('TRG-8824', 'Authorized Fishery Gear')">
+<span class="material-symbols-outlined text-[18px]">cancel</span>
+<span>Reject / Legitimate Gear</span>
+</button>
+</div>
+</div>
+</div>
+</article>
+</div>
+</div>
+<!-- RIGHT 28% COLUMN: Gamified Leaderboard & Real-time Drift Mini-Model -->
+</div>
+</div>
+<!-- Micro-interaction Client Scripts -->
+<script>
+    function toggleRejectMenu(menuId) {
+      const menu = document.getElementById(menuId);
+      if (menu) {
+        menu.classList.toggle('hidden');
+      }
+    }
+
+    function handleAccept(targetId) {
+      const card = document.getElementById('anomaly-' + targetId.toLowerCase());
+      if (card) {
+        card.classList.add('opacity-40', 'pointer-events-none', 'scale-[0.99]');
+        setTimeout(() => {
+          card.innerHTML = `
+            <div class="py-6 px-4 text-center flex flex-col items-center justify-center gap-2">
+              <span class="material-symbols-outlined text-seafoam-glow text-[36px]">verified</span>
+              <span class="font-headline-sm text-headline-sm text-abyssal-navy font-bold">Verification Confirmed for ${targetId}</span>
+              <span class="font-label-code text-label-code text-secondary font-bold">DISPATCH NOTICE ROUTED TO COAST GUARD VESSEL ICGS SAMUDRA PAHERIDAR</span>
+            </div>
+          `;
+          card.classList.remove('opacity-40');
+        }, 300);
+      }
+    }
+
+    function handleReject(targetId, reason) {
+      const card = document.getElementById('anomaly-' + targetId.toLowerCase());
+      if (card) {
+        card.classList.add('opacity-40', 'pointer-events-none');
+        setTimeout(() => {
+          card.innerHTML = `
+            <div class="py-6 px-4 text-center flex flex-col items-center justify-center gap-2">
+              <span class="material-symbols-outlined text-sonar-alert text-[36px]">cancel</span>
+              <span class="font-headline-sm text-headline-sm text-abyssal-navy font-bold">${targetId} Marked as False Positive</span>
+              <span class="font-label-code text-label-code text-on-surface-variant">REASON LOGGED: ${reason.toUpperCase()} • RETRAINING SAR CLASSIFIER</span>
+            </div>
+          `;
+          card.classList.remove('opacity-40');
+        }, 300);
+      }
+    }
+
+    document.getElementById('batch-approve-btn')?.addEventListener('click', () => {
+      const targets = ['TRG-8821', 'TRG-8824'];
+      targets.forEach(t => handleAccept(t));
+    });
+  </script>
+</div></main></div></body></html>

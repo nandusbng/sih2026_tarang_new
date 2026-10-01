@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TARANG - Autonomous Marine Intelligence</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/@dotlottie/player-component@2.7.12/dist/dotlottie-player.mjs" type="module"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&amp;display=swap" rel="stylesheet"/>
+<style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+      overflow: hidden;
+      background-color: #000;
+      cursor: default;
+    }
+    .video-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+      z-index: 0;
+      opacity: 0.9;
+    }
+    .overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(to right, rgba(0, 15, 34, 0.9) 0%, rgba(0, 15, 34, 0.4) 50%, transparent 100%);
+      z-index: 1;
+    }
+    .content {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
+      height: 100vh;
+      text-align: left;
+      color: white;
+      padding-left: 10%;
+      max-width: 60%;
+    }
+    .reveal-text {
+      opacity: 0;
+      transform: translateX(-30px);
+      animation: revealRight 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .delay-1 { animation-delay: 0.2s; }
+    .delay-2 { animation-delay: 0.4s; }
+    .delay-3 { animation-delay: 0.6s; }
+
+    @keyframes revealRight {
+      0% { opacity: 0; transform: translateX(-30px); }
+      100% { opacity: 1; transform: translateX(0); }
+    }
+
+    /* Premium Button Hover Effect */
+    .enter-btn {
+      position: relative;
+      overflow: hidden;
+      transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      background: rgba(20, 184, 166, 0.1);
+      border: 1px solid rgba(20, 184, 166, 0.5);
+      backdrop-filter: blur(12px);
+      transform-style: preserve-3d;
+    }
+    .enter-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(20, 184, 166, 0.4), transparent);
+      transition: left 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: -1;
+    }
+    .enter-btn:hover {
+      border-color: rgba(20, 184, 166, 1);
+      box-shadow: 0 10px 30px -10px rgba(20, 184, 166, 0.6);
+      transform: translateY(-4px) scale(1.02);
+      letter-spacing: 0.05em;
+    }
+    .enter-btn:hover::before {
+      left: 100%;
+    }
+    .enter-btn:active {
+      transform: translateY(0) scale(0.98);
+    }
+    
+    /* Arrow animation on hover */
+    .enter-btn svg {
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .enter-btn:hover svg {
+      transform: translateX(6px);
+    }
+
+    /* Wave Shine Text Effect */
+    .hover-letter {
+      display: inline-block;
+      color: #ffffff;
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), text-shadow 0.3s ease, color 0.3s ease;
+      animation: waveShine 3s infinite;
+      cursor: default;
+    }
+    .hover-letter:hover {
+      transform: translateY(-12px) scale(1.1);
+      color: #14b8a6;
+      text-shadow: 0 15px 25px rgba(20, 184, 166, 0.8);
+      animation: none; /* Pause the shine when hovering */
+    }
+    @keyframes waveShine {
+      0%, 100% { color: #ffffff; text-shadow: none; }
+      15%, 85% { color: #ffffff; text-shadow: none; }
+      50% { color: #14b8a6; text-shadow: 0 0 15px rgba(20,184,166,0.6); }
+    }
+  </style>
+</head>
+<body>
+<!-- Background Video -->
+<video autoplay="" class="video-bg" loop="" muted="" playsinline="">
+<source src="LandingPage.mp4" type="video/mp4"/>
+</video>
+<!-- Overlay (Left Heavy) -->
+<div class="overlay"></div>
+
+<!-- Top Navigation / Brand Header -->
+<div class="absolute top-6 left-6 md:left-12 z-10 flex items-center gap-3">
+  <div class="w-12 h-12 rounded-full overflow-hidden border border-teal-500/30 bg-[#020b15]/80 backdrop-blur p-1 flex items-center justify-center shrink-0 shadow-lg shadow-teal-500/10">
+    <img src="logoimage.jpg" class="w-full h-full object-contain rounded-full" alt="TARANG Logo" />
+  </div>
+  <div class="flex flex-col">
+    <span class="text-xs font-mono font-bold tracking-widest text-teal-400 uppercase">TARANG // तरंग</span>
+    <span class="text-[10px] font-mono text-slate-400">MoES &amp; NIOT Operational Platform</span>
+  </div>
+</div>
+
+<!-- Content -->
+<div class="content">
+<h1 class="reveal-text delay-1 text-6xl md:text-8xl font-extrabold tracking-tight mb-6 drop-shadow-2xl">
+<span class="hover-letter" style="animation-delay: 0s">T</span><span class="hover-letter" style="animation-delay: 0.1s">A</span><span class="hover-letter" style="animation-delay: 0.2s">R</span><span class="hover-letter" style="animation-delay: 0.3s">A</span><span class="hover-letter relative" style="animation-delay: 0.4s; position: relative;">N
+        <dotlottie-player autoplay="" background="transparent" loop="" speed="1" src="https://lottie.host/8c0aedad-7bdd-495d-ba3e-e01ff61b3e09/Xh7gX7Veti.lottie" style="position: absolute; top: -70px; left: 50%; transform: translateX(-50%); width: 100px; height: 100px; pointer-events: none;">
+</dotlottie-player>
+</span><span class="hover-letter" style="animation-delay: 0.5s">G</span>
+</h1>
+      <!-- Prominent Full Form of TARANG -->
+      <div class="reveal-text delay-2 mb-10 max-w-3xl">
+        <h2 class="text-2xl sm:text-3xl md:text-4xl lg:text-[40px] font-bold tracking-tight text-white leading-tight drop-shadow-xl">
+          <span class="text-teal-400 font-black">T</span>echnology for 
+          <span class="text-teal-400 font-black">A</span>quatic 
+          <span class="text-teal-400 font-black">R</span>ecognition, 
+          <span class="text-teal-400 font-black">A</span>ssessment, 
+          <span class="text-teal-400 font-black">N</span>avigation and 
+          <span class="text-teal-400 font-black">G</span>eotagging
+        </h2>
+        <div class="flex items-center gap-2.5 mt-4 text-xs md:text-sm font-mono tracking-widest text-teal-300/90 uppercase">
+          <span class="inline-block w-2 h-2 rounded-full bg-teal-400 animate-pulse"></span>
+          Autonomous Marine Intelligence &amp; Acoustic Verification System
+        </div>
+      </div>
+
+      <div class="reveal-text delay-3 flex flex-wrap items-center gap-4">
+        <a class="enter-btn px-8 py-4 rounded-full text-white font-semibold tracking-wider text-sm md:text-base uppercase inline-flex items-center gap-3 cursor-pointer" href="public.html">
+          <span>Explore Ocean Awareness</span>
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M14 5l7 7m0 0l-7 7m7-7H3" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+        </a>
+        <a class="enter-btn px-8 py-4 rounded-full text-teal-200 hover:text-white font-semibold tracking-wider text-sm md:text-base uppercase inline-flex items-center gap-3 cursor-pointer border border-teal-500/50 bg-teal-950/60 hover:bg-teal-900/90 hover:border-teal-400 shadow-lg shadow-teal-950/50" href="login.html">
+          <span>Operational Access</span>
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+        </a>
+      </div>
+    </div>
+<!-- Bottom Right Star Lottie -->
+<dotlottie-player autoplay="" background="transparent" loop="" speed="1" src="https://lottie.host/1ae07f07-b71b-4b0e-8785-c21e27e1d08d/3ccsBVkl3p.lottie" style="position: absolute; bottom: 5%; right: 5%; width: 150px; height: 150px; pointer-events: none; z-index: 10;">
+</dotlottie-player>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const video = document.querySelector('.video-bg');
+      if (video) {
+        // Attempt to force play to bypass browser autoplay restrictions
+        const playPromise = video.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(error => {
+            console.log("Browser prevented autoplay:", error);
+            // Optionally, add a "click anywhere to play" listener if blocked
+            document.body.addEventListener('click', () => video.play(), { once: true });
+          });
+        }
+      }
+    });
+  </script>
+</body>
+</html>

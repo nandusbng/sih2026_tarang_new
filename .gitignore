@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+env/
+
+# Node
+node_modules/
+frontend/node_modules/
+
+# Outputs & Data
+outputs/
+*.xtf
+*.xtf.bak
+tarang.db
+tarang.db-journal
+
+# Models & Media
+# best.pt might be okay since it's 22M, but some people ignore it. I'll include it for the repo to work.
+# Drone model is small.
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+*.zip

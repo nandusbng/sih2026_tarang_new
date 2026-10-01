@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;family=Space+Grotesk:wght@600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: 'class', theme: { extend: { 'colors': { 'surface-dim': '#c8dcf4', 'on-primary-fixed': '#001c37', 'inverse-on-surface': '#e8f1ff', 'outline-variant': '#c4c6ce', 'on-tertiary': '#ffffff', 'on-tertiary-container': '#1f9c8f', 'secondary-fixed': '#cce5ff', 'primary-fixed': '#d2e4ff', 'seafoam-glow': '#14B8A6', 'on-secondary-container': '#00476e', 'surface-bright': '#f7f9ff', 'abyssal-navy': '#031B33', 'surface-tint': '#49607e', 'on-tertiary-fixed-variant': '#005049', 'surface-ice': '#F0F4F8', 'tertiary-fixed': '#89f5e7', 'error': '#ba1a1a', 'on-secondary-fixed-variant': '#004b73', 'on-secondary-fixed': '#001d31', 'primary': '#000f22', 'surface-container-high': '#d9eaff', 'on-error-container': '#93000a', 'secondary-fixed-dim': '#93ccff', 'on-primary-container': '#768dad', 'surface-container-low': '#edf4ff', 'on-primary-fixed-variant': '#314865', 'secondary': '#006398', 'primary-container': '#0a2540', 'surface-container-lowest': '#ffffff', 'tertiary-container': '#002a26', 'inverse-surface': '#1f3245', 'secondary-container': '#5bb8fe', 'tertiary': '#001210', 'outline': '#74777e', 'border-subtle': '#E2E8F0', 'on-background': '#081d2f', 'on-error': '#ffffff', 'surface-container': '#e3efff', 'on-surface': '#081d2f', 'background': '#f7f9ff', 'tertiary-fixed-dim': '#6bd8cb', 'on-surface-variant': '#43474d', 'primary-fixed-dim': '#b0c8eb', 'surface': '#f7f9ff', 'sonar-alert': '#E11D48', 'telemetry-amber': '#D97706', 'surface-variant': '#d1e4fd', 'on-tertiary-fixed': '#00201d', 'surface-container-highest': '#d1e4fd', 'inverse-primary': '#b0c8eb', 'canvas-base': '#FAFCFF', 'on-secondary': '#ffffff', 'on-primary': '#ffffff', 'error-container': '#ffdad6' }, 'borderRadius': { 'DEFAULT': '0.125rem', 'lg': '0.25rem', 'xl': '0.5rem', 'full': '0.75rem' }, 'spacing': { 'space-xs': '0.25rem', 'space-sm': '0.5rem', 'gutter': '1.25rem', 'space-xl': '2.5rem', 'space-md': '1rem', 'space-lg': '1.5rem', 'gutter-desktop': '2rem', 'margin': '1rem', 'margin-desktop': '3rem' }, 'fontFamily': { 'headline-sm': ['Plus Jakarta Sans'], 'display-xl-mobile': ['Plus Jakarta Sans'], 'headline-lg': ['Plus Jakarta Sans'], 'label-code': ['Space Grotesk'], 'body-sm': ['Inter'], 'body-md': ['Inter'], 'telemetry-metric': ['Space Grotesk'], 'headline-lg-mobile': ['Plus Jakarta Sans'], 'display-xl': ['Plus Jakarta Sans'], 'label-sm': ['Inter'], 'body-lg': ['Inter'] }, 'fontSize': { 'headline-sm': ['20px', { 'lineHeight': '28px', 'fontWeight': '600' }], 'display-xl-mobile': ['36px', { 'lineHeight': '42px', 'letterSpacing': '-0.02em', 'fontWeight': '800' }], 'headline-lg': ['32px', { 'lineHeight': '40px', 'letterSpacing': '-0.02em', 'fontWeight': '700' }], 'label-code': ['11px', { 'lineHeight': '14px', 'letterSpacing': '0.06em', 'fontWeight': '600' }], 'body-sm': ['12px', { 'lineHeight': '16px', 'fontWeight': '400' }], 'body-md': ['14px', { 'lineHeight': '20px', 'fontWeight': '400' }], 'telemetry-metric': ['28px', { 'lineHeight': '34px', 'letterSpacing': '-0.02em', 'fontWeight': '700' }], 'headline-lg-mobile': ['24px', { 'lineHeight': '32px', 'letterSpacing': '-0.01em', 'fontWeight': '700' }], 'display-xl': ['56px', { 'lineHeight': '64px', 'letterSpacing': '-0.03em', 'fontWeight': '800' }], 'label-sm': ['11px', { 'lineHeight': '14px', 'letterSpacing': '0.02em', 'fontWeight': '600' }], 'body-lg': ['16px', { 'lineHeight': '24px', 'fontWeight': '400' }] } } } }</script></head><body class="bg-canvas-base font-body-md text-on-surface antialiased"><header class="fixed top-0 left-0 right-0 z-50 w-full bg-surface-container-lowest/90 backdrop-blur-xl shadow-[0_1px_12px_rgba(10,37,64,0.06)]"><div class="h-20 w-full px-gutter-desktop flex items-center justify-between gap-space-md"><div class="flex items-center gap-space-md shrink-0"><img alt="TARANG Maritime Emblem" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1UBMW6iMgfbBwZLIDTRnGRcZz4EYw5gVrnjY-JwIlTSpQtME7DwIWGYGYFXrxz2sokFJ1wUUcD8e1L5wHn1eFkXI7OgRvwvhs32SW7W0p0EofKYjoPKWTdqsaean0Rwd5HyexL85zU0Xu_w53bN3GnBjqHsJUfoELVsId85dsLi9mFKd4vbQTknatWMVUC6W57tZkIAxk6F9cp2r5YeEK6QMlT3eFg5bUnr71xBrtcuDFD000hr9PfvDQ"/><div class="flex flex-col justify-center"><div class="flex items-center gap-space-xs"><span class="font-headline-sm text-headline-sm tracking-tight text-primary font-bold">TARANG</span><span class="font-label-code text-label-code text-on-tertiary-container bg-surface-ice px-space-xs py-0.5 rounded">SIH 2026</span></div><span class="font-label-sm text-label-sm text-on-surface-variant hidden xl:block">Smart India Hackathon • MoES / INCOIS Track</span></div></div><nav class="hidden lg:flex items-center gap-space-xs bg-surface-ice/70 p-1 rounded-xl shadow-[0_1px_4px_rgba(10,37,64,0.04)]" data-active-classes="bg-surface-container-low text-secondary font-semibold rounded-xl"><a aria-current="page" class="px-space-md py-space-xs transition-all bg-surface-container-low text-secondary font-semibold rounded-xl" data-path="overview" href="#">Overview</a><a class="font-body-md text-body-md px-space-md py-space-xs rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="sonar-ai-analyzer" href="#">Sonar AI Analyzer</a><a class="font-body-md text-body-md px-space-md py-space-xs rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="expert-verification" href="#">Expert Verification</a><a class="font-body-md text-body-md px-space-md py-space-xs rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="fleet-logistics-and-routing" href="#">Fleet Logistics &amp; Routing</a></nav><div class="flex items-center gap-space-md shrink-0"><div class="hidden 2xl:flex items-center gap-space-xs bg-surface-ice px-space-md py-space-xs rounded-xl shadow-[0_1px_3px_rgba(10,37,64,0.04)]"><span class="relative flex h-2.5 w-2.5"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-seafoam-glow opacity-75"></span><span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-seafoam-glow"></span></span><span class="font-label-code text-label-code text-on-surface font-semibold">INSAT-3DR SYNCED</span><span class="font-label-code text-label-code text-on-surface-variant">• 12 HOTSPOTS</span></div><button class="hidden sm:flex items-center gap-space-xs bg-primary text-on-primary hover:bg-primary-container font-body-md text-body-md font-semibold px-space-md py-2 rounded-xl transition-all shadow-[0_4px_16px_rgba(10,37,64,0.18)]" type="button"><span class="material-symbols-outlined text-[18px] text-seafoam-glow">rocket_launch</span><span>Launch Mission Control</span></button><div class="flex items-center gap-space-xs bg-surface-ice pl-space-xs pr-space-md py-1 rounded-full shadow-[0_1px_4px_rgba(10,37,64,0.04)]"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div><div class="flex flex-col text-left"><span class="font-label-code text-label-code text-primary font-bold leading-none">INCOIS Ops #409</span><span class="font-label-sm text-label-sm text-on-surface-variant text-[10px] leading-tight">Hydro Command</span></div></div></div></div></header><main class="w-full pt-20 bg-canvas-base min-h-[calc(100vh-20rem)]"><div class="flex flex-col w-full relative overflow-hidden bg-canvas-base">
+<!-- Ambient Wave Ripple Canvas Background -->
+<canvas class="absolute inset-0 pointer-events-none z-0 w-full h-full opacity-45" id="ambient-ocean-canvas"></canvas>
+<!-- ========================================================================= -->
+<!-- SECTION 1: HERO SECTION                                                   -->
+<!-- ========================================================================= -->
+<section class="relative z-10 w-full px-margin md:px-gutter-desktop pt-space-xl pb-space-lg flex flex-col items-center text-center">
+<!-- Status Chip / Eyebrow Pill -->
+<div class="inline-flex items-center gap-space-xs px-space-md py-1.5 rounded-full bg-surface-container-low shadow-sm mb-space-lg">
+<span class="relative flex h-2.5 w-2.5">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-seafoam-glow opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-seafoam-glow"></span>
+</span>
+<span class="font-label-code text-label-code text-primary uppercase tracking-wider font-bold">SIH 2026 Grand Challenge</span>
+<span class="text-outline-variant font-label-code text-label-code">•</span>
+<span class="font-label-code text-label-code text-on-tertiary-container font-semibold">Real-Time Oceanic Telemetry &amp; Multispectral AI</span>
+</div>
+<!-- Main Title with Distinct Maritime Typography -->
+<h1 class="max-w-5xl font-display-xl text-display-xl-mobile lg:text-display-xl text-primary font-extrabold tracking-tight mb-space-md">
+      Autonomous Marine Debris Detection, Verification &amp;
+      <span class="bg-gradient-to-r from-secondary via-secondary-container to-seafoam-glow bg-clip-text text-transparent"> Fleet Interception</span>
+</h1>
+<!-- Descriptive Subtitle -->
+<p class="max-w-3xl font-body-lg text-body-lg text-on-surface-variant leading-relaxed mb-space-xl">
+      Synthesizing Sentinel-2 multispectral imagery, synthetic aperture radar (SAR), and autonomous underwater vehicle (AUV) sonar telemetry to isolate macroplastics and ghost nets across the Indian Ocean coastline with 94.8% verified precision.
+    </p>
+<!-- CTAs & Action Ribbon -->
+<div class="flex flex-wrap items-center justify-center gap-space-md mb-space-xl">
+<a class="group relative inline-flex items-center gap-space-sm px-space-lg py-3.5 rounded-xl bg-primary text-on-primary font-headline-sm text-body-lg shadow-md hover:shadow-xl transition-all duration-300 hover:scale-[1.02]" href="#drift-console">
+<span class="material-symbols-outlined text-seafoam-glow text-[20px] transition-transform group-hover:rotate-45">radar</span>
+<span class="font-semibold">Explore Live Drift Console</span>
+<span class="material-symbols-outlined text-[18px] transition-transform group-hover:translate-x-1">arrow_forward</span>
+</a>
+<a class="inline-flex items-center gap-space-sm px-space-lg py-3.5 rounded-xl bg-surface-container-lowest text-primary font-headline-sm text-body-lg shadow-sm hover:bg-surface-container-low hover:shadow-md transition-all duration-300" href="#architecture">
+<span class="material-symbols-outlined text-secondary text-[20px]">account_tree</span>
+<span class="font-semibold">Technical Architecture</span>
+</a>
+</div>
+<!-- Live Telemetry Badges Strip -->
+<div class="w-full max-w-5xl grid grid-cols-2 md:grid-cols-4 gap-space-sm p-2 rounded-xl bg-surface-container-low shadow-sm">
+<!-- Metric 1 -->
+<div class="flex flex-col p-space-md bg-surface-container-lowest rounded-lg shadow-sm text-left">
+<div class="flex items-center justify-between mb-space-xs">
+<span class="font-label-code text-label-code text-on-surface-variant uppercase">Indian Ocean Scan</span>
+<span class="material-symbols-outlined text-secondary text-[18px]">satellite_alt</span>
+</div>
+<div class="font-telemetry-metric text-telemetry-metric text-primary font-bold">14,820 <span class="font-body-sm text-body-sm text-on-surface-variant font-normal">km²</span></div>
+<span class="font-label-sm text-label-sm text-seafoam-glow font-medium mt-1">Live coverage today</span>
+</div>
+<!-- Metric 2 -->
+<div class="flex flex-col p-space-md bg-surface-container-lowest rounded-lg shadow-sm text-left">
+<div class="flex items-center justify-between mb-space-xs">
+<span class="font-label-code text-label-code text-on-surface-variant uppercase">Model Precision</span>
+<span class="material-symbols-outlined text-on-tertiary-container text-[18px]">verified</span>
+</div>
+<div class="font-telemetry-metric text-telemetry-metric text-primary font-bold">94.8%</div>
+<span class="font-label-sm text-label-sm text-on-tertiary-container font-medium mt-1">FDI + NDVI F1-Score</span>
+</div>
+<!-- Metric 3 -->
+<div class="flex flex-col p-space-md bg-surface-container-lowest rounded-lg shadow-sm text-left">
+<div class="flex items-center justify-between mb-space-xs">
+<span class="font-label-code text-label-code text-on-surface-variant uppercase">Debris Recovered</span>
+<span class="material-symbols-outlined text-telemetry-amber text-[18px]">recycling</span>
+</div>
+<div class="font-telemetry-metric text-telemetry-metric text-primary font-bold">18.4 <span class="font-body-sm text-body-sm text-on-surface-variant font-normal">Tons</span></div>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-medium mt-1">Bay of Bengal Sector</span>
+</div>
+<!-- Metric 4 -->
+<div class="flex flex-col p-space-md bg-surface-container-lowest rounded-lg shadow-sm text-left">
+<div class="flex items-center justify-between mb-space-xs">
+<span class="font-label-code text-label-code text-on-surface-variant uppercase">Mean Intercept</span>
+<span class="material-symbols-outlined text-sonar-alert text-[18px]">timer</span>
+</div>
+<div class="font-telemetry-metric text-telemetry-metric text-primary font-bold">42 <span class="font-body-sm text-body-sm text-on-surface-variant font-normal">min</span></div>
+<span class="font-label-sm text-label-sm text-sonar-alert font-medium mt-1">Vessel Sortie Delta</span>
+</div>
+</div>
+</section>
+<!-- ========================================================================= -->
+<!-- SECTION 2: RADAR & HYDROGRAPHIC DRIFT PREVIEW                             -->
+<!-- ========================================================================= -->
+<section class="relative z-10 w-full px-margin md:px-gutter-desktop py-space-xl" id="drift-console">
+<div class="w-full bg-surface-container-lowest rounded-xl shadow-md overflow-hidden">
+<!-- Console Header Bar -->
+<div class="flex flex-wrap items-center justify-between px-space-lg py-space-md bg-surface-container-low gap-space-md">
+<div class="flex items-center gap-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="inline-block w-3 h-3 rounded-full bg-seafoam-glow"></span>
+<span class="font-label-code text-label-code font-bold text-primary uppercase">RADAR SWEEP: ACTIVE • ARABIAN SEA TO COROMANDEL</span>
+</div>
+<span class="hidden md:inline text-outline font-label-code text-label-code">GRID_LOC: 13.0827° N, 80.2707° E</span>
+</div>
+<!-- Mode Selectors -->
+<div class="flex items-center gap-1 bg-surface-ice p-1 rounded-lg">
+<button class="radar-mode-btn px-space-md py-1.5 rounded text-label-code font-label-code font-semibold bg-surface-container-lowest text-primary shadow-sm transition-all" id="btn-optical" onclick="setRadarMode('optical')" type="button">
+            Sentinel Optical
+          </button>
+<button class="radar-mode-btn px-space-md py-1.5 rounded text-label-code font-label-code font-semibold text-on-surface-variant hover:text-on-surface transition-all" id="btn-sar" onclick="setRadarMode('sar')" type="button">
+            SAR Radar
+          </button>
+<button class="radar-mode-btn px-space-md py-1.5 rounded text-label-code font-label-code font-semibold text-on-surface-variant hover:text-on-surface transition-all" id="btn-sonar" onclick="setRadarMode('sonar')" type="button">
+            AUV Sonar Bathymetry
+          </button>
+</div>
+</div>
+<!-- Radar Canvas & Interactive Display Area -->
+<div class="relative w-full h-[520px] bg-abyssal-navy flex items-center justify-center overflow-hidden">
+<!-- Radar Grid Lines (SVG) -->
+<svg class="absolute inset-0 w-full h-full opacity-25 pointer-events-none" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<radialgradient cx="50%" cy="50%" id="radarRadial" r="50%">
+<stop offset="0%" stop-color="#14B8A6" stop-opacity="0.1"></stop>
+<stop offset="100%" stop-color="#006398" stop-opacity="0.0"></stop>
+</radialgradient>
+</defs>
+<rect fill="url(#radarRadial)" height="100%" width="100%"></rect>
+<!-- Concentric circles -->
+<circle cx="50%" cy="50%" fill="none" r="90" stroke="#5bb8fe" stroke-dasharray="3 3" stroke-width="1"></circle>
+<circle cx="50%" cy="50%" fill="none" r="180" stroke="#5bb8fe" stroke-dasharray="4 4" stroke-width="1"></circle>
+<circle cx="50%" cy="50%" fill="none" r="270" stroke="#5bb8fe" stroke-dasharray="4 4" stroke-width="1"></circle>
+<circle cx="50%" cy="50%" fill="none" r="360" stroke="#5bb8fe" stroke-width="1"></circle>
+<!-- Axis crosshairs -->
+<line opacity="0.4" stroke="#5bb8fe" stroke-width="1" x1="50%" x2="50%" y1="0%" y2="100%"></line>
+<line opacity="0.4" stroke="#5bb8fe" stroke-width="1" x1="0%" x2="100%" y1="50%" y2="50%"></line>
+</svg>
+<!-- Dynamic Rotating Radar Sweep Line -->
+<div class="absolute w-[720px] h-[720px] rounded-full pointer-events-none origin-center animate-spin" id="radar-sweep" style="animation-duration: 7s; background: conic-gradient(from 0deg at 50% 50%, rgba(20, 184, 166, 0.35) 0deg, transparent 65deg, transparent 360deg);"></div>
+<!-- Simulated Hydrodynamic Drift Vectors -->
+<div class="absolute inset-0 pointer-events-none flex items-center justify-center">
+<!-- Vector Arrow 1 -->
+<div class="absolute top-1/4 left-1/3 flex items-center gap-1 opacity-70 text-secondary-container">
+<span class="material-symbols-outlined text-[20px] rotate-45">north_east</span>
+<span class="font-label-code text-label-code text-[10px]">CURRENT: 1.4 kn • 042°</span>
+</div>
+<!-- Vector Arrow 2 -->
+<div class="absolute bottom-1/4 right-1/4 flex items-center gap-1 opacity-70 text-secondary-container">
+<span class="material-symbols-outlined text-[20px] -rotate-12">trending_flat</span>
+<span class="font-label-code text-label-code text-[10px]">SURFACE DRIFT: 0.9 kn • 088°</span>
+</div>
+</div>
+<!-- Tagged Interactive Cluster Pin 1 -->
+<div class="absolute top-[32%] left-[42%] group z-20 cursor-pointer">
+<div class="relative flex items-center justify-center">
+<span class="animate-ping absolute h-8 w-8 rounded-full bg-sonar-alert opacity-60"></span>
+<div class="relative h-4 w-4 rounded-full bg-sonar-alert flex items-center justify-center shadow-lg"></div>
+</div>
+<!-- Tooltip Popup Card -->
+<div class="absolute left-6 -top-10 w-72 bg-surface-container-lowest/95 backdrop-blur-md p-space-sm rounded-lg shadow-xl pointer-events-none group-hover:pointer-events-auto transition-all transform opacity-95 group-hover:scale-105">
+<div class="flex items-center justify-between mb-1">
+<span class="font-label-code text-label-code text-sonar-alert font-bold">CLUSTER #IN-882</span>
+<span class="font-label-code text-label-code px-1.5 py-0.5 rounded bg-surface-container-high text-primary font-bold">96.2% CONF</span>
+</div>
+<p class="font-headline-sm text-body-md text-primary font-bold leading-tight mb-1">Submerged Ghost Gillnet</p>
+<div class="grid grid-cols-2 gap-1 text-[10px] font-label-code text-on-surface-variant">
+<span>EST. MASS: 2.1 Tons</span>
+<span>DRIFT: 1.8 kn SE</span>
+<span>SST: 28.4°C</span>
+<span>RISK: Marine Fauna Hazard</span>
+</div>
+</div>
+</div>
+<!-- Tagged Interactive Cluster Pin 2 -->
+<div class="absolute bottom-[35%] right-[38%] group z-20 cursor-pointer">
+<div class="relative flex items-center justify-center">
+<span class="animate-ping absolute h-8 w-8 rounded-full bg-telemetry-amber opacity-60"></span>
+<div class="relative h-4 w-4 rounded-full bg-telemetry-amber flex items-center justify-center shadow-lg"></div>
+</div>
+<!-- Tooltip Popup Card -->
+<div class="absolute right-6 -top-8 w-72 bg-surface-container-lowest/95 backdrop-blur-md p-space-sm rounded-lg shadow-xl pointer-events-none group-hover:pointer-events-auto transition-all transform opacity-95 group-hover:scale-105">
+<div class="flex items-center justify-between mb-1">
+<span class="font-label-code text-label-code text-telemetry-amber font-bold">CLUSTER #IN-904</span>
+<span class="font-label-code text-label-code px-1.5 py-0.5 rounded bg-surface-container-high text-primary font-bold">89.4% CONF</span>
+</div>
+<p class="font-headline-sm text-body-md text-primary font-bold leading-tight mb-1">Macroplastic Slick • HDPE Aggregate</p>
+<div class="grid grid-cols-2 gap-1 text-[10px] font-label-code text-on-surface-variant">
+<span>EST. AREA: 480 m²</span>
+<span>HEADING: 114° Coromandel</span>
+<span>DISPATCH: Skimmer Tarang-02</span>
+<span>STATUS: Trajectory Tracked</span>
+</div>
+</div>
+</div>
+<!-- Tagged Autonomous Vessel Pin -->
+<div class="absolute bottom-[20%] left-[28%] group z-20 cursor-pointer">
+<div class="relative flex items-center justify-center">
+<div class="h-6 w-6 rounded-full bg-seafoam-glow text-abyssal-navy flex items-center justify-center shadow-lg">
+<span class="material-symbols-outlined text-[16px] font-bold">directions_boat</span>
+</div>
+</div>
+<div class="absolute left-8 -top-3 whitespace-nowrap bg-primary-container px-space-xs py-1 rounded shadow text-on-primary font-label-code text-[10px]">
+            INTERCEPTOR ICGS-VARUNA [12.4 kn]
+          </div>
+</div>
+<!-- Real-Time Telemetry HUD Overlays -->
+<div class="absolute bottom-space-md left-space-md bg-abyssal-navy/85 backdrop-blur-md p-space-sm rounded-lg text-on-primary font-label-code text-label-code flex flex-col gap-1 shadow-lg">
+<div class="text-secondary-container flex items-center gap-1 font-bold">
+<span class="material-symbols-outlined text-[16px]">water_ec</span>
+<span>INCOIS OCEAN METRICS: TILE 409</span>
+</div>
+<span class="text-surface-dim">Significant Wave Height (SWH): 1.62 m</span>
+<span class="text-surface-dim">Tidal Cycle: Ebb Flow (-0.4m/hr)</span>
+<span class="text-seafoam-glow">Drift Vector Projection: Nominal Stability</span>
+</div>
+<!-- Coordinates Floating Legend -->
+<div class="absolute top-space-md right-space-md bg-abyssal-navy/85 backdrop-blur-md px-space-sm py-1 rounded text-right font-label-code text-[10px] text-surface-dim shadow-lg">
+<div>LAT: 13°04'57"N | LON: 80°16'14"E</div>
+<div class="text-seafoam-glow font-bold">ARABIAN SEA / BAY OF BENGAL TRANSECT</div>
+</div>
+</div>
+<!-- Console Footer Feed Bar -->
+<div class="flex flex-wrap items-center justify-between px-space-lg py-space-sm bg-surface-container-low text-on-surface-variant font-label-code text-label-code">
+<div class="flex items-center gap-space-md">
+<span class="flex items-center gap-1 text-primary font-bold">
+<span class="material-symbols-outlined text-[16px] text-seafoam-glow">sensors</span>
+            SENSOR SYNTHESIS:
+          </span>
+<span>Sentinel-2 (MSI Band 8A &amp; 12)</span>
+<span class="hidden sm:inline">•</span>
+<span class="hidden sm:inline">NovaSAR-1 S-Band</span>
+<span class="hidden md:inline">•</span>
+<span class="hidden md:inline">Edge Side-Scan Sonar Ping: 450 kHz</span>
+</div>
+<div class="text-primary font-bold">
+          LATENCY: <span class="text-on-tertiary-container">1.24s Edge</span>
+</div>
+</div>
+</div>
+</section>
+<!-- ========================================================================= -->
+<!-- SECTION 3: THE AUTONOMOUS CLEANUP LIFECYCLE (3-STEP PIPELINE)              -->
+<!-- ========================================================================= -->
+<section class="relative z-10 w-full px-margin md:px-gutter-desktop py-space-xl" id="lifecycle">
+<!-- Section Header -->
+<div class="max-w-3xl mb-space-xl">
+<div class="flex items-center gap-space-xs mb-space-xs">
+<span class="font-label-code text-label-code text-secondary font-bold uppercase tracking-wider">Operational Sequence</span>
+<span class="text-outline-variant">•</span>
+<span class="font-label-code text-label-code text-on-surface-variant">Three-Tier Architecture</span>
+</div>
+<h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary font-bold">
+        The Autonomous Cleanup Lifecycle
+      </h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant mt-space-xs">
+        From orbital multispectral sensors to harbor-based retrieval flotillas in three integrated operational stages.
+      </p>
+</div>
+<!-- 3-Column Stepper Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-space-lg relative">
+<!-- Step 01 -->
+<div class="flex flex-col bg-surface-container-lowest p-space-lg rounded-xl shadow-sm hover:shadow-md transition-all duration-300 relative group">
+<!-- Top Step Indicator -->
+<div class="flex items-center justify-between mb-space-md">
+<span class="font-label-code text-telemetry-metric text-secondary/30 font-extrabold group-hover:text-secondary transition-colors">01</span>
+<span class="font-label-code text-label-code px-space-xs py-1 rounded bg-surface-container-low text-secondary font-bold">
+            Multispectral + SAR + Sonar
+          </span>
+</div>
+<div class="w-12 h-12 rounded-lg bg-surface-container-low flex items-center justify-center text-secondary mb-space-md">
+<span class="material-symbols-outlined text-[28px]">biotech</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-primary font-bold mb-space-xs">
+          AI Detection &amp; Spectral Signatures
+        </h3>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed mb-space-md flex-grow">
+          Deep residual vision models evaluate Sentinel-2 multispectral bands and high-resolution commercial SAR feeds to pinpoint floating polymers, discarded ghost nets, and chemical slicks across variable sea states.
+        </p>
+<!-- Technical Specification Points -->
+<div class="mt-auto pt-space-sm bg-surface-ice p-space-sm rounded-lg flex flex-col gap-1.5 font-label-code text-[11px] text-on-surface">
+<div class="flex items-center justify-between">
+<span class="text-on-surface-variant">Spectral Index</span>
+<span class="font-semibold text-primary">FDI + NDVI Differential</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-on-surface-variant">Vision Backbone</span>
+<span class="font-semibold text-primary">YOLOv10-Ocean Custom Head</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-on-surface-variant">Inference Target</span>
+<span class="font-semibold text-seafoam-glow">Jetson AGX Edge Buoys</span>
+</div>
+</div>
+</div>
+<!-- Step 02 -->
+<div class="flex flex-col bg-surface-container-lowest p-space-lg rounded-xl shadow-sm hover:shadow-md transition-all duration-300 relative group">
+<!-- Top Step Indicator -->
+<div class="flex items-center justify-between mb-space-md">
+<span class="font-label-code text-telemetry-metric text-secondary/30 font-extrabold group-hover:text-secondary transition-colors">02</span>
+<span class="font-label-code text-label-code px-space-xs py-1 rounded bg-surface-container-low text-on-tertiary-container font-bold">
+            Coast Guard &amp; Biologists
+          </span>
+</div>
+<div class="w-12 h-12 rounded-lg bg-surface-container-low flex items-center justify-center text-on-tertiary-container mb-space-md">
+<span class="material-symbols-outlined text-[28px]">fact_check</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-primary font-bold mb-space-xs">
+          Expert Human-in-the-Loop Validation
+        </h3>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed mb-space-md flex-grow">
+          Oceanographers and coastal authorities review segmented bounding boxes via dual-view raw vs. normalized spectral comparison dashboards, preventing false alarms on sargassum weed and foam lines before dispatch.
+        </p>
+<!-- Technical Specification Points -->
+<div class="mt-auto pt-space-sm bg-surface-ice p-space-sm rounded-lg flex flex-col gap-1.5 font-label-code text-[11px] text-on-surface">
+<div class="flex items-center justify-between">
+<span class="text-on-surface-variant">Gating Filter</span>
+<span class="font-semibold text-primary">Confidence &gt; 85% Auto-Queue</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-on-surface-variant">False Positive Dampener</span>
+<span class="font-semibold text-primary">Biomass Density Chlorophyll-a Check</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-on-surface-variant">Audit Verification</span>
+<span class="font-semibold text-seafoam-glow">Cryptographic Ledger Log</span>
+</div>
+</div>
+</div>
+<!-- Step 03 -->
+<div class="flex flex-col bg-surface-container-lowest p-space-lg rounded-xl shadow-sm hover:shadow-md transition-all duration-300 relative group">
+<!-- Top Step Indicator -->
+<div class="flex items-center justify-between mb-space-md">
+<span class="font-label-code text-telemetry-metric text-secondary/30 font-extrabold group-hover:text-secondary transition-colors">03</span>
+<span class="font-label-code text-label-code px-space-xs py-1 rounded bg-surface-container-low text-secondary font-bold">
+            Hydrodynamic Drift Routing
+          </span>
+</div>
+<div class="w-12 h-12 rounded-lg bg-surface-container-low flex items-center justify-center text-secondary mb-space-md">
+<span class="material-symbols-outlined text-[28px]">navigation</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-primary font-bold mb-space-xs">
+          Autonomous Retrieval &amp; Fleet Dispatch
+        </h3>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed mb-space-md flex-grow">
+          Trajectory algorithms integrate live tidal tables, Eulerian current forecasts, and vessel fuel endurance to generate optimized interception waypoints for autonomous skimmers and municipal salvage vessels.
+        </p>
+<!-- Technical Specification Points -->
+<div class="mt-auto pt-space-sm bg-surface-ice p-space-sm rounded-lg flex flex-col gap-1.5 font-label-code text-[11px] text-on-surface">
+<div class="flex items-center justify-between">
+<span class="text-on-surface-variant">Trajectory Engine</span>
+<span class="font-semibold text-primary">A* Current-Augmented Vector</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-on-surface-variant">Fuel Optimization</span>
+<span class="font-semibold text-primary">-31% Burn Rate Intercept Path</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-on-surface-variant">Port Manifest API</span>
+<span class="font-semibold text-seafoam-glow">Direct CPCB / Port Dispatch</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- ========================================================================= -->
+<!-- SECTION 4: SENSOR FUSION & REAL-TIME IMPACT SHOWCASE                      -->
+<!-- ========================================================================= -->
+<section class="relative z-10 w-full px-margin md:px-gutter-desktop py-space-xl bg-surface-container-low" id="architecture">
+<div class="w-full max-w-7xl mx-auto flex flex-col gap-space-xl">
+<!-- Split Comparison Header -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-space-md">
+<div>
+<span class="font-label-code text-label-code text-on-tertiary-container font-bold uppercase tracking-wider">Multi-Modal Sensor Synthesis</span>
+<h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary font-bold mt-space-xs">
+            Orbital Glare vs. TARANG Multispectral Isolation
+          </h2>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-md">
+          Overcoming sea surface sunglint and ocean whitecaps through calibrated FDI baseline extraction and underwater acoustic beamforming.
+        </p>
+</div>
+<!-- Split Interactive Visual Viewport -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-center">
+<!-- Left: Image Spectral Comparison Card -->
+<div class="lg:col-span-8 bg-surface-container-lowest rounded-xl shadow-md p-space-md flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-secondary text-[20px]">compare</span>
+<span class="font-headline-sm text-body-lg text-primary font-bold">Spectral Extraction Comparison View</span>
+</div>
+<div class="flex items-center gap-space-xs font-label-code text-label-code text-on-surface-variant">
+<span>TARGET SECTOR: BOB-2026-CH</span>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-md">
+<!-- Raw Optical Glare Feed -->
+<div class="flex flex-col gap-space-xs">
+<div class="relative h-64 w-full rounded-lg overflow-hidden bg-abyssal-navy">
+<img class="w-full h-full object-cover opacity-80" data-alt="Satellite imagery showing natural ocean surface with harsh sun glint and ocean reflections, making plastic debris almost impossible to discern with naked eye, shot from Sentinel-2 orbital viewpoint over the Indian Ocean." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAm-t610vQ9gK1yErW-IMW8H740xct4tmBHkwZikvqG9GxRQ7GM-S7dXhk0hFtiPxvS6WNnny0Z0chAA0yGUS0D-3MconPodd4PUMD0Kuy4VpWxgZKNMdPlH1YqtwMDb95yh7MbwYEsz5HBLz3XGei8GdTKsSQyZEQNlW7PVf0sDUK1Ng6uuPFy7KPUPwIcHw2WlFer8uOO_MX--HTB6JBjBMmja-boYspyzipXUKuCYXmiaWVxz6rL"/>
+<div class="absolute top-2 left-2 px-2 py-1 rounded bg-primary/80 backdrop-blur text-on-primary font-label-code text-[10px]">
+                  RAW SENTINEL-2 RGB (SUNGLINT OCCLUDED)
+                </div>
+<div class="absolute bottom-2 left-2 text-[11px] font-label-code text-on-primary bg-primary/60 px-2 py-0.5 rounded">
+                  Visibility: Compromised
+                </div>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Natural color composite showing false reflections from sea spray and solar glare.</span>
+</div>
+<!-- TARANG Processed FDI Mask -->
+<div class="flex flex-col gap-space-xs">
+<div class="relative h-64 w-full rounded-lg overflow-hidden bg-abyssal-navy">
+<img class="w-full h-full object-cover" data-alt="High tech multispectral heat map visualization isolating synthetic plastics in bright cyan and emerald bounding boxes against a dark oceanic bathymetric map, showing AI segmented ghost net clusters and telemetry coordinates." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB_3SpOzkk8us9nv0p3rUowYxK78B-QwR5cEfCYgFUFHk07KkIicV0FhQRxCvHCIXkKyz3odrc8w0KSQk9Uux7mDJVHHACeATgVjH7XZPB5jLLRYN08WE61iMbHq3BCZEha7FK91vyV5hp7G4tkTuNkgTCvcKgLF0A__bEW8WjzGQGF7HndulPB-ch5PTm3s7zyNbTSGaFeBV3v0deuEimp1xq7Ty0X3Cbghh7t69CIh-d-pJNe1mcz"/>
+<div class="absolute top-2 left-2 px-2 py-1 rounded bg-primary-container text-seafoam-glow font-label-code text-[10px] font-bold">
+                  TARANG MULTISPECTRAL FDI SEGMENTATION
+                </div>
+<div class="absolute bottom-2 left-2 text-[11px] font-label-code text-seafoam-glow bg-primary/80 px-2 py-0.5 rounded flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">check_circle</span> 3 Debris Slicks Isolated
+                </div>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Calibrated Floating Debris Index isolating polymer infrared reflection spikes.</span>
+</div>
+</div>
+<!-- Bottom Telemetry Metric Readouts -->
+<div class="grid grid-cols-3 gap-space-sm pt-space-xs text-center">
+<div class="p-space-xs rounded bg-surface-ice">
+<div class="font-label-code text-[10px] text-on-surface-variant">SIGNAL-TO-NOISE GAIN</div>
+<div class="font-telemetry-metric text-headline-sm text-primary font-bold">+18.4 dB</div>
+</div>
+<div class="p-space-xs rounded bg-surface-ice">
+<div class="font-label-code text-[10px] text-on-surface-variant">FALSE DISMISSAL RATE</div>
+<div class="font-telemetry-metric text-headline-sm text-on-tertiary-container font-bold">&lt; 0.6%</div>
+</div>
+<div class="p-space-xs rounded bg-surface-ice">
+<div class="font-label-code text-[10px] text-on-surface-variant">CLASSIFICATION RES.</div>
+<div class="font-telemetry-metric text-headline-sm text-secondary font-bold">10m Ground</div>
+</div>
+</div>
+</div>
+<!-- Right: Real-time Dispatch & Fleet Dispatch Board -->
+<div class="lg:col-span-4 flex flex-col gap-space-md">
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-md flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-code text-label-code text-primary font-bold uppercase">Interception Flotilla</span>
+<span class="font-label-code text-label-code text-seafoam-glow font-bold">2 UNITS DISPATCHED</span>
+</div>
+<!-- Vessel 1 -->
+<div class="flex items-start gap-space-sm p-space-sm bg-surface-ice rounded-lg">
+<div class="p-2 rounded bg-surface-container-lowest text-secondary shadow-sm">
+<span class="material-symbols-outlined text-[20px]">sailing</span>
+</div>
+<div class="flex flex-col flex-grow">
+<div class="flex items-center justify-between">
+<span class="font-headline-sm text-body-md font-bold text-primary">INS Sarvekshak</span>
+<span class="font-label-code text-[10px] px-1.5 py-0.5 rounded bg-surface-container-high text-secondary font-bold">EN ROUTE</span>
+</div>
+<span class="font-label-code text-[11px] text-on-surface-variant">Sector 4 • ETA 26 min (Speed: 14 kn)</span>
+<!-- Progress bar -->
+<div class="w-full bg-border-subtle h-1.5 rounded-full mt-2 overflow-hidden">
+<div class="bg-secondary h-full rounded-full" style="width: 68%;"></div>
+</div>
+</div>
+</div>
+<!-- Vessel 2 -->
+<div class="flex items-start gap-space-sm p-space-sm bg-surface-ice rounded-lg">
+<div class="p-2 rounded bg-surface-container-lowest text-seafoam-glow shadow-sm">
+<span class="material-symbols-outlined text-[20px]">smart_toy</span>
+</div>
+<div class="flex flex-col flex-grow">
+<div class="flex items-center justify-between">
+<span class="font-headline-sm text-body-md font-bold text-primary">Skimmer Tarang-Alpha</span>
+<span class="font-label-code text-[10px] px-1.5 py-0.5 rounded bg-surface-container-high text-on-tertiary-container font-bold">NET DEPLOYED</span>
+</div>
+<span class="font-label-code text-[11px] text-on-surface-variant">Station 13.12N, 80.31E • 1.2T Loaded</span>
+<!-- Progress bar -->
+<div class="w-full bg-border-subtle h-1.5 rounded-full mt-2 overflow-hidden">
+<div class="bg-seafoam-glow h-full rounded-full" style="width: 92%;"></div>
+</div>
+</div>
+</div>
+<!-- Vessel 3 Standby -->
+<div class="flex items-start gap-space-sm p-space-sm bg-surface-ice rounded-lg opacity-75">
+<div class="p-2 rounded bg-surface-container-lowest text-outline shadow-sm">
+<span class="material-symbols-outlined text-[20px]">anchor</span>
+</div>
+<div class="flex flex-col flex-grow">
+<div class="flex items-center justify-between">
+<span class="font-headline-sm text-body-md font-bold text-primary">ICG Patrol Interceptor 18</span>
+<span class="font-label-code text-[10px] px-1.5 py-0.5 rounded bg-surface-dim text-on-surface-variant font-bold">STANDBY</span>
+</div>
+<span class="font-label-code text-[11px] text-on-surface-variant">Chennai Port Anchorage Berth B-4</span>
+</div>
+</div>
+</div>
+<!-- Live Mission Log Stream -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-md flex flex-col gap-space-xs">
+<span class="font-label-code text-label-code text-primary font-bold uppercase">Automated Mission Log</span>
+<div class="font-label-code text-[11px] flex flex-col gap-1.5 text-on-surface-variant">
+<div class="flex items-center justify-between">
+<span class="text-primary font-semibold">14:02 UTC</span>
+<span class="truncate max-w-[200px]">SAR pass ingested: 8 high-density anomalies</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-primary font-semibold">14:18 UTC</span>
+<span class="truncate max-w-[200px] text-seafoam-glow">Cluster #IN-882 verified by INCOIS hydrographer</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-primary font-semibold">14:24 UTC</span>
+<span class="truncate max-w-[200px]">Interception vector computed via A* tide model</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- ========================================================================= -->
+<!-- SECTION 5: SIH 2026 STRATEGIC PARTNERS & COMMITMENT RIBBON                 -->
+<!-- ========================================================================= -->
+<section class="relative z-10 w-full px-margin md:px-gutter-desktop py-space-xl bg-surface-container-lowest">
+<div class="w-full max-w-7xl mx-auto flex flex-col items-center text-center">
+<span class="font-label-code text-label-code text-on-surface-variant uppercase tracking-widest font-bold mb-space-xs">
+        Strategic Ocean Governance Integration
+      </span>
+<h3 class="font-headline-sm text-headline-sm text-primary font-bold mb-space-lg">
+        Architected for National Hydrographic Agencies &amp; Mission Mandates
+      </h3>
+<!-- Partner Badge Grid -->
+<div class="w-full grid grid-cols-2 md:grid-cols-4 gap-space-md items-center justify-center">
+<!-- Partner 1 -->
+<div class="flex flex-col items-center p-space-md rounded-xl bg-surface-ice hover:bg-surface-container-low transition-colors duration-200">
+<span class="material-symbols-outlined text-[36px] text-primary mb-1">waves</span>
+<span class="font-headline-sm text-body-md text-primary font-bold">INCOIS</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Ocean State Forecast System</span>
+</div>
+<!-- Partner 2 -->
+<div class="flex flex-col items-center p-space-md rounded-xl bg-surface-ice hover:bg-surface-container-low transition-colors duration-200">
+<span class="material-symbols-outlined text-[36px] text-secondary mb-1">public</span>
+<span class="font-headline-sm text-body-md text-primary font-bold">MoES</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Ministry of Earth Sciences</span>
+</div>
+<!-- Partner 3 -->
+<div class="flex flex-col items-center p-space-md rounded-xl bg-surface-ice hover:bg-surface-container-low transition-colors duration-200">
+<span class="material-symbols-outlined text-[36px] text-on-tertiary-container mb-1">shield</span>
+<span class="font-headline-sm text-body-md text-primary font-bold">Indian Coast Guard</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Maritime Search &amp; Retrieval Ops</span>
+</div>
+<!-- Partner 4 -->
+<div class="flex flex-col items-center p-space-md rounded-xl bg-surface-ice hover:bg-surface-container-low transition-colors duration-200">
+<span class="material-symbols-outlined text-[36px] text-telemetry-amber mb-1">explore</span>
+<span class="font-headline-sm text-body-md text-primary font-bold">Sagar Parikrama</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Coastal Ecology Restoration Track</span>
+</div>
+</div>
+</div>
+</section>
+<!-- ========================================================================= -->
+<!-- SECTION 6: HIGH-IMPACT MISSION CTA BANNER                                -->
+<!-- ========================================================================= -->
+<section class="relative z-10 w-full px-margin md:px-gutter-desktop py-space-xl bg-canvas-base">
+<div class="w-full max-w-6xl mx-auto rounded-xl bg-primary-container text-on-primary p-space-lg md:p-space-xl relative overflow-hidden shadow-xl">
+<!-- Decorative Backdrop Geometry -->
+<div class="absolute -right-20 -bottom-20 w-80 h-80 rounded-full bg-secondary opacity-20 blur-3xl pointer-events-none"></div>
+<div class="absolute -left-10 -top-10 w-60 h-60 rounded-full bg-seafoam-glow opacity-15 blur-2xl pointer-events-none"></div>
+<div class="relative z-10 flex flex-col md:flex-row items-center justify-between gap-space-lg">
+<div class="max-w-xl text-left">
+<div class="inline-flex items-center gap-1 text-seafoam-glow font-label-code text-label-code font-bold uppercase mb-space-xs">
+<span class="material-symbols-outlined text-[16px]">terminal</span>
+<span>SIH 2026 DEPLOYMENT READY</span>
+</div>
+<h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-primary font-bold mb-space-xs">
+            Operationalize Real-Time Debris Telemetry in Your Maritime Sector
+          </h2>
+<p class="font-body-md text-body-md text-surface-dim">
+            Integrate INCOIS telemetry nodes, SAR passes, and autonomous intercept flotillas through open hydrographic APIs and standard GIS data pipelines.
+          </p>
+</div>
+<div class="flex flex-col sm:flex-row items-center gap-space-sm shrink-0">
+<button class="w-full sm:w-auto inline-flex items-center justify-center gap-space-xs px-space-lg py-3.5 rounded-lg bg-seafoam-glow text-primary font-headline-sm text-body-md font-bold shadow-md hover:bg-opacity-90 transition-all" type="button">
+<span class="material-symbols-outlined text-[20px]">data_object</span>
+<span>Request API Sandbox</span>
+</button>
+<a class="w-full sm:w-auto inline-flex items-center justify-center gap-space-xs px-space-md py-3.5 rounded-lg bg-surface-container-lowest/10 hover:bg-surface-container-lowest/20 text-on-primary font-label-code text-label-code font-semibold transition-all" href="#drift-console">
+<span>Watch Live Sweep</span>
+</a>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Client-side Interactive Behaviors -->
+<script>
+  // 1. Ambient Ocean Wave Ripple Canvas Effect
+  (function() {
+    const canvas = document.getElementById('ambient-ocean-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let width = (canvas.width = window.innerWidth);
+    let height = (canvas.height = window.innerHeight);
+
+    let waves = [
+      { y: height * 0.25, length: 0.004, amplitude: 24, speed: 0.015, offset: 0, color: 'rgba(0, 99, 152, 0.035)' },
+      { y: height * 0.55, length: 0.003, amplitude: 38, speed: 0.012, offset: 2, color: 'rgba(20, 184, 166, 0.03)' },
+      { y: height * 0.85, length: 0.005, amplitude: 28, speed: 0.02, offset: 4, color: 'rgba(2, 132, 199, 0.025)' }
+    ];
+
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = document.documentElement.scrollHeight || window.innerHeight;
+      waves[0].y = height * 0.22;
+      waves[1].y = height * 0.52;
+      waves[2].y = height * 0.82;
+    }
+    window.addEventListener('resize', resize);
+
+    function animate() {
+      ctx.clearRect(0, 0, width, height);
+      waves.forEach(w => {
+        w.offset += w.speed;
+        ctx.beginPath();
+        ctx.moveTo(0, w.y);
+        for (let x = 0; x < width; x += 10) {
+          const dy = Math.sin(x * w.length + w.offset) * w.amplitude;
+          ctx.lineTo(x, w.y + dy);
+        }
+        ctx.lineTo(width, height);
+        ctx.lineTo(0, height);
+        ctx.closePath();
+        ctx.fillStyle = w.color;
+        ctx.fill();
+      });
+      requestAnimationFrame(animate);
+    }
+    animate();
+  })();
+
+  // 2. Radar Interactive Mode Switcher
+  function setRadarMode(mode) {
+    const buttons = document.querySelectorAll('.radar-mode-btn');
+    buttons.forEach(btn => {
+      btn.classList.remove('bg-surface-container-lowest', 'text-primary', 'shadow-sm');
+      btn.classList.add('text-on-surface-variant');
+    });
+
+    const activeBtn = document.getElementById('btn-' + mode);
+    if (activeBtn) {
+      activeBtn.classList.remove('text-on-surface-variant');
+      activeBtn.classList.add('bg-surface-container-lowest', 'text-primary', 'shadow-sm');
+    }
+
+    const sweep = document.getElementById('radar-sweep');
+    if (sweep) {
+      if (mode === 'optical') {
+        sweep.style.background = 'conic-gradient(from 0deg at 50% 50%, rgba(20, 184, 166, 0.35) 0deg, transparent 65deg, transparent 360deg)';
+      } else if (mode === 'sar') {
+        sweep.style.background = 'conic-gradient(from 0deg at 50% 50%, rgba(91, 184, 254, 0.45) 0deg, transparent 75deg, transparent 360deg)';
+      } else if (mode === 'sonar') {
+        sweep.style.background = 'conic-gradient(from 0deg at 50% 50%, rgba(225, 29, 72, 0.4) 0deg, transparent 55deg, transparent 360deg)';
+      }
+    }
+  }
+</script></main><footer class="w-full bg-surface-container-lowest shadow-[0_-1px_10px_rgba(10,37,64,0.04)] py-space-xl"><div class="w-full px-gutter-desktop flex flex-col gap-space-xl"><div class="grid grid-cols-1 md:grid-cols-4 gap-space-lg"><div class="flex flex-col gap-space-sm md:col-span-2"><div class="flex items-center gap-space-sm"><img alt="TARANG Maritime Emblem" class="h-6 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1UBMW6iMgfbBwZLIDTRnGRcZz4EYw5gVrnjY-JwIlTSpQtME7DwIWGYGYFXrxz2sokFJ1wUUcD8e1L5wHn1eFkXI7OgRvwvhs32SW7W0p0EofKYjoPKWTdqsaean0Rwd5HyexL85zU0Xu_w53bN3GnBjqHsJUfoELVsId85dsLi9mFKd4vbQTknatWMVUC6W57tZkIAxk6F9cp2r5YeEK6QMlT3eFg5bUnr71xBrtcuDFD000hr9PfvDQ"/><span class="font-headline-sm text-headline-sm tracking-tight text-primary font-bold">TARANG</span></div><p class="font-body-md text-body-md text-on-surface-variant max-w-lg">Enterprise ocean hydrodynamic telemetry and marine debris intelligence platform. Developed under Smart India Hackathon 2026 for the Ministry of Earth Sciences (MoES) and INCOIS Ocean State Forecast Network.</p><div class="flex items-center gap-space-sm font-label-code text-label-code text-on-tertiary-container mt-space-xs"><span class="material-symbols-outlined text-[16px]">verified</span><span>MoES &amp; INCOIS Real-Time Ocean Observation Compliance Tier-1</span></div></div><div class="flex flex-col gap-space-sm"><span class="font-label-code text-label-code text-primary font-bold tracking-wider uppercase">Telemetry Routes</span><nav class="flex flex-col gap-space-xs" data-active-classes="text-secondary font-semibold"><a aria-current="page" class="transition-colors text-secondary font-semibold" data-path="overview" href="#">Overview</a><a class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors" data-path="sonar-ai-analyzer" href="#">Sonar AI Analyzer</a><a class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors" data-path="expert-verification" href="#">Expert Verification</a><a class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors" data-path="fleet-logistics-and-routing" href="#">Fleet Logistics &amp; Routing</a></nav></div><div class="flex flex-col gap-space-sm"><span class="font-label-code text-label-code text-primary font-bold tracking-wider uppercase">Hydro Observation Status</span><div class="flex flex-col gap-space-xs font-label-sm text-label-sm text-on-surface-variant"><div class="flex items-center justify-between py-1 bg-surface-ice px-space-sm rounded"><span class="font-label-code text-label-code text-on-surface">BUOY ARGO-IND-89</span><span class="font-label-code text-label-code text-seafoam-glow font-bold">ACTIVE (0.84 kn)</span></div><div class="flex items-center justify-between py-1 bg-surface-ice px-space-sm rounded"><span class="font-label-code text-label-code text-on-surface">SAR RADAR CONST.</span><span class="font-label-code text-label-code text-secondary font-bold">PASS T-04 MIN</span></div><div class="flex items-center justify-between py-1 bg-surface-ice px-space-sm rounded"><span class="font-label-code text-label-code text-on-surface">INDIAN OCEAN GRID</span><span class="font-label-code text-label-code text-on-tertiary-container font-bold">NOMINAL 99.98%</span></div></div></div></div><div class="flex flex-col sm:flex-row items-center justify-between gap-space-md pt-space-lg bg-surface-ice/40 px-space-md py-space-sm rounded-xl"><span class="font-label-sm text-label-sm text-on-surface-variant">© 2026 TARANG Maritime Intelligence. Smart India Hackathon Innovation Platform. INCOIS / MoES Maritime Node.</span><div class="flex items-center gap-space-md font-label-code text-label-code text-on-surface-variant"><a class="hover:text-primary transition-colors" href="#">HYDROGRAPHIC API</a><span>•</span><a class="hover:text-primary transition-colors" href="#">TELEMETRY LOGS</a><span>•</span><a class="hover:text-primary transition-colors" href="#">SECURE OPS</a></div></div></div></footer></body></html>

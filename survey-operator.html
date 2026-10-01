@@ -1,0 +1,1342 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head><script>window.location.replace("operator-portal.html");</script>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TARANG // तरंग - Sonar AI Detection Console | MoES &amp; INCOIS</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@500;600;700;800&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Supabase SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/@dotlottie/player-component@2.7.12/dist/dotlottie-player.mjs" type="module"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js" type="module"></script>
+<!-- Tailwind CSS via CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config verbatim -->
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "seafoam-glow": "#14B8A6",
+            "on-primary-container": "#768dad",
+            "background": "#f7f9ff",
+            "primary-container": "#0a2540",
+            "outline-variant": "#c4c6ce",
+            "inverse-primary": "#b0c8eb",
+            "surface-container": "#e3efff",
+            "error": "#ba1a1a",
+            "surface-container-lowest": "#ffffff",
+            "on-tertiary-container": "#1f9c8f",
+            "canvas-base": "#FAFCFF",
+            "on-primary-fixed-variant": "#314865",
+            "secondary-fixed": "#cce5ff",
+            "tertiary": "#001210",
+            "primary": "#000f22",
+            "on-background": "#081d2f",
+            "tertiary-container": "#002a26",
+            "inverse-surface": "#1f3245",
+            "outline": "#74777e",
+            "surface-variant": "#d1e4fd",
+            "secondary-container": "#5bb8fe",
+            "secondary-fixed-dim": "#93ccff",
+            "on-secondary-container": "#00476e",
+            "on-primary-fixed": "#001c37",
+            "border-subtle": "#E2E8F0",
+            "surface": "#f7f9ff",
+            "surface-tint": "#49607e",
+            "on-error-container": "#93000a",
+            "surface-bright": "#f7f9ff",
+            "on-tertiary-fixed-variant": "#005049",
+            "secondary": "#006398",
+            "on-surface-variant": "#43474d",
+            "on-surface": "#081d2f",
+            "tertiary-fixed-dim": "#6bd8cb",
+            "on-secondary": "#ffffff",
+            "tertiary-fixed": "#89f5e7",
+            "on-tertiary": "#ffffff",
+            "surface-container-high": "#d9eaff",
+            "primary-fixed-dim": "#b0c8eb",
+            "surface-ice": "#F0F4F8",
+            "surface-container-highest": "#d1e4fd",
+            "on-primary": "#ffffff",
+            "surface-container-low": "#edf4ff",
+            "on-tertiary-fixed": "#00201d",
+            "abyssal-navy": "#031B33",
+            "inverse-on-surface": "#e8f1ff",
+            "telemetry-amber": "#D97706",
+            "sonar-alert": "#E11D48",
+            "error-container": "#ffdad6",
+            "on-secondary-fixed-variant": "#004b73",
+            "surface-dim": "#c8dcf4",
+            "on-secondary-fixed": "#001d31",
+            "on-error": "#ffffff",
+            "primary-fixed": "#d2e4ff"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "gutter": "1.25rem",
+            "space-xl": "2.5rem",
+            "margin": "1rem",
+            "space-xs": "0.25rem",
+            "gutter-desktop": "2rem",
+            "space-sm": "0.5rem",
+            "space-lg": "1.5rem",
+            "margin-desktop": "3rem",
+            "space-md": "1rem"
+          },
+          "fontFamily": {
+            "headline-lg-mobile": ["Plus Jakarta Sans"],
+            "label-code": ["Space Grotesk"],
+            "telemetry-metric": ["Space Grotesk"],
+            "headline-sm": ["Plus Jakarta Sans"],
+            "display-xl-mobile": ["Plus Jakarta Sans"],
+            "display-xl": ["Plus Jakarta Sans"],
+            "body-sm": ["Inter"],
+            "body-md": ["Inter"],
+            "headline-lg": ["Plus Jakarta Sans"],
+            "label-sm": ["Inter"],
+            "body-lg": ["Inter"]
+          },
+          "fontSize": {
+            "headline-lg-mobile": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+            "label-code": ["11px", {"lineHeight": "14px", "letterSpacing": "0.06em", "fontWeight": "600"}],
+            "telemetry-metric": ["28px", {"lineHeight": "34px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+            "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+            "display-xl-mobile": ["36px", {"lineHeight": "42px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+            "display-xl": ["56px", {"lineHeight": "64px", "letterSpacing": "-0.03em", "fontWeight": "800"}],
+            "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+            "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+            "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+            "label-sm": ["11px", {"lineHeight": "14px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+            "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+      vertical-align: middle;
+      display: inline-block;
+    }
+    .sonar-scanline {
+      background: linear-gradient(180deg, rgba(20, 184, 166, 0) 0%, rgba(20, 184, 166, 0.35) 94%, rgba(91, 184, 254, 0.85) 100%);
+      animation: sonarSweep 6.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+    @keyframes sonarSweep {
+      0% { transform: translateY(-100%); opacity: 0; }
+      15% { opacity: 0.9; }
+      90% { opacity: 0.8; }
+      100% { transform: translateY(100%); opacity: 0; }
+    }
+    .waterfall-grid {
+      background-size: 32px 32px;
+      background-image: 
+        linear-gradient(to right, rgba(91, 184, 254, 0.07) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(91, 184, 254, 0.05) 1px, transparent 1px);
+    }
+    .noise-waterfall {
+      background-image: radial-gradient(rgba(20, 184, 166, 0.12) 1px, transparent 0);
+      background-size: 14px 14px;
+    }
+    .nadir-line {
+      background: linear-gradient(180deg, rgba(20, 184, 166, 0.2) 0%, rgba(91, 184, 254, 0.7) 50%, rgba(20, 184, 166, 0.2) 100%);
+    }
+  </style>
+</head>
+<body class="bg-canvas-base text-on-surface h-full flex flex-col antialiased selection:bg-secondary selection:text-surface-container-lowest font-body-md overflow-x-hidden">
+<input accept="image/*,video/*,.xtf" class="hidden" id="file-input" type="file"/>
+<!-- TOP NAV BAR (Minimal UI) -->
+<header class="bg-canvas-base border-b border-border-subtle shadow-sm sticky top-0 z-50 flex-none">
+<div class="flex justify-between items-center w-full px-space-lg md:px-gutter-desktop max-w-full mx-auto py-2.5">
+<!-- Brand -->
+<div class="flex items-center gap-space-md"><button class="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-ice hover:bg-surface-container-high text-on-surface font-bold text-sm transition-colors shadow-sm cursor-pointer border border-border-subtle" onclick="history.back()">
+<span class="material-symbols-outlined text-[18px]">arrow_back</span> Back
+</button>
+<div class="flex items-center gap-2">
+<img alt="TARANG Logo" class="h-8 w-auto object-contain rounded-lg" src="logoimage.jpg"/>
+<div class="flex flex-col">
+<span class="text-headline-sm font-headline-sm font-bold tracking-tight text-primary-container">TARANG // तरंग</span>
+</div>
+</div>
+</div>
+<!-- Minimal Status -->
+<div class="flex items-center gap-2 lg:gap-3">
+<div class="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded bg-surface-ice border border-border-subtle">
+<span class="w-1.5 h-1.5 rounded-full bg-seafoam-glow animate-pulse"></span>
+<span class="text-label-code font-label-code text-primary-container">SYSTEM ACTIVE</span>
+</div>
+<a class="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-red-500 hover:bg-red-600 text-white font-bold text-[12px] transition-colors shadow-md cursor-pointer ml-2" href="operator-portal.html?view=results">
+<span class="material-symbols-outlined text-[16px]">power_settings_new</span> END MISSION
+</a>
+<a class="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-surface-ice hover:bg-red-50 text-slate-700 hover:text-red-600 font-bold text-[12px] transition-colors shadow-sm cursor-pointer ml-2 border border-border-subtle" href="login.html" onclick="sessionStorage.clear()">
+<span class="material-symbols-outlined text-[16px]">logout</span> LOGOUT
+</a></div>
+</div>
+</header>
+<!-- MAIN VIEWPORT: Split 12-Column Responsive Layout -->
+<main class="flex-1 w-full p-2 md:p-3 lg:p-4 grid grid-cols-1 lg:grid-cols-12 gap-3 md:gap-4 overflow-y-auto min-h-0">
+<!-- LEFT CONTAINER: 12-col lg:col-span-8 xl:col-span-8 clean media player & uploader -->
+<section class="lg:col-span-8 xl:col-span-8 flex flex-col bg-[#020b15] rounded-xl border border-border-subtle shadow-md relative overflow-hidden min-h-[560px] lg:min-h-[700px]">
+<input accept="image/*,video/*,.xtf" class="hidden" id="file-input" type="file"/>
+<!-- Media Viewport -->
+<div class="flex-1 relative flex items-center justify-center bg-[#020b15] overflow-hidden group w-full h-full" id="media-viewport">
+<!-- Clean Centered Upload Dropzone -->
+<div class="absolute inset-0 z-20 flex flex-col items-center justify-center cursor-pointer hover:bg-white/[0.02] transition-all bg-gradient-to-b from-[#030d1a] to-[#010811] p-6 text-center" id="upload-zone">
+<div class="max-w-md w-full p-8 rounded-2xl bg-[#07192c]/80 border border-teal-500/20 shadow-2xl backdrop-blur-md flex flex-col items-center gap-4 group/card hover:border-teal-400/40 transition-all">
+<img alt="TARANG Logo" class="h-16 w-16 object-contain rounded-xl" src="logoimage.jpg"/>
+<div class="flex flex-col gap-1">
+<h3 class="font-headline-lg text-2xl text-white font-bold tracking-tight">Upload Sonar Data</h3>
+<p class="text-slate-400 font-label-code text-xs">Drop your sonar image, video, or XTF binary here, or click to browse</p>
+</div>
+<button class="mt-2 w-full py-3.5 px-6 rounded-xl bg-seafoam-glow hover:bg-teal-400 text-abyssal-navy font-bold text-sm tracking-wide shadow-lg shadow-teal-500/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98]" id="btn-browse-main" type="button">
+<span class="material-symbols-outlined text-[20px]">add_photo_alternate</span>
+<span>Select Image, Video, or XTF</span>
+</button>
+<!-- Quick Sample Presets -->
+<div class="flex items-center gap-2 w-full pt-2 border-t border-slate-700/50">
+<button class="flex-1 py-2 px-3 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 font-label-code text-[11px] font-medium border border-slate-700 transition-colors flex items-center justify-center gap-1.5" id="btn-sample-video" type="button">
+<span class="material-symbols-outlined text-[15px] text-teal-400">play_circle</span>
+<span>Sample Video</span>
+</button>
+<button class="flex-1 py-2 px-3 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 font-label-code text-[11px] font-medium border border-slate-700 transition-colors flex items-center justify-center gap-1.5" id="btn-sample-image" type="button">
+<span class="material-symbols-outlined text-[15px] text-cyan-400">image</span>
+<span>Sample Scan</span>
+</button>
+</div>
+<span class="text-[10px] font-label-code text-slate-500 uppercase tracking-wider">MP4 • MOV • AVI • WEBM • JPG • PNG • WEBP</span>
+</div>
+</div>
+<!-- Media display targets -->
+<img class="hidden w-full h-full object-contain absolute inset-0 z-10 bg-black" id="result-image"/>
+<video class="hidden w-full h-full object-contain absolute inset-0 z-10 bg-black" id="result-video" playsinline=""></video>
+<!-- Inference Loading Overlay -->
+<div class="hidden absolute inset-0 z-30 bg-[#020b15]/90 backdrop-blur-md flex flex-col items-center justify-center text-center p-6" id="loading-overlay">
+<div class="relative w-20 h-20 mb-4 flex items-center justify-center">
+<div class="absolute inset-0 rounded-full border-2 border-seafoam-glow/20 animate-ping"></div>
+<img alt="TARANG Logo" class="h-16 w-16 object-contain rounded-xl" src="logoimage.jpg"/>
+</div>
+<h3 class="font-headline-sm text-[18px] text-white font-bold">Neural Model Running (best.pt)</h3>
+<p class="font-label-code text-[12px] text-slate-400 mt-1 max-w-sm" id="loading-status-text">
+        Running YOLO inference on model best.pt...
+      </p>
+</div>
+</div>
+
+<!-- Media Controls (Visible when media is loaded) -->
+<div class="h-14 bg-[#051322] border-t border-slate-800 flex items-center justify-between px-4 z-20" id="media-controls">
+<div class="flex items-center gap-3">
+<button class="text-slate-200 hover:text-seafoam-glow transition-colors outline-none" id="btn-play-pause" title="Play / Pause">
+<span class="material-symbols-outlined text-[28px]">play_circle</span>
+</button>
+<button class="text-slate-200 hover:text-sonar-alert transition-colors outline-none" id="btn-stop" title="Stop &amp; Clear">
+<span class="material-symbols-outlined text-[28px]">stop_circle</span>
+</button>
+<span class="text-slate-400 font-label-code text-xs ml-2" id="video-time">00:00 / 00:00</span>
+</div>
+<div class="flex items-center gap-3 text-slate-300">
+<button class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 font-label-code text-[11px] flex items-center gap-1 border border-slate-700 transition-colors" id="btn-reupload" title="Change File">
+<span class="material-symbols-outlined text-[15px]">upload</span>
+<span>Upload New</span>
+</button>
+<button class="hover:text-teal-400 transition-colors outline-none p-1" id="btn-maximize" title="Fullscreen">
+<span class="material-symbols-outlined text-[22px]">open_in_full</span>
+</button>
+<button class="hover:text-teal-400 transition-colors outline-none p-1" id="btn-popout" title="Picture in Picture">
+<span class="material-symbols-outlined text-[22px]">picture_in_picture_alt</span>
+</button>
+</div>
+</div>
+</section>
+<!-- RIGHT CONTAINER: 12-col lg:col-span-4 xl:col-span-4 flex flex-col bg-surface-container-lowest rounded-xl border border-border-subtle shadow-sm overflow-hidden"> -->
+<aside class="lg:col-span-4 xl:col-span-4 flex flex-col bg-surface-container-lowest rounded-xl border border-border-subtle shadow-sm overflow-hidden h-full">
+<!-- 3D Drone Model Section -->
+<div class="relative w-full overflow-hidden bg-surface-container border-b border-border-subtle flex-none" style="height: 180px;">
+<!-- Initial State -->
+<div class="absolute inset-0 flex items-center justify-center bg-surface-container z-10 transition-opacity duration-300" id="drone-initial">
+<button class="px-5 py-2.5 bg-seafoam-glow text-abyssal-navy font-bold rounded-lg shadow-lg hover:bg-seafoam-glow/90 transition-all flex items-center gap-2 transform hover:scale-105" onclick="startDroneAnimation()">
+<span class="material-symbols-outlined">flight_takeoff</span> Inspect AUV Drone
+        </button>
+</div>
+<!-- Model Viewer -->
+<model-viewer auto-rotate="" camera-controls="" class="w-full h-full transform -translate-y-full opacity-0 transition-all duration-700 ease-out" environment-image="neutral" id="drone-model" shadow-intensity="1" src="Drone.glb" style="width: 100%; height: 100%;">
+</model-viewer>
+</div>
+<!-- Panel Header & Filter Tabs -->
+<div class="p-3.5 border-b border-border-subtle flex-none bg-canvas-base">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-2.5 h-2.5 rounded-full bg-seafoam-glow animate-pulse"></div>
+<h2 class="text-headline-sm font-headline-sm font-bold text-primary-container tracking-tight">
+              Detected Anomalies
+            </h2>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-surface-ice text-primary-container text-label-code font-label-code font-bold border border-border-subtle">
+            14 Active
+          </span>
+</div>
+<!-- Filter Pills Segmented Control -->
+<div class="flex items-center gap-1.5 mt-3 overflow-x-auto pb-1 text-label-code font-label-code">
+<button class="px-2.5 py-1 rounded bg-primary-container text-surface-container-lowest font-semibold shadow-xs">
+            All (<span id="count-all">0</span>)
+          </button>
+<button class="px-2.5 py-1 rounded bg-surface-ice hover:bg-surface-container text-sonar-alert font-semibold transition-colors border border-border-subtle flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-sonar-alert"></span>
+            Shipwrecks (<span id="count-shipwreck">0</span>)
+          </button>
+<button class="px-2.5 py-1 rounded bg-surface-ice hover:bg-surface-container text-on-surface-variant transition-colors border border-border-subtle">
+            Ghost Nets (<span id="count-ghost_net">0</span>)
+          </button>
+<button class="px-2.5 py-1 rounded bg-surface-ice hover:bg-surface-container text-on-surface-variant transition-colors border border-border-subtle">
+            Other (<span id="count-other">0</span>)
+          </button>
+</div>
+</div>
+<!-- Scrollable Telemetry Cards Feed -->
+<div class="flex-1 overflow-y-auto p-3 space-y-3 bg-canvas-base/60" id="anomalies-container">
+<!-- Sidebar Upload Zone (Restored) -->
+<div class="bg-surface-container-lowest p-6 rounded-xl border-2 border-dashed border-outline-variant/60 hover:border-seafoam-glow hover:bg-seafoam-glow/5 flex flex-col items-center justify-center text-center gap-3 cursor-pointer transition-colors duration-200 mt-3 mx-3 mb-3" id="upload-zone">
+<div class="w-10 h-10 rounded-full bg-secondary/10 text-secondary flex items-center justify-center mb-1">
+<span class="material-symbols-outlined text-[24px]">cloud_upload</span>
+</div>
+<div>
+<div class="flex items-center gap-4">
+<h3 class="font-headline-sm text-primary font-bold">Upload Media</h3>
+<button class="px-3 py-1 bg-secondary hover:bg-abyssal-navy transition-colors text-white rounded text-xs font-bold uppercase shadow z-50" id="openSurveyModal" onclick="document.getElementById('surveyPopModal').classList.remove('hidden'); event.stopPropagation();">Create Survey</button>
+</div>
+<p class="font-body-sm text-[11px] text-on-surface-variant mt-1">Click or drag &amp; drop video/image/.xtf files here</p>
+</div>
+</div>
+</div><div class="hidden">
+<!-- CARD 1: Critical Hazard - Ghost Net Nylon-6 -->
+<article class="bg-surface-container-lowest border-2 border-seafoam-glow/50 hover:border-seafoam-glow rounded-xl p-3 shadow-sm hover:shadow-md transition-all duration-150">
+<div class="flex items-start justify-between gap-2 mb-2">
+<div>
+<div class="flex items-center gap-2">
+<span class="text-label-code font-label-code text-secondary font-bold text-[12px]">#ANM-2026-089</span>
+<span class="px-2 py-0.5 rounded text-[10px] font-label-code font-bold bg-teal-50 text-teal-700 border border-teal-200">
+                  94.8% AI CONF
+                </span>
+</div>
+<h3 class="text-headline-sm font-headline-sm font-bold text-primary-container text-base mt-0.5 leading-snug">
+                Ghost Net Nylon-6 Monofilament
+              </h3>
+</div>
+<span class="flex-none px-2 py-0.5 rounded text-[10px] font-label-code font-bold bg-red-50 text-sonar-alert border border-red-200 uppercase">
+              Urgent Threat
+            </span>
+</div>
+<!-- Acoustic Crop Snippet & Telemetry Grid -->
+<div class="grid grid-cols-3 gap-2 my-2.5">
+<!-- Simulated acoustic raster crop -->
+<div class="col-span-1 rounded-lg bg-abyssal-navy border border-border-subtle relative overflow-hidden flex items-center justify-center h-20 group">
+<div class="absolute inset-0 bg-gradient-to-tr from-cyan-950 to-abyssal-navy"></div>
+<svg class="w-full h-full opacity-70" viewbox="0 0 100 80">
+<path d="M 20 40 Q 50 20 80 45 Q 60 70 20 40" fill="none" stroke="#14B8A6" stroke-dasharray="4 2" stroke-width="2"></path>
+<circle cx="50" cy="40" fill="rgba(20, 184, 166, 0.2)" r="14"></circle>
+</svg>
+<span class="absolute bottom-1 right-1 text-[8px] font-label-code text-cyan-300 bg-black/60 px-1 rounded">455kHz</span>
+</div>
+<!-- Card Metrics Readout -->
+<div class="col-span-2 flex flex-col justify-between text-label-code font-label-code text-[11px] py-0.5">
+<div class="flex justify-between">
+<span class="text-on-surface-variant">Depth:</span>
+<strong class="text-primary-container">-42.8m (Seabed)</strong>
+</div>
+<div class="flex justify-between">
+<span class="text-on-surface-variant">Dry Mass:</span>
+<strong class="text-primary-container">145kg ± 12kg</strong>
+</div>
+<div class="flex justify-between">
+<span class="text-on-surface-variant">GPS Fix:</span>
+<span class="text-secondary font-mono text-[10px]">12°51'24"N 80°14'38"E</span>
+</div>
+<div class="flex justify-between">
+<span class="text-on-surface-variant">Current Drift:</span>
+<span class="text-telemetry-amber">0.4 kts @ 210° SW</span>
+</div>
+</div>
+</div>
+<!-- Quick Actions Footer -->
+<div class="pt-2 border-t border-border-subtle flex items-center justify-between gap-2">
+<button class="flex-1 py-1.5 px-2.5 rounded-lg bg-primary-container hover:bg-[#071b2f] text-surface-container-lowest text-label-code font-label-code font-semibold flex items-center justify-center gap-1 text-xs transition-colors active:scale-95 shadow-xs">
+<span class="material-symbols-outlined text-sm text-seafoam-glow" data-icon="send">send</span>
+<span>Send to Verification</span>
+</button>
+<button class="py-1.5 px-2.5 rounded-lg bg-surface-ice hover:bg-surface-container text-primary-container text-label-code font-label-code border border-border-subtle flex items-center justify-center gap-1 text-xs transition-colors" title="Mark on Bathymetric Map">
+<span class="material-symbols-outlined text-sm" data-icon="add_location">add_location</span>
+<span>Waypoint</span>
+</button>
+</div>
+</article>
+<!-- CARD 2: Bio-Hazard Warning - HDPE Drum Cluster -->
+<article class="bg-surface-container-lowest border border-border-subtle hover:border-sonar-alert/70 rounded-xl p-3 shadow-sm hover:shadow-md transition-all duration-150">
+<div class="flex items-start justify-between gap-2 mb-2">
+<div>
+<div class="flex items-center gap-2">
+<span class="text-label-code font-label-code text-secondary font-bold text-[12px]">#ANM-2026-090</span>
+<span class="px-2 py-0.5 rounded text-[10px] font-label-code font-bold bg-amber-50 text-telemetry-amber border border-amber-200">
+                  91.2% AI CONF
+                </span>
+</div>
+<h3 class="text-headline-sm font-headline-sm font-bold text-primary-container text-base mt-0.5 leading-snug">
+                HDPE Industrial Drum Cluster
+              </h3>
+</div>
+<span class="flex-none px-2 py-0.5 rounded text-[10px] font-label-code font-bold bg-red-100 text-sonar-alert border border-red-300 uppercase">
+              Biohazard
+            </span>
+</div>
+<!-- Acoustic Crop & Data -->
+<div class="grid grid-cols-3 gap-2 my-2.5">
+<div class="col-span-1 rounded-lg bg-abyssal-navy border border-border-subtle relative overflow-hidden flex items-center justify-center h-20">
+<div class="absolute inset-0 bg-gradient-to-tr from-red-950/40 to-abyssal-navy"></div>
+<svg class="w-full h-full opacity-80" viewbox="0 0 100 80">
+<rect fill="none" height="30" rx="3" stroke="#E11D48" stroke-width="2" width="25" x="25" y="25"></rect>
+<rect fill="none" height="26" rx="3" stroke="#E11D48" stroke-width="1.5" width="22" x="55" y="32"></rect>
+</svg>
+<span class="absolute bottom-1 right-1 text-[8px] font-label-code text-red-300 bg-black/60 px-1 rounded">200L x 2</span>
+</div>
+<div class="col-span-2 flex flex-col justify-between text-label-code font-label-code text-[11px] py-0.5">
+<div class="flex justify-between">
+<span class="text-on-surface-variant">Depth:</span>
+<strong class="text-primary-container">-38.1m (Suspended)</strong>
+</div>
+<div class="flex justify-between">
+<span class="text-on-surface-variant">Volume:</span>
+<strong class="text-primary-container">approx. 400 Liters</strong>
+</div>
+<div class="flex justify-between">
+<span class="text-on-surface-variant">Shipping Cor:</span>
+<span class="text-primary-container">Deep Lane SE-3</span>
+</div>
+<div class="flex justify-between">
+<span class="text-on-surface-variant">Acoustic Refl:</span>
+<span class="text-sonar-alert font-semibold">-12.4 dB (High)</span>
+</div>
+</div>
+</div>
+<!-- Quick Actions -->
+<div class="pt-2 border-t border-border-subtle flex items-center justify-between gap-2">
+<button class="flex-1 py-1.5 px-2.5 rounded-lg bg-surface-ice hover:bg-surface-container text-primary-container text-label-code font-label-code font-semibold flex items-center justify-center gap-1 text-xs transition-colors border border-border-subtle">
+<span class="material-symbols-outlined text-sm text-secondary" data-icon="multiline_chart">multiline_chart</span>
+<span>Inspect Raw Pings</span>
+</button>
+<button class="py-1.5 px-2.5 rounded-lg bg-surface-ice hover:bg-surface-container text-sonar-alert text-label-code font-label-code border border-border-subtle flex items-center justify-center gap-1 text-xs transition-colors" title="Flag for Specialist Review">
+<span class="material-symbols-outlined text-sm" data-icon="flag">flag</span>
+<span>Flag</span>
+</button>
+</div>
+</article>
+<!-- CARD 3: Derelict Gear - Braided Polypropylene Trawl -->
+<article class="bg-surface-container-lowest border border-border-subtle hover:border-secondary rounded-xl p-3 shadow-sm hover:shadow-md transition-all duration-150">
+<div class="flex items-start justify-between gap-2 mb-2">
+<div>
+<div class="flex items-center gap-2">
+<span class="text-label-code font-label-code text-secondary font-bold text-[12px]">#ANM-2026-091</span>
+<span class="px-2 py-0.5 rounded text-[10px] font-label-code font-bold bg-slate-100 text-on-surface-variant border border-border-subtle">
+                  88.5% AI CONF
+                </span>
+</div>
+<h3 class="text-headline-sm font-headline-sm font-bold text-primary-container text-base mt-0.5 leading-snug">
+                Braided Polypropylene Trawl
+              </h3>
+</div>
+<span class="flex-none px-2 py-0.5 rounded text-[10px] font-label-code font-bold bg-teal-50 text-teal-700 border border-teal-200">
+              Coral Threat
+            </span>
+</div>
+<!-- Acoustic Crop & Specs -->
+<div class="grid grid-cols-3 gap-2 my-2.5">
+<div class="col-span-1 rounded-lg bg-abyssal-navy border border-border-subtle relative overflow-hidden flex items-center justify-center h-20">
+<div class="absolute inset-0 bg-gradient-to-tr from-cyan-950/60 to-abyssal-navy"></div>
+<svg class="w-full h-full opacity-70" viewbox="0 0 100 80">
+<path d="M 10 60 Q 40 30 70 50 T 95 30" fill="none" stroke="#F59E0B" stroke-width="2.5"></path>
+</svg>
+<span class="absolute bottom-1 right-1 text-[8px] font-label-code text-amber-300 bg-black/60 px-1 rounded">34m Span</span>
+</div>
+<div class="col-span-2 flex flex-col justify-between text-label-code font-label-code text-[11px] py-0.5">
+<div class="flex justify-between">
+<span class="text-on-surface-variant">Depth:</span>
+<strong class="text-primary-container">-45.0m (Benthic)</strong>
+</div>
+<div class="flex justify-between">
+<span class="text-on-surface-variant">Length:</span>
+<strong class="text-primary-container">34 meters</strong>
+</div>
+<div class="flex justify-between">
+<span class="text-on-surface-variant">Substrate:</span>
+<span class="text-primary-container">Live Coral Shoal</span>
+</div>
+<div class="flex justify-between">
+<span class="text-on-surface-variant">Status:</span>
+<span class="text-seafoam-glow font-bold">Unanchored</span>
+</div>
+</div>
+</div>
+<!-- Actions -->
+<div class="pt-2 border-t border-border-subtle flex items-center justify-between gap-2">
+<button class="w-full py-1.5 px-2.5 rounded-lg bg-surface-ice hover:bg-surface-container text-primary-container text-label-code font-label-code font-semibold flex items-center justify-center gap-1.5 text-xs transition-colors border border-border-subtle">
+<span class="material-symbols-outlined text-sm text-seafoam-glow" data-icon="assignment_turned_in">assignment_turned_in</span>
+<span>Queue Autonomous Interception</span>
+</button>
+</div>
+</article>
+</div>
+
+<!-- BATCH OPERATIONS & TELEMETRY PIPE FOOTER -->
+<div class="p-3 bg-canvas-base border-t border-border-subtle flex-none space-y-2">
+<button class="w-full py-2 px-3 rounded-lg bg-primary-container hover:bg-[#071b2f] text-surface-container-lowest text-label-code font-label-code font-bold flex items-center justify-center gap-2 transition-all shadow active:scale-[0.98]" id="btn-generate-report">
+<span class="material-symbols-outlined text-base text-seafoam-glow" data-icon="description">call_split</span>
+<span>Dispatch Detections (Auto &amp; Manual)</span>
+</button>
+<!-- Pipeline Security Verification Stamp -->
+<div class="pt-1 flex items-center justify-between text-[10px] font-label-code text-on-surface-variant">
+<div class="flex items-center gap-1 text-slate-500">
+<span class="material-symbols-outlined text-xs text-seafoam-glow" data-icon="lock">lock</span>
+<span>SIH26-INCOIS-LINKED // SECURE TLS-1.3</span>
+</div>
+<span class="text-secondary font-mono">LATENCY 18ms</span>
+</div>
+</div>
+</aside>
+</main>
+<!-- FOOTER (Shared Component JSON compliant with style tokens) -->
+<footer class="bg-canvas-base border-t border-border-subtle flex-none">
+<div class="w-full py-1.5 px-space-lg md:px-gutter-desktop flex justify-center items-center gap-2 text-[10px] font-label-code text-on-surface-variant">
+<span class="font-bold text-primary">TARANG // तरंग</span>
+<span>© 2026 Ministry of Earth Sciences (MoES) &amp; INCOIS</span>
+</div>
+</footer>
+<!-- Micro-interactions Script -->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const fileInput = document.getElementById('file-input');
+    const uploadZone = document.getElementById('upload-zone');
+    const loadingOverlay = document.getElementById('loading-overlay');
+    const loadingStatusText = document.getElementById('loading-status-text');
+    const resultImage = document.getElementById('result-image');
+    const resultVideo = document.getElementById('result-video');
+    const mediaViewport = document.getElementById('media-viewport');
+    
+    const btnBrowseMain = document.getElementById('btn-browse-main');
+    const btnSampleVideo = document.getElementById('btn-sample-video');
+    const btnSampleImage = document.getElementById('btn-sample-image');
+    const btnPlayPause = document.getElementById('btn-play-pause');
+    const btnStop = document.getElementById('btn-stop');
+    const btnReupload = document.getElementById('btn-reupload');
+    const btnMaximize = document.getElementById('btn-maximize');
+    const btnPopout = document.getElementById('btn-popout');
+    const videoTime = document.getElementById('video-time');
+    
+    const anomaliesContainer = document.getElementById('anomalies-container');
+    const activeCountBadge = document.querySelector('aside .flex-none span.rounded-full');
+    const filterTabs = document.querySelectorAll('aside .overflow-x-auto button');
+    
+    let currentDetections = [];
+    let currentFilter = 'all';
+    let isProcessing = false;
+    let processingInterval = null;
+
+    // Trigger File Picker
+    if (btnBrowseMain) {
+        btnBrowseMain.addEventListener('click', (e) => {
+            e.stopPropagation();
+            fileInput.click();
+        });
+    }
+    if (btnReupload) {
+        btnReupload.addEventListener('click', (e) => {
+            e.stopPropagation();
+            fileInput.click();
+        });
+    }
+    if (uploadZone) {
+        uploadZone.addEventListener('click', (e) => {
+            if (e.target !== btnSampleVideo && e.target !== btnSampleImage && !btnSampleVideo?.contains(e.target) && !btnSampleImage?.contains(e.target)) {
+                fileInput.click();
+            }
+        });
+    }
+
+    // Sample Triggers
+    if (btnSampleVideo) {
+        btnSampleVideo.addEventListener('click', (e) => {
+            e.stopPropagation();
+            runDetectionWithSample('LandingPage.mp4');
+        });
+    }
+    if (btnSampleImage) {
+        btnSampleImage.addEventListener('click', (e) => {
+            e.stopPropagation();
+            runDetectionWithSample('stitch_screen');
+        });
+    }
+
+    // Stop / Reset Button
+    if (btnStop) {
+        btnStop.addEventListener('click', () => {
+            if (processingInterval) clearInterval(processingInterval);
+            resultVideo.pause();
+            resultVideo.src = '';
+            resultVideo.classList.add('hidden');
+            resultImage.src = '';
+            resultImage.classList.add('hidden');
+            uploadZone.classList.remove('hidden');
+            if (btnPlayPause) btnPlayPause.innerHTML = '<span class="material-symbols-outlined text-[28px]">play_circle</span>';
+            if (videoTime) videoTime.innerText = '00:00 / 00:00';
+            fileInput.value = '';
+        });
+    }
+
+    // Play / Pause Button
+    if (btnPlayPause) {
+        btnPlayPause.addEventListener('click', () => {
+            if (resultVideo && !resultVideo.classList.contains('hidden')) {
+                if (resultVideo.paused) {
+                    resultVideo.play();
+                    btnPlayPause.innerHTML = '<span class="material-symbols-outlined text-[28px]">pause_circle</span>';
+                } else {
+                    resultVideo.pause();
+                    btnPlayPause.innerHTML = '<span class="material-symbols-outlined text-[28px]">play_circle</span>';
+                }
+            }
+        });
+    }
+
+    if (resultVideo) {
+        resultVideo.addEventListener('play', () => {
+            if (btnPlayPause) btnPlayPause.innerHTML = '<span class="material-symbols-outlined text-[28px]">pause_circle</span>';
+        });
+        resultVideo.addEventListener('pause', () => {
+            if (btnPlayPause) btnPlayPause.innerHTML = '<span class="material-symbols-outlined text-[28px]">play_circle</span>';
+        });
+        resultVideo.addEventListener('timeupdate', () => {
+            if (videoTime && resultVideo.duration) {
+                const cur = formatTime(resultVideo.currentTime);
+                const dur = formatTime(resultVideo.duration);
+                videoTime.innerText = `${cur} / ${dur}`;
+            }
+        });
+    }
+
+    function formatTime(sec) {
+        const m = Math.floor(sec / 60);
+        const s = Math.floor(sec % 60);
+        return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+    }
+
+    // Maximize & Popout
+    if (btnMaximize && mediaViewport) {
+        btnMaximize.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                mediaViewport.requestFullscreen().catch(err => console.log(err));
+            } else {
+                document.exitFullscreen();
+            }
+        });
+    }
+    if (btnPopout && resultVideo) {
+        btnPopout.addEventListener('click', () => {
+            if (document.pictureInPictureEnabled && !resultVideo.classList.contains('hidden')) {
+                resultVideo.requestPictureInPicture().catch(err => console.log(err));
+            }
+        });
+    }
+
+    // Drag and Drop
+    if (uploadZone) {
+        ['dragenter', 'dragover'].forEach(name => {
+            uploadZone.addEventListener(name, (e) => {
+                e.preventDefault();
+                uploadZone.classList.add('bg-teal-500/10');
+            });
+        });
+        ['dragleave', 'drop'].forEach(name => {
+            uploadZone.addEventListener(name, (e) => {
+                e.preventDefault();
+                uploadZone.classList.remove('bg-teal-500/10');
+            });
+        });
+        uploadZone.addEventListener('drop', (e) => {
+            if (e.dataTransfer && e.dataTransfer.files.length > 0) {
+                handleUpload(e.dataTransfer.files[0]);
+            }
+        });
+    }
+
+    // File Input change
+    fileInput.addEventListener('change', function() {
+        if (this.files && this.files.length > 0) {
+            handleUpload(this.files[0]);
+        }
+    });
+
+    function showLoading(msg) {
+        if (loadingOverlay) {
+            loadingOverlay.classList.remove('hidden');
+            if (loadingStatusText) loadingStatusText.innerText = msg || 'Running best.pt inference across frames & generating detection screenshots...';
+        }
+    }
+
+    function hideLoading() {
+        if (loadingOverlay) {
+            loadingOverlay.classList.add('hidden');
+        }
+    }
+
+    function startRealtimeProcessing() {
+        if (processingInterval) clearInterval(processingInterval);
+        
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        processingInterval = setInterval(() => {
+            if (!resultVideo || resultVideo.paused || resultVideo.ended || isProcessing) return;
+            
+            isProcessing = true;
+            canvas.width = resultVideo.videoWidth || 1280;
+            canvas.height = resultVideo.videoHeight || 720;
+            ctx.drawImage(resultVideo, 0, 0, canvas.width, canvas.height);
+            
+            canvas.toBlob((blob) => {
+                if (!blob) {
+                    isProcessing = false;
+                    return;
+                }
+                
+                
+                const formData = new FormData();
+                formData.append('file', blob, 'frame.jpg');
+                formData.append('conf', '0.20');
+                if (window.currentSurveyId) {
+                    formData.append('survey_id', window.currentSurveyId);
+                }
+
+
+                fetch('/api/detect', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.detections && data.detections.length > 0) {
+                        data.detections.forEach(d => {
+                            const isDuplicate = currentDetections.slice(0, 4).some(existing => existing.class_name === d.class_name);
+                            if (!isDuplicate) {
+                                d.id = d.id + '-' + Math.random().toString(36).substr(2, 6);
+                                currentDetections.unshift(d);
+                            }
+                        });
+                        
+                        if (currentDetections.length > 40) currentDetections = currentDetections.slice(0, 40);
+                        
+                        updateAnomalyCounts(currentDetections);
+                        renderAnomalyCards(currentDetections);
+                    }
+                    isProcessing = false;
+                })
+                .catch(err => {
+                    console.error("Frame processing error:", err);
+                    isProcessing = false;
+                });
+            }, 'image/jpeg', 0.85);
+            
+        }, 1200);
+    }
+
+    function handleUpload(file) {
+        uploadZone.classList.add('hidden');
+        const isVideo = file.type.startsWith('video/') || file.name.match(/\.(mp4|mov|avi|webm)$/i);
+
+        const isXtf = file.name.toLowerCase().endsWith('.xtf');
+        if (isXtf) {
+            resultVideo.classList.add('hidden');
+            resultImage.classList.add('hidden');
+            showLoading(`Ingesting ${file.name} — Parsing XTF binary & reconstructing waterfall...`);
+            
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            if (window.currentSurveyId) {
+                formData.append('survey_id', window.currentSurveyId);
+            }
+
+
+            fetch('/api/v1/xtf/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                hideLoading();
+                renderXtfResults(data);
+            })
+            .catch(err => {
+                hideLoading();
+                alert('Error processing XTF: ' + err.message);
+            });
+            return;
+        }
+
+        
+        if (isVideo) {
+            resultImage.classList.add('hidden');
+            resultVideo.classList.remove('hidden');
+            
+            const fileURL = URL.createObjectURL(file);
+            resultVideo.src = fileURL;
+            resultVideo.play().catch(e => console.log('Autoplay blocked:', e));
+            
+            currentDetections = [];
+            if (anomaliesContainer) anomaliesContainer.innerHTML = '';
+            
+            startRealtimeProcessing();
+        } else {
+            resultVideo.classList.add('hidden');
+            resultImage.classList.remove('hidden');
+            showLoading(`Ingesting ${file.name} — Running YOLO inference on model best.pt...`);
+            
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            if (window.currentSurveyId) {
+                formData.append('survey_id', window.currentSurveyId);
+            }
+
+            formData.append('conf', '0.20');
+
+            fetch('/api/detect', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                hideLoading();
+                renderResults(data);
+            })
+            .catch(err => {
+                hideLoading();
+                alert('Error running inference: ' + err.message);
+            });
+        }
+    }
+
+    function runDetectionWithSample(sampleName) {
+        uploadZone.classList.add('hidden');
+        const isVideo = sampleName.endsWith('.mp4');
+        
+        if (isVideo) {
+            resultImage.classList.add('hidden');
+            resultVideo.classList.remove('hidden');
+            resultVideo.src = 'LandingPage.mp4';
+            resultVideo.play().catch(e => console.log('Autoplay blocked:', e));
+            
+            currentDetections = [];
+            if (anomaliesContainer) anomaliesContainer.innerHTML = '';
+            
+            startRealtimeProcessing();
+        } else {
+            resultVideo.classList.add('hidden');
+            resultImage.classList.remove('hidden');
+            showLoading(`Loading sample scan — Running YOLO inference on model best.pt...`);
+            
+            const formData = new FormData();
+            formData.append('sample', sampleName);
+            formData.append('conf', '0.20');
+
+            fetch('/api/detect', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                hideLoading();
+                renderResults(data);
+            })
+            .catch(err => {
+                hideLoading();
+                alert('Error running sample detection: ' + err.message);
+            });
+        }
+    }
+
+    
+    function renderXtfResults(data) {
+        uploadZone.classList.add('hidden');
+        resultVideo.classList.add('hidden');
+        resultImage.classList.add('hidden'); // We will create custom image elements
+
+        // Clear previous custom xtf container if exists
+        let oldContainer = document.getElementById('xtf-container');
+        if (oldContainer) oldContainer.remove();
+
+        const container = document.createElement('div');
+        container.id = 'xtf-container';
+        container.className = 'absolute inset-0 z-10 bg-[#020b15] overflow-y-auto p-4 flex flex-col gap-4';
+        
+
+        let metaGridHtml = '';
+        if (data.metadata) {
+            for (const [key, value] of Object.entries(data.metadata)) {
+                metaGridHtml += `<div><span class="text-[10px] text-slate-400 font-label-code block uppercase">${key}</span><span class="font-bold text-sm break-all">${value}</span></div>`;
+            }
+        } else {
+            // Fallback if metadata object is somehow missing
+            metaGridHtml = `
+                <div><span class="text-[10px] text-slate-400 font-label-code block uppercase">Survey ID</span><span class="font-bold text-sm break-all">${data.survey_id}</span></div>
+                <div><span class="text-[10px] text-slate-400 font-label-code block uppercase">Total Pings</span><span class="font-bold text-sm break-all">${data.total_pings}</span></div>
+                <div><span class="text-[10px] text-slate-400 font-label-code block uppercase">Channels</span><span class="font-bold text-sm break-all">${data.channels}</span></div>
+            `;
+        }
+        
+        const metadataHtml = `
+            <div class="bg-[#07192c] p-4 rounded-xl border border-teal-500/20 shadow-md text-white">
+                <h3 class="text-seafoam-glow font-headline-sm font-bold mb-3">XTF Survey Metadata</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    ${metaGridHtml}
+                </div>
+            </div>
+        `;
+        
+        const imagesHtml = `<div class="flex flex-col gap-4" id="xtf-images-wrapper"></div>`;
+        
+        container.innerHTML = metadataHtml + imagesHtml;
+        document.getElementById('media-viewport').appendChild(container);
+        
+        // Fetch and append images
+        fetch(`/api/v1/xtf/${data.survey_id}/images`)
+            .then(res => res.json())
+            .then(images => {
+                const wrapper = document.getElementById('xtf-images-wrapper');
+                images.forEach(img => {
+                    const imgEl = document.createElement('img');
+                    imgEl.src = `/api/v1/xtf/${data.survey_id}/images/${img.id}`;
+                    imgEl.className = 'w-full rounded-lg border border-teal-500/20 object-contain';
+                    wrapper.appendChild(imgEl);
+                });
+            });
+
+        currentDetections = data.detections || [];
+        updateAnomalyCounts(currentDetections);
+        renderAnomalyCards(currentDetections);
+    }
+
+    function renderResults(data) {
+        uploadZone.classList.add('hidden');
+
+        if (data.media_type === 'video') {
+            resultImage.classList.add('hidden');
+            resultVideo.classList.remove('hidden');
+            resultVideo.src = data.media_url + '?t=' + new Date().getTime();
+            resultVideo.play().catch(e => console.log(e));
+        } else {
+            resultVideo.classList.add('hidden');
+            resultImage.classList.remove('hidden');
+            resultImage.src = data.media_url;
+        }
+
+        currentDetections = data.detections || [];
+        updateAnomalyCounts(currentDetections);
+        renderAnomalyCards(currentDetections);
+    }
+
+    function updateAnomalyCounts(detections) {
+        const total = detections.length;
+        if (activeCountBadge) {
+            activeCountBadge.innerText = `${total} Active`;
+            if (total > 0) {
+                activeCountBadge.className = 'px-2 py-0.5 rounded-full bg-red-100 text-sonar-alert text-label-code font-label-code font-bold border border-red-200 animate-pulse';
+            } else {
+                activeCountBadge.className = 'px-2 py-0.5 rounded-full bg-surface-ice text-primary-container text-label-code font-label-code font-bold border border-border-subtle';
+            }
+        }
+        
+        const countAll = document.getElementById('count-all');
+        const countShip = document.getElementById('count-shipwreck');
+        const countNet = document.getElementById('count-ghost_net');
+        const countOther = document.getElementById('count-other');
+
+        if (countAll) countAll.innerText = total;
+        if (countShip) countShip.innerText = detections.filter(d => d.class_name === 'shipwreck').length;
+        if (countNet) countNet.innerText = detections.filter(d => d.class_name === 'ghost_net').length;
+        if (countOther) countOther.innerText = detections.filter(d => !['shipwreck', 'ghost_net'].includes(d.class_name)).length;
+    }
+
+    function renderAnomalyCards(detections) {
+        if (!anomaliesContainer) return;
+        anomaliesContainer.innerHTML = '';
+
+        const filtered = currentFilter === 'all' 
+            ? detections 
+            : currentFilter === 'other'
+                ? detections.filter(d => !['shipwreck', 'ghost_net'].includes(d.class_name))
+                : detections.filter(d => d.class_name === currentFilter);
+
+        if (filtered.length === 0) {
+            anomaliesContainer.innerHTML = `
+                <div class="bg-surface-container-lowest p-6 rounded-xl border border-dashed border-outline-variant/60 flex flex-col items-center justify-center text-center gap-2 h-64 mt-4 mx-2">
+                    <span class="material-symbols-outlined text-[32px] text-teal-600 p-3 rounded-xl bg-teal-50 mb-2">policy</span>
+                    <h5 class="font-headline-sm text-[15px] text-primary font-bold">No Detections Extracted</h5>
+                    <p class="font-body-sm text-[12px] text-on-surface-variant px-4">Upload a sonar image or video to run inference with <strong class="text-primary font-label-code">best.pt</strong>. Each detected target will be extracted as a screenshot here.</p>
+                </div>
+            `;
+            return;
+        }
+
+        filtered.forEach((det) => {
+            const card = document.createElement('div');
+            card.className = "bg-surface-container-lowest p-3 rounded-xl shadow-sm hover:shadow-md transition-all relative flex flex-col gap-2 border border-border-subtle cursor-pointer";
+            card.style.borderLeft = `4px solid ${det.color || '#006398'}`;
+            
+            const timeTag = det.time_offset ? ` • ${det.time_offset}` : '';
+
+                let telemetryHtml = '';
+                if (det.telemetry) {
+                    telemetryHtml = `
+                    <div class="mt-2 bg-surface-container/50 p-2 rounded border border-outline-variant/30 text-[9px] font-label-code text-on-surface">
+                        <div class="text-secondary font-bold mb-1 uppercase tracking-wider flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[12px]">my_location</span>
+                            Exact Telemetry
+                        </div>
+                        <div class="grid grid-cols-2 gap-y-1">
+                            <div class="truncate"><span class="text-slate-500">LAT:</span> ${det.telemetry.Latitude || 'N/A'}</div>
+                            <div class="truncate"><span class="text-slate-500">LON:</span> ${det.telemetry.Longitude || 'N/A'}</div>
+                            <div class="truncate"><span class="text-slate-500">PING:</span> ${det.telemetry['Ping Number'] || 'N/A'}</div>
+                            <div class="truncate"><span class="text-slate-500">HDG:</span> ${det.telemetry.Heading || 'N/A'}</div>
+                            <div class="truncate"><span class="text-slate-500">DPTH:</span> ${det.telemetry.Depth || '0'}m</div>
+                            <div class="truncate"><span class="text-slate-500">ALT:</span> ${det.telemetry.Altitude || '0'}m</div>
+                        </div>
+                    </div>
+                    `;
+                }
+
+
+            card.innerHTML = `
+                <div class="flex items-start justify-between gap-1">
+                    <div class="flex flex-col">
+                        <span class="font-label-code text-[10px] text-on-surface-variant">${det.id}${timeTag}</span>
+                        <h4 class="font-headline-sm text-[14px] text-primary font-bold leading-tight">${det.title}</h4>
+                    </div>
+                    <span class="px-2 py-0.5 rounded font-label-code text-[10px] font-bold bg-teal-50 text-teal-700 border border-teal-200">
+                        ${det.confidence}% CONF
+                    </span>
+                </div>
+
+                <!-- Acoustic Screenshot Crop -->
+                <div class="relative h-28 w-full rounded-lg overflow-hidden bg-abyssal-navy border border-slate-200 group/crop">
+                    <img class="w-full h-full object-contain bg-black/50 group-hover/crop:scale-105 transition-transform" src="${det.crop_url}" alt="Crop" />
+                    <div class="absolute top-1.5 left-1.5 bg-primary/90 text-seafoam-glow font-label-code text-[8px] px-1.5 py-0.5 rounded backdrop-blur-xs flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[10px]">crop</span>
+                        <span>DETECTION CROP</span>
+                    </div>
+                    <div class="absolute bottom-1.5 right-1.5 bg-abyssal-navy/90 text-white font-label-code text-[8px] px-1.5 py-0.5 rounded backdrop-blur-xs">
+                        Z: ${det.depth} | ${det.dim}
+                    </div>
+                </div>
+
+                <!-- Metadata Grid -->
+                <div class="bg-surface-ice p-2 rounded-lg font-label-code text-[10px]">
+                    <span class="text-slate-500">MATERIAL:</span>
+                    <div class="font-semibold text-primary truncate">${det.material}</div>
+                </div>
+
+                ${telemetryHtml}
+
+                <!-- Card Action Buttons -->
+                ${det.time_offset ? `
+                <div class="flex items-center gap-2 pt-1">
+                    <button class="btn-seek flex-1 py-1 rounded-lg bg-surface-ice hover:bg-surface-container text-secondary font-label-code text-[11px] flex items-center justify-center gap-1 font-bold shadow-xs transition-all" title="Seek video to timestamp">
+                        <span class="material-symbols-outlined text-[14px]">fast_forward</span>
+                        <span>Seek to ${det.time_offset}</span>
+                    </button>
+                </div>
+                ` : ''}
+            `;
+
+            const seekBtn = card.querySelector('.btn-seek');
+            if (seekBtn && resultVideo && det.time_offset) {
+                seekBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const parts = det.time_offset.split(':');
+                    const sec = parseFloat(parts[0]) * 60 + parseFloat(parts[1]);
+                    resultVideo.currentTime = sec;
+                    resultVideo.play();
+                });
+            }
+
+            const reviewBtn = card.querySelector('.btn-review');
+            if (reviewBtn) {
+                reviewBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    reviewBtn.innerHTML = '<span class="material-symbols-outlined text-[14px] text-seafoam-glow animate-spin">sync</span><span>Queued...</span>';
+                    setTimeout(() => {
+                        reviewBtn.innerHTML = '<span class="material-symbols-outlined text-[14px] text-seafoam-glow">check_circle</span><span>Verified #409</span>';
+                        reviewBtn.classList.add('bg-teal-800');
+                    }, 500);
+                });
+            }
+
+            anomaliesContainer.appendChild(card);
+        });
+    }
+
+    // Filter Buttons
+    if (filterTabs) {
+        filterTabs.forEach((tab, index) => {
+            tab.addEventListener('click', function() {
+                filterTabs.forEach(t => {
+                    t.classList.remove('bg-primary-container', 'text-surface-container-lowest', 'font-semibold', 'shadow-xs');
+                    t.classList.add('bg-surface-ice', 'text-on-surface-variant');
+                });
+                this.classList.add('bg-primary-container', 'text-surface-container-lowest', 'font-semibold', 'shadow-xs');
+                this.classList.remove('bg-surface-ice', 'text-on-surface-variant');
+                
+                const filterMap = ['all', 'shipwreck', 'ghost_net', 'other'];
+                currentFilter = filterMap[index] || 'all';
+                renderAnomalyCards(currentDetections);
+            });
+        });
+    }
+
+    const btnReport = document.getElementById('btn-generate-report');
+    if (btnReport) {
+        btnReport.addEventListener('click', () => {
+            if (currentDetections.length === 0) {
+                alert("No detections available to dispatch.");
+                return;
+            }
+            
+            const classAB = currentDetections.filter(d => d.classification_tier === 'Tier A' || d.classification_tier === 'Tier B' || d.classification_tier === 'A' || d.classification_tier === 'B').map(d => ({
+                ...d,
+                latitude: d.metadata?.latitude || d.latitude || null,
+                longitude: d.metadata?.longitude || d.longitude || null
+            }));
+            const classC = currentDetections.filter(d => d.classification_tier === 'Tier C' || d.classification_tier === 'C').map(d => ({
+                ...d,
+                latitude: d.metadata?.latitude || d.latitude || null,
+                longitude: d.metadata?.longitude || d.longitude || null
+            }));
+            
+            // Initialize Supabase Client
+            const supabaseUrl = 'https://cryfgdedvnyczhausidk.supabase.co';
+            const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNyeWZnZGVkdm55Y3poYXVzaWRrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4OTQwMDU3MSwiZXhwIjoyMTA0OTc2NTcxfQ.3RRFtT--ublCzZZhfSyM0HodY0Goxtb-HrddJkCBLAU';
+            const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
+            // Generate JSON for Class A and B
+            if (classAB.length > 0) {
+                const jsonObj = {
+                    "timestamp": new Date().toISOString(),
+                    "system": "TARANG_SURVEY_OPS",
+                    "destination": "MARINE_ANALYST",
+                    "exported_tier": ["A", "B"],
+                    "total_detections": classAB.length,
+                    "detections": classAB
+                };
+                
+                // Push payload to Supabase Database
+                supabaseClient.from('dispatches').insert([
+                    { payload: jsonObj }
+                ]).then(({ data, error }) => {
+                    if (error) {
+                        console.error('Error dispatching to Supabase:', error);
+                        showToast("Failed to sync to Marine Analyst.", true);
+                    } else {
+                        console.log('Dispatch synced to cloud database');
+                        showToast("Data sent successfully to Marine Analyst Portal!");
+                    }
+                });
+
+                // Also save locally as a backup
+                localStorage.setItem('marineAnalystData', JSON.stringify(jsonObj));
+
+                const jsonBlob = new Blob([JSON.stringify(jsonObj, null, 2)], { type: 'application/json' });
+                const jsonUrl = URL.createObjectURL(jsonBlob);
+                const jsonA = document.createElement('a');
+                jsonA.href = jsonUrl;
+                jsonA.download = `Automated_Dispatch_ClassAB_${Date.now()}.json`;
+                document.body.appendChild(jsonA);
+                jsonA.click();
+                document.body.removeChild(jsonA);
+                URL.revokeObjectURL(jsonUrl);
+            }
+            
+            // Push Class C to Supabase for Sonar Analyst
+            if (classC.length > 0) {
+                const jsonObjC = {
+                    "timestamp": new Date().toISOString(),
+                    "system": "TARANG_SURVEY_OPS",
+                    "destination": "SONAR_ANALYST",
+                    "exported_tier": ["C"],
+                    "total_detections": classC.length,
+                    "detections": classC
+                };
+                
+                supabaseClient.from('dispatches').insert([
+                    { payload: jsonObjC }
+                ]).then(({ data, error }) => {
+                    if (error) {
+                        console.error('Error dispatching Class C to Supabase:', error);
+                    } else {
+                        console.log('Class C dispatch synced to cloud database');
+                    }
+                });
+            }
+            
+            alert(`Dispatched ${classAB.length} automated targets and queued ${classC.length} manual review targets.`);
+        });
+    }
+});
+</script>
+<!-- SURVEY POP MODAL -->
+<div class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm hidden" id="surveyPopModal">
+<div class="bg-surface-container-lowest w-full max-w-lg rounded-xl shadow-2xl overflow-hidden border border-border-subtle p-6 relative">
+<button class="absolute top-4 right-4 text-gray-500 hover:text-red-500" onclick="document.getElementById('surveyPopModal').classList.add('hidden')">
+<span class="material-symbols-outlined">close</span>
+</button>
+<h2 class="text-xl font-headline-lg font-bold text-primary-container mb-4">Initialize Survey Pop</h2>
+<form class="space-y-3" id="surveyPopForm">
+<div>
+<label class="block text-[11px] font-label-code font-bold text-gray-600 uppercase mb-1">Survey Name</label>
+<input class="w-full rounded border border-gray-300 px-3 py-1.5 text-sm" id="survey_name" placeholder="e.g. INCOIS-BAY-04" required="" type="text"/>
+</div>
+<div>
+<label class="block text-[11px] font-label-code font-bold text-gray-600 uppercase mb-1">Location</label>
+<input class="w-full rounded border border-gray-300 px-3 py-1.5 text-sm" id="location_name" placeholder="e.g. Bay of Bengal" required="" type="text"/>
+</div>
+<div class="grid grid-cols-2 gap-3">
+<div>
+<label class="block text-[11px] font-label-code font-bold text-gray-600 uppercase mb-1">Date</label>
+<input class="w-full rounded border border-gray-300 px-3 py-1.5 text-sm" id="survey_date" required="" type="date"/>
+</div>
+<div>
+<label class="block text-[11px] font-label-code font-bold text-gray-600 uppercase mb-1">Time</label>
+<input class="w-full rounded border border-gray-300 px-3 py-1.5 text-sm" id="survey_time" required="" type="time"/>
+</div>
+</div>
+<div class="pt-4 flex justify-end gap-3">
+<button class="px-4 py-2 rounded text-sm text-gray-600 hover:bg-gray-100" onclick="document.getElementById('surveyPopModal').classList.add('hidden')" type="button">Cancel</button>
+<button class="px-4 py-2 bg-secondary text-white rounded text-sm font-bold uppercase shadow hover:bg-abyssal-navy" type="submit">Create Survey</button>
+</div>
+</form>
+</div>
+</div>
+<script>
+window.currentSurveyId = null;
+
+document.getElementById('surveyPopForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const payload = {
+        survey_name: document.getElementById('survey_name').value,
+        location_name: document.getElementById('location_name').value,
+        survey_date: document.getElementById('survey_date').value,
+        survey_time: document.getElementById('survey_time').value,
+        sonar_device: 'Standard',
+        sonar_frequency: 'Unknown'
+    };
+    try {
+        const response = await fetch('/api/v1/surveys', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+
+        if (data.status === 'success') {
+            window.currentSurveyId = data.survey_id;
+            
+            // Sync to Supabase Database
+            try {
+                const supabaseUrl = 'https://cryfgdedvnyczhausidk.supabase.co';
+                const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNyeWZnZGVkdm55Y3poYXVzaWRrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4OTQwMDU3MSwiZXhwIjoyMTA0OTc2NTcxfQ.3RRFtT--ublCzZZhfSyM0HodY0Goxtb-HrddJkCBLAU';
+                const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
+                const dbPayload = {
+                    survey_id: data.survey_id, 
+                    survey_name: payload.survey_name,
+                    survey_date: payload.survey_date,
+                    survey_time: payload.survey_time,
+                    location_name: payload.location_name,
+                    sonar_device: payload.sonar_device,
+                    sonar_frequency: payload.sonar_frequency,
+                    created_by: sessionStorage.getItem('currentUser') || 'Operator',
+                    status: 'PENDING',
+                    navigation_status: 'PENDING',
+                    processing_status: 'NOT_STARTED'
+                };
+                
+                const { error } = await supabaseClient.from('surveys').insert([dbPayload]);
+                if (error) {
+                    console.error('Supabase Sync Error:', error);
+                } else {
+                    console.log('Successfully synced survey to Supabase.');
+                }
+            } catch(e) {
+                console.error('Supabase Sync Exception', e);
+            }
+            
+            alert('Survey Created successfully! You can now upload media for Survey: ' + data.survey_id);
+
+            document.getElementById('surveyPopModal').classList.add('hidden');
+        } else {
+            alert('Error creating survey: ' + data.error);
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Server error.');
+    }
+});
+</script>
+<script>
+function startDroneAnimation() {
+    const initialOverlay = document.getElementById('drone-initial');
+    const model = document.getElementById('drone-model');
+    
+    if (!initialOverlay || !model) return;
+    
+    // Fade out overlay
+    initialOverlay.style.opacity = '0';
+    setTimeout(() => {
+        initialOverlay.style.display = 'none';
+    }, 300);
+    
+    // Animate model dropping from top
+    model.classList.remove('-translate-y-full', 'opacity-0');
+    model.classList.add('translate-y-0', 'opacity-100');
+}
+</script>
+<!-- Toast Notification System -->
+<script>
+function showToast(message, isError=false) {
+    const toast = document.createElement('div');
+    toast.className = `fixed bottom-6 right-6 z-[9999] px-6 py-3 rounded-lg shadow-xl font-label-code text-sm font-semibold transform transition-all duration-300 translate-y-10 opacity-0 flex items-center gap-2 border ${isError ? 'bg-red-50 text-red-700 border-red-200' : 'bg-[#002a45] text-seafoam-glow border-seafoam-glow/30'}`;
+    toast.innerHTML = `<span class="material-symbols-outlined text-[18px]">${isError ? 'error' : 'check_circle'}</span><span>${message}</span>`;
+    document.body.appendChild(toast);
+    
+    // Animate in
+    setTimeout(() => {
+        toast.classList.remove('translate-y-10', 'opacity-0');
+    }, 10);
+    
+    // Animate out and remove
+    setTimeout(() => {
+        toast.classList.add('translate-y-10', 'opacity-0');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+</script>
+</body>
+</html>
