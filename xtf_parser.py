@@ -86,33 +86,13 @@ def parse_xtf(filepath, output_dir):
             min_lon, max_lon = 180, -180
             altitudes, depths, speeds = [], [], []
 
-            # Define 10 distinct cluster centroids around Bombay High (19.38 N, 71.34 E)
-            cluster_centroids = [
-                (19.3800, 71.3400), # Cluster 1
-                (19.3850, 71.3420), # Cluster 2
-                (19.3750, 71.3380), # Cluster 3
-                (19.3820, 71.3450), # Cluster 4
-                (19.3780, 71.3350), # Cluster 5
-                (19.3900, 71.3410), # Cluster 6
-                (19.3700, 71.3390), # Cluster 7
-                (19.3880, 71.3480), # Cluster 8
-                (19.3720, 71.3320), # Cluster 9
-                (19.3950, 71.3450)  # Cluster 10
-            ]
-
             # Process acoustic data
             port_samples = []
             stbd_samples = []
             
             for idx, ping in enumerate(sonar_packets):
-                chunk_idx = (idx // 1000) % len(cluster_centroids)
-                base_lat, base_lon = cluster_centroids[chunk_idx]
-                
-                # --- INJECT REALISTIC BOMBAY HIGH OFFSHORE COORDINATES (CLUSTERED) ---
-                # Simulate movement by adding a tiny drift around the chunk's cluster centroid
-                ping.SensorYcoordinate = base_lat + ((idx % 1000) * 0.000001)
-                ping.SensorXcoordinate = base_lon + ((idx % 1000) * 0.000001)
-                
+                # Use actual coordinates if available
+                pass                
                 if ping.SensorYcoordinate:
                     min_lat, max_lat = min(min_lat, ping.SensorYcoordinate), max(max_lat, ping.SensorYcoordinate)
                 if ping.SensorXcoordinate:
@@ -195,6 +175,17 @@ def parse_xtf(filepath, output_dir):
                 img_filename = f"xtf_{metadata['Survey ID']}_{i}.jpg"
                 img_path = os.path.join(output_dir, img_filename)
                 cv2.imwrite(img_path, img_color)
+                
+                # Upload to Supabase Storage
+                try:
+                    url = os.environ.get('SUPABASE_URL')
+                    key = os.environ.get('SUPABASE_KEY')
+                    if url and key:
+                        sb = create_client(url, key)
+                        with open(img_path, 'rb') as f:
+                            sb.storage.from_('survey-images').upload(img_filename, f, {"upsert": "true"})
+                except Exception as e:
+                    print("Supabase Storage Upload Error:", e)
                 
                 images.append({
                     "id": f"img_{i}",

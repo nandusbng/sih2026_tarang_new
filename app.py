@@ -1,7 +1,6 @@
 import os
 import uuid
 import base64
-import sqlite3
 import hashlib
 import json
 import csv
@@ -15,10 +14,134 @@ import numpy as np
 app = Flask(__name__, static_folder='.')
 
 DB_PATH = os.path.join(os.path.dirname(__file__), 'tarang.db')
+
+import os
+import re
+from supabase import create_client
+from dotenv import load_dotenv
+
+load_dotenv()
+
+class SupabaseRow(dict):
+    def __init__(self, d):
+        super().__init__(d)
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            return list(self.values())[key]
+        return super().__getitem__(key)
+    def keys(self):
+        return super().keys()
+
+class SupabaseCursor:
+    def __init__(self, data):
+        self.data = data
+        self.idx = 0
+    def fetchone(self):
+        if self.data and len(self.data) > 0 and self.idx < len(self.data):
+            row = SupabaseRow(self.data[self.idx])
+            self.idx += 1
+            return row
+        return None
+    def fetchall(self):
+        return [SupabaseRow(d) for d in self.data] if self.data else []
+    def __iter__(self):
+        return iter(self.fetchall())
+
+class SupabaseShim:
+    def __init__(self):
+        url = os.environ.get('SUPABASE_URL')
+        key = os.environ.get('SUPABASE_KEY')
+        self.sb = create_client(url, key) if url and key else None
+        
+    def execute(self, query, params=()):
+        if not self.sb:
+            return SupabaseCursor([])
+            
+        q = query.strip()
+        # SELECT COUNT(*)
+        if q.upper().startswith("SELECT COUNT(*)"):
+            table_match = re.search(r'FROM\s+(\w+)', q, re.IGNORECASE)
+            if not table_match: return SupabaseCursor([{"count": 0}])
+            table = table_match.group(1)
+            req = self.sb.table(table).select("id", count="exact")
+            if "WHERE LOWER(verification_status) = 'verified'" in q.upper():
+                req = req.eq('verification_status', 'verified')
+            elif "WHERE LOWER(clearance_status) = 'cleared'" in q.upper():
+                req = req.eq('clearance_status', 'cleared')
+            elif "WHERE STATUS != 'DISMISSED'" in q.upper():
+                req = req.neq('status', 'Dismissed')
+            res = req.execute()
+            return SupabaseCursor([{"count": res.count if res.count else 0}])
+            
+        # SELECT
+        if q.upper().startswith("SELECT"):
+            table_match = re.search(r'FROM\s+(\w+)', q, re.IGNORECASE)
+            table = table_match.group(1)
+            req = self.sb.table(table).select("*")
+            
+            if "WHERE" in q.upper():
+                where_clause = q.upper().split("WHERE")[1].split("ORDER BY")[0].strip()
+                if "SURVEY_ID = ?" in where_clause:
+                    req = req.eq("survey_id", params[0])
+                elif "INSTITUTION_ID = ?" in where_clause:
+                    req = req.ilike("institution_id", params[0])
+                elif "ID = ?" in where_clause:
+                    req = req.eq("id", params[0])
+                elif "CLASSIFICATION_TIER IN ('A', 'B')" in where_clause:
+                    req = req.in_("classification_tier", ["A", "B"])
+                elif "CLASSIFICATION_TIER = 'C'" in where_clause:
+                    req = req.eq("classification_tier", "C")
+                    
+            if "ORDER BY created_at DESC" in q.upper():
+                req = req.order("created_at", desc=True)
+            elif "ORDER BY created_at ASC" in q.upper():
+                req = req.order("created_at")
+            elif "ORDER BY confidence DESC" in q.upper():
+                req = req.order("confidence", desc=True)
+                
+            res = req.execute()
+            return SupabaseCursor(res.data)
+            
+        # UPDATE
+        if q.upper().startswith("UPDATE"):
+            table_match = re.search(r'UPDATE\s+(\w+)', q, re.IGNORECASE)
+            table = table_match.group(1)
+            if table == "notifications" and "is_read = 1" in q.lower():
+                self.sb.table(table).update({"is_read": True}).neq("id", "0").execute()
+            elif table == "hotspots" and "status = ?" in q.lower():
+                self.sb.table(table).update({"status": params[0]}).eq("id", params[1]).execute()
+            elif table == "detections" and "clearance_status = ?" in q.lower():
+                self.sb.table(table).update({"clearance_status": params[0]}).eq("id", params[1]).execute()
+            elif table == "detections" and "verification_status = ?" in q.lower():
+                self.sb.table(table).update({"verification_status": params[0]}).eq("id", params[1]).execute()
+            return SupabaseCursor([])
+            
+        # INSERT
+        if q.upper().startswith("INSERT INTO"):
+            table_match = re.search(r'INSERT INTO\s+(\w+)', q, re.IGNORECASE)
+            table = table_match.group(1)
+            cols_match = re.search(r'\((.*?)\)', q)
+            if cols_match:
+                cols = [c.strip() for c in cols_match.group(1).split(',')]
+                data = dict(zip(cols, params))
+                try:
+                    self.sb.table(table).insert(data).execute()
+                except Exception as e:
+                    print(f"Supabase Insert Error ({table}):", e)
+            return SupabaseCursor([])
+            
+        return SupabaseCursor([])
+        
+    def commit(self):
+        pass
+    def close(self):
+        pass
+    def cursor(self):
+        return self
+
 def get_db():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+    return SupabaseShim()
+
 
 def hash_password(password, salt=None):
     if not salt:
@@ -138,6 +261,17 @@ def crop_and_encode(frame, box, pad=18):
     crop_filename = f"crop_{crop_id}.jpg"
     crop_path = os.path.join(CROPS_DIR, crop_filename)
     cv2.imwrite(crop_path, crop)
+    try:
+        url = os.environ.get('SUPABASE_URL')
+        key = os.environ.get('SUPABASE_KEY')
+        if url and key:
+            from supabase import create_client
+            sb = create_client(url, key)
+            with open(crop_path, 'rb') as f_up:
+                # Use string 'crops/filename' so it handles the redirect well
+                sb.storage.from_('survey-images').upload(f"crops/{crop_filename}", f_up, {"upsert": "true"})
+    except Exception as e:
+        print("Crop upload error:", e)
     crop_url = f"/outputs/crops/{crop_filename}"
     
     # Also generate base64 data URI
@@ -302,6 +436,11 @@ def index():
 
 @app.route('/outputs/<path:filename>')
 def serve_output(filename):
+    import os
+    from flask import redirect
+    url = os.environ.get('SUPABASE_URL')
+    if url:
+        return redirect(f"{url}/storage/v1/object/public/survey-images/{filename}")
     return send_from_directory(OUTPUTS_DIR, filename)
 
 @app.route('/<path:path>')
@@ -701,104 +840,52 @@ def auth_login():
     if not inst_id or not password:
         return jsonify({'status': 'error', 'message': 'Institution ID and password are required.'}), 400
         
-    conn = get_db()
-    user = conn.execute('SELECT * FROM users WHERE institution_id = ? COLLATE NOCASE', (inst_id,)).fetchone()
-    conn.close()
-    
-    if not user:
-        return jsonify({'status': 'error', 'message': 'Invalid Institution ID or password.'}), 401
+    try:
+        import os
+        from supabase import create_client
+        sb = create_client(os.environ.get('SUPABASE_URL'), os.environ.get('SUPABASE_KEY'))
         
-    if not verify_password(user['password_hash'], user['salt'], password):
-        return jsonify({'status': 'error', 'message': 'Invalid Institution ID or password.'}), 401
+        email = f"{inst_id}@tarang.local" if "@" not in inst_id else inst_id
+        res = sb.auth.sign_in_with_password({"email": email, "password": password})
         
-    role = user['role']
-    redirect = ROLE_REDIRECTS.get(role, 'operator-portal.html')
-    
-    return jsonify({
-        'status': 'success',
-        'user': {
-            'id': user['id'],
-            'full_name': user['full_name'],
-            'institution_id': user['institution_id'],
-            'role': user['role'],
-            'status': user['status']
-        },
-        'redirect': redirect
-    })
-
+        user_res = sb.table('tarang_users').select('*').eq('institution_id', inst_id).execute()
+        user_data = user_res.data[0] if user_res.data else {
+            'id': res.user.id, 'full_name': 'Authorized User', 'institution_id': inst_id, 'role': 'survey_operator'
+        }
+            
+        role = user_data.get('role', 'survey_operator')
+        return jsonify({'status': 'success', 'user': user_data, 'redirect': ROLE_REDIRECTS.get(role, 'operator-portal.html')})
+    except Exception as e:
+        print("Supabase Auth Login Error:", e)
+        return jsonify({'status': 'error', 'message': str(e)}), 401
 @app.route('/api/auth/register', methods=['POST'])
 def auth_register():
     data = request.json or request.form
-    full_name = (data.get('full_name') or '').strip()
-    inst_id = (data.get('institution_id') or '').strip()
+    full_name = data.get('full_name', '').strip()
+    inst_id = data.get('institution_id', '').strip()
     password = data.get('password', '')
-    confirm_password = data.get('confirm_password', '')
-    raw_role = (data.get('role') or 'survey_operator').strip().lower()
+    role = data.get('role', 'survey_operator')
     
-    # Map raw role string to normalized key
-    role_norm_map = {
-        'survey operator': 'survey_operator',
-        'survey_operator': 'survey_operator',
-        'sonar image analyst': 'sonar_analyst',
-        'sonar analyst': 'sonar_analyst',
-        'sonar_analyst': 'sonar_analyst',
-        'conservation / marine ngo': 'marine_analyst',
-        'conservation marine ngo': 'marine_analyst',
-        'marine analyst': 'marine_analyst',
-        'marine_analyst': 'marine_analyst',
-        'coastal & marine authority': 'gov_authority',
-        'coastal marine authority': 'gov_authority',
-        'gov authority': 'gov_authority',
-        'gov_authority': 'gov_authority',
-        'public': 'public'
-    }
-    role = role_norm_map.get(raw_role, raw_role)
-    
-    # Validations
-    if not full_name:
-        return jsonify({'status': 'error', 'message': 'Full Name is required.'}), 400
-    if not inst_id:
-        return jsonify({'status': 'error', 'message': 'Institution ID is required.'}), 400
-    if not password:
-        return jsonify({'status': 'error', 'message': 'Password is required.'}), 400
-    if not confirm_password:
-        return jsonify({'status': 'error', 'message': 'Please confirm your password.'}), 400
-    if password != confirm_password:
-        return jsonify({'status': 'error', 'message': 'Passwords do not match.'}), 400
-    if not role:
-        return jsonify({'status': 'error', 'message': 'Team Role is required.'}), 400
+    if not full_name or not inst_id or not password:
+        return jsonify({'status': 'error', 'message': 'Missing required fields.'}), 400
         
-    conn = get_db()
-    existing = conn.execute('SELECT id FROM users WHERE institution_id = ? COLLATE NOCASE', (inst_id,)).fetchone()
-    if existing:
-        conn.close()
-        return jsonify({'status': 'error', 'message': f'Institution ID "{inst_id}" is already registered.'}), 409
+    try:
+        import os
+        from supabase import create_client
+        sb = create_client(os.environ.get('SUPABASE_URL'), os.environ.get('SUPABASE_KEY'))
         
-    p_hash, salt = hash_password(password)
-    user_id = str(uuid.uuid4())
-    now_iso = datetime.now().isoformat()
-    
-    conn.execute('''
-        INSERT INTO users (id, full_name, institution_id, password_hash, salt, role, status, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, 'active', ?)
-    ''', (user_id, full_name, inst_id, p_hash, salt, role, now_iso))
-    conn.commit()
-    conn.close()
-    
-    redirect = ROLE_REDIRECTS.get(role, 'operator-portal.html')
-    return jsonify({
-        'status': 'success',
-        'message': 'Account created successfully.',
-        'user': {
-            'id': user_id,
-            'full_name': full_name,
-            'institution_id': inst_id,
-            'role': role,
-            'status': 'active'
-        },
-        'redirect': redirect
-    })
-
+        email = f"{inst_id}@tarang.local" if "@" not in inst_id else inst_id
+        res = sb.auth.sign_up({"email": email, "password": password})
+        
+        user_data = {
+            'id': res.user.id if res.user else str(uuid.uuid4()),
+            'full_name': full_name, 'institution_id': inst_id, 'role': role, 'status': 'active'
+        }
+        sb.table('tarang_users').insert(user_data).execute()
+        return jsonify({'status': 'success', 'message': 'Account created via Supabase Auth.', 'user': user_data, 'redirect': ROLE_REDIRECTS.get(role, 'operator-portal.html')})
+    except Exception as e:
+        print("Supabase Auth Register Error:", e)
+        return jsonify({'status': 'error', 'message': str(e)}), 400
 @app.route('/api/admin/users', methods=['GET'])
 def get_admin_users():
     conn = get_db()
