@@ -11,8 +11,6 @@
 <!-- Material Symbols -->
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<!-- Supabase SDK -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- DotLottie Player -->
 <script src="https://unpkg.com/@dotlottie/player-component@2.7.12/dist/dotlottie-player.mjs" type="module"></script>
 <!-- Tailwind CSS via CDN -->
@@ -156,6 +154,8 @@
       background: linear-gradient(180deg, rgba(20, 184, 166, 0.2) 0%, rgba(91, 184, 254, 0.7) 50%, rgba(20, 184, 166, 0.2) 100%);
     }
   </style>
+  <script src="js/auth.js"></script>
+  <script>protectRoute();</script>
 </head>
 <body class="bg-canvas-base text-on-surface h-full flex flex-col antialiased selection:bg-secondary selection:text-surface-container-lowest font-body-md overflow-x-hidden">
 <input accept="image/*,video/*,.xtf" class="hidden" id="file-input" type="file"/>
@@ -889,18 +889,32 @@ document.addEventListener("DOMContentLoaded", function() {
         container.innerHTML = metadataHtml + imagesHtml;
         document.getElementById('media-viewport').appendChild(container);
         
-        // Fetch and append images
+        // Fetch persisted evidence records. The URL is supplied by the API;
+        // never rebuild it from the local XTF processing path.
         fetch(`/api/v1/xtf/${data.survey_id}/images`)
-            .then(res => res.json())
+            .then(async (res) => {
+                if (!res.ok) throw new Error(`Evidence API HTTP ${res.status}`);
+                return res.json();
+            })
             .then(images => {
                 const wrapper = document.getElementById('xtf-images-wrapper');
                 images.forEach(img => {
+                    const evidenceUrl = String(img.url || '').trim();
+                    if (!/^(https?:\/\/|\/)/i.test(evidenceUrl) || /^[A-Za-z]:[\\/]/.test(evidenceUrl) || /^\\\\/.test(evidenceUrl)) {
+                        console.error('TARANG XTF evidence API returned an unsafe image URL.', { surveyId: data.survey_id, imageId: img.image_id, evidenceUrl });
+                        return;
+                    }
                     const imgEl = document.createElement('img');
-                    imgEl.src = `/api/v1/xtf/${data.survey_id}/images/${img.id}`;
+                    imgEl.src = evidenceUrl;
+                    imgEl.dataset.evidenceId = img.image_id || '';
+                    imgEl.onerror = () => console.error('TARANG XTF evidence image failed to load.', {
+                        surveyId: data.survey_id, imageId: imgEl.dataset.evidenceId, url: imgEl.currentSrc || imgEl.src
+                    });
                     imgEl.className = 'w-full rounded-lg border border-teal-500/20 object-contain';
                     wrapper.appendChild(imgEl);
                 });
-            });
+            })
+            .catch(error => console.error('TARANG XTF evidence API retrieval failed.', { surveyId: data.survey_id, error }));
 
         currentDetections = data.detections || [];
         updateAnomalyCounts(currentDetections);
@@ -1102,32 +1116,39 @@ document.addEventListener("DOMContentLoaded", function() {
                 longitude: d.metadata?.longitude || d.longitude || null
             }));
             
-            // Initialize Supabase Client
-            const supabaseUrl = 'https://cryfgdedvnyczhausidk.supabase.co';
-            const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNyeWZnZGVkdm55Y3poYXVzaWRrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4OTQwMDU3MSwiZXhwIjoyMTA0OTc2NTcxfQ.3RRFtT--ublCzZZhfSyM0HodY0Goxtb-HrddJkCBLAU';
-            const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+            // Dispatch records are written by the backend with server credentials.
+            const dispatchToServer = (payload) => fetch('/api/v1/dispatches', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    survey_id: payload.detections?.[0]?.survey_id,
+                    destination: payload.destination,
+                    tiers: payload.exported_tier
+                })
+            }).then(async (response) => {
+                const data = await response.json();
+                return { data: response.ok ? data : null, error: response.ok ? null : data };
+            });
 
             // Generate JSON for Class A and B
             if (classAB.length > 0) {
                 const jsonObj = {
                     "timestamp": new Date().toISOString(),
                     "system": "TARANG_SURVEY_OPS",
-                    "destination": "MARINE_ANALYST",
+                    "destination": "MARINE_PORTAL",
                     "exported_tier": ["A", "B"],
                     "total_detections": classAB.length,
                     "detections": classAB
                 };
                 
                 // Push payload to Supabase Database
-                supabaseClient.from('dispatches').insert([
-                    { payload: jsonObj }
-                ]).then(({ data, error }) => {
+                dispatchToServer(jsonObj).then(({ data, error }) => {
                     if (error) {
                         console.error('Error dispatching to Supabase:', error);
-                        showToast("Failed to sync to Marine Analyst.", true);
+                        showToast("Failed to sync to Marine Portal.", true);
                     } else {
                         console.log('Dispatch synced to cloud database');
-                        showToast("Data sent successfully to Marine Analyst Portal!");
+                        showToast("Data sent successfully to Marine Portal!");
                     }
                 });
 
@@ -1142,12 +1163,9 @@ document.addEventListener("DOMContentLoaded", function() {
                     "total_detections": classC.length,
                     "detections": classC
                 };
-                localStorage.setItem('intermediateData', JSON.stringify(jsonObjC));
             }
             
-            // Also save locally as a backup
-
-                localStorage.setItem('marineAnalystData', JSON.stringify(jsonObj));
+            // Client-side export blob for analyst audit
 
                 const jsonBlob = new Blob([JSON.stringify(jsonObj, null, 2)], { type: 'application/json' });
                 const jsonUrl = URL.createObjectURL(jsonBlob);
@@ -1171,9 +1189,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     "detections": classC
                 };
                 
-                supabaseClient.from('dispatches').insert([
-                    { payload: jsonObjC }
-                ]).then(({ data, error }) => {
+                dispatchToServer(jsonObjC).then(({ data, error }) => {
                     if (error) {
                         console.error('Error dispatching Class C to Supabase:', error);
                     } else {

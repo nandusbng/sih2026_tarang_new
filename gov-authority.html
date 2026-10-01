@@ -12,6 +12,7 @@
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="js/tarang-map.js"></script>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -47,6 +48,7 @@
       if (!user) { window.location.href = 'login.html'; }
     })();
   </script>
+  <script>protectRoute();</script>
 </head>
 <body class="h-full flex flex-col text-slate-900 antialiased font-sans bg-slate-50 overflow-hidden">
 
@@ -60,7 +62,7 @@
       </div>
       <div class="flex items-center gap-2">
         <span class="font-headline font-black text-lg text-slate-900 tracking-wider leading-none">TARANG</span>
-        <span class="text-xs font-mono font-semibold text-teal-700 tracking-wide border-l border-slate-300 pl-2">Government Authority</span>
+        <span class="text-xs font-mono font-semibold text-teal-700 tracking-wide border-l border-slate-300 pl-2">Government Portal</span>
       </div>
     </div>
     <div class="flex items-center gap-3">
@@ -83,7 +85,7 @@
     <!-- LEFT SIDEBAR — exactly 4 items -->
     <aside class="w-60 bg-white border-r border-slate-200 flex flex-col shrink-0 p-4 shadow-sm z-30">
       <div class="px-3 py-2 text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold mb-2">
-        Government Authority
+        Government Portal
       </div>
       <nav class="space-y-1 flex-1">
         <button onclick="switchTab('overview')" data-tab="overview"
@@ -182,6 +184,30 @@
             <div id="hotspot-map-empty" class="absolute inset-0 flex items-center justify-center text-slate-500 text-sm font-mono bg-slate-50 z-[500]">Loading map…</div>
           </div>
         </div>
+
+        <!-- Optimized Cleanup Route (same persisted record the Marine Portal generates) -->
+        <div class="marine-card-no-hover rounded-xl p-4 flex flex-col gap-3">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h3 class="text-sm font-headline font-bold text-slate-900">Cleanup Route — Optimized Hotspot Sequence</h3>
+              <p class="text-xs text-slate-500 font-mono mt-1">Heuristic optimization over persisted hotspots. Maritime distances in nautical miles (1 NM = 1852 m).</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <button onclick="loadCleanupRoutePanel(true)" class="px-3 py-2 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-mono font-bold transition-colors">Optimize Route</button>
+              <button onclick="govDownloadJson('/api/v1/export/cleanup-route.json', 'tarang_cleanup_route.json')" class="px-3 py-2 rounded-lg bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-mono font-bold transition-colors">Download Cleanup Route JSON</button>
+              <button onclick="govDownloadJson('/api/v1/export/notifications.json', 'tarang_notifications.json')" class="px-3 py-2 rounded-lg bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-mono font-bold transition-colors">Download Notification JSON</button>
+            </div>
+          </div>
+          <div id="gov-route-status" class="text-xs font-mono text-slate-500">Loading latest persisted cleanup route…</div>
+          <div class="grid grid-cols-1 lg:grid-cols-5 gap-4">
+            <div class="lg:col-span-3 relative rounded-lg border border-slate-200 overflow-hidden bg-slate-100" style="height:380px">
+              <div id="gov-cleanup-route-map" class="absolute inset-0"></div>
+            </div>
+            <div class="lg:col-span-2 rounded-lg border border-slate-200 bg-slate-950 p-4 text-xs font-mono text-teal-200 overflow-auto" style="max-height:380px">
+              <div id="gov-cleanup-route-sequence">No cleanup route generated yet.</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- ============================================================ -->
@@ -248,7 +274,7 @@
       <div id="view-settings" class="gov-view hidden max-w-3xl mx-auto space-y-6">
         <div class="border-b border-slate-200 pb-4">
           <h2 class="font-headline font-bold text-[24px] text-slate-900">Portal Settings</h2>
-          <p class="text-sm text-slate-500 font-mono mt-1">Configure your government authority preferences.</p>
+          <p class="text-sm text-slate-500 font-mono mt-1">Configure your Government Portal preferences.</p>
         </div>
 
         <div class="marine-card-no-hover rounded-xl p-6 space-y-8">
@@ -311,6 +337,7 @@
 
     let mapHotspot   = null;   // Leaflet instance
     let mapDetail    = null;   // Leaflet instance
+    let govRouteMap  = null;   // TarangMap instance for the cleanup route
 
     const API = {
       surveys:    '/api/v1/surveys',
@@ -350,8 +377,61 @@
       // Fix Leaflet map rendering after tab switch
       setTimeout(function() {
         if (id === 'hotspots' && mapHotspot) mapHotspot.invalidateSize();
+        if (id === 'hotspots' && govRouteMap && govRouteMap.map) { govRouteMap.map.invalidateSize(); govRouteMap.fitBounds(); }
         if (id === 'survey-details' && mapDetail) mapDetail.invalidateSize();
       }, 150);
+    }
+
+    // ────────────────────────────────────────────────────────
+    //  CLEANUP ROUTE (persisted hotspot route, NM distances)
+    // ────────────────────────────────────────────────────────
+    async function govDownloadJson(url, filename) {
+      const status = document.getElementById('gov-route-status');
+      const result = await TarangExport.downloadJson(url, filename);
+      if (!result.ok && status) {
+        status.className = 'text-xs font-mono text-rose-600';
+        status.textContent = 'Download could not be authenticated: ' + result.error;
+      }
+    }
+
+    async function loadCleanupRoutePanel(regenerate) {
+      const status = document.getElementById('gov-route-status');
+      try {
+        let response;
+        if (regenerate) {
+          status.className = 'text-xs font-mono text-slate-500';
+          status.textContent = 'Optimizing cleanup route from persisted hotspots…';
+          response = await fetch('/api/v1/hotspot-route', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}'
+          });
+        } else {
+          response = await fetch('/api/v1/hotspot-route/latest');
+        }
+        const payload = await response.json().catch(function() { return {}; });
+        if (!response.ok) {
+          status.className = 'text-xs font-mono text-rose-600';
+          status.textContent = payload.message || ('Cleanup route request failed (HTTP ' + response.status + ').');
+          return;
+        }
+        if (payload.status === 'none' || !payload.route) {
+          status.className = 'text-xs font-mono text-slate-500';
+          status.textContent = payload.message || 'No cleanup route has been generated yet. Use “Optimize Route”.';
+          return;
+        }
+        const route = payload.route;
+        status.className = 'text-xs font-mono text-slate-500';
+        status.textContent = 'Cleanup Route ' + route.route_id + ' · ' + route.hotspot_count +
+          ' hotspot(s) · TOTAL: ' + TarangUnits.formatDistance(route.total_distance_nm, route.total_distance_km);
+        document.getElementById('gov-cleanup-route-sequence').innerHTML = TarangRouteUI.sequenceHtml(route);
+        if (!govRouteMap) {
+          govRouteMap = new TarangMap('gov-cleanup-route-map', { center: MAP_CONFIG.defaultCenter.slice(), zoom: 6 });
+        }
+        govRouteMap.setCleanupRoute(route);
+        setTimeout(function() { if (govRouteMap && govRouteMap.map) govRouteMap.map.invalidateSize(); }, 150);
+      } catch (error) {
+        status.className = 'text-xs font-mono text-rose-600';
+        status.textContent = 'Cleanup route request failed: ' + (error.message || error);
+      }
     }
 
     // ── Init ──
@@ -379,6 +459,7 @@
       renderOverview();
       renderHotspots();
       initSurveySelector();
+      loadCleanupRoutePanel(false);
     });
 
     // ────────────────────────────────────────────────────────
@@ -499,18 +580,18 @@
       tbody.innerHTML = gHotspots.map(function(h) {
         return '<tr class="hover:bg-slate-50 transition-colors">' +
           '<td class="p-4 font-bold text-slate-900">' + (h.region || h.name || '–') + '</td>' +
-          '<td class="p-4 text-slate-600">' + (h.surveys_count != null ? h.surveys_count : '–') + '</td>' +
-          '<td class="p-4 font-semibold text-teal-700">' + (h.verified_detections != null ? h.verified_detections : '–') + '</td>' +
+          '<td class="p-4 text-slate-600">' + (h.total_targets != null ? h.total_targets : '–') + '</td>' +
+          '<td class="p-4 font-semibold text-teal-700">' + (h.priority || '–') + '</td>' +
           '<td class="p-4 text-slate-600">' + (h.major_targets || h.target_types || '–') + '</td>' +
-          '<td class="p-4 text-slate-600" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + (h.basis || h.hotspot_basis || '–') + '">' + (h.basis || h.hotspot_basis || '–') + '</td>' +
-          '<td class="p-4 text-slate-600">' + (h.cleanup_status || '–') + '</td>' +
+          '<td class="p-4 text-slate-600" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + ((h.target_types || []).join ? (h.target_types || []).join(', ') : (h.target_types || '–')) + '">' + ((h.target_types || []).join ? (h.target_types || []).join(', ') : (h.target_types || '–')) + '</td>' +
+          '<td class="p-4 text-slate-600">' + (h.status || '–') + '</td>' +
         '</tr>';
       }).join('');
 
-      // Map
+      // Map — tiles come from the shared MAP_CONFIG provider chain (js/tarang-map.js)
       mapEmpty.classList.add('hidden');
-      mapHotspot = L.map('hotspot-map').setView([13.0, 80.2], 5);
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: 'TARANG' }).addTo(mapHotspot);
+      mapHotspot = L.map('hotspot-map').setView([12.905, 80.495], 5);
+      TarangTiles.attach(mapHotspot);
 
       var bounds = L.latLngBounds();
       var hasCoords = false;
@@ -520,7 +601,7 @@
         if (lat && lng) {
           hasCoords = true;
           L.circleMarker([lat, lng], { radius: 10, fillColor: '#ef4444', color: '#b91c1c', weight: 1.5, opacity: 1, fillOpacity: 0.55 })
-           .bindPopup('<b>' + (h.name || h.region || 'Hotspot') + '</b><br>Basis: ' + (h.basis || h.hotspot_basis || 'N/A'))
+           .bindPopup('<b>' + (h.name || h.region || 'Hotspot') + '</b><br>Priority: ' + (h.priority || 'N/A') + '<br>Status: ' + (h.status || 'N/A'))
            .addTo(mapHotspot);
           bounds.extend([lat, lng]);
         }
@@ -628,11 +709,11 @@
       } else {
         mapEm.classList.add('hidden');
         mapDetail = L.map('survey-detail-map').setView([validDets[0].latitude, validDets[0].longitude], 13);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(mapDetail);
+        TarangTiles.attach(mapDetail);
         var bounds = L.latLngBounds();
         validDets.forEach(function(d) {
           L.circleMarker([d.latitude, d.longitude], { radius: 6, fillColor: '#0f766e', color: '#fff', weight: 1, opacity: 1, fillOpacity: 0.8 })
-           .bindPopup('<b>' + (d.class_name || 'Target') + '</b><br>' + d.latitude.toFixed(5) + ', ' + d.longitude.toFixed(5))
+           .bindPopup('<b>' + (d.class_name || 'Sonar Detection') + '</b><br>Latitude ' + d.latitude.toFixed(5) + ', Longitude ' + d.longitude.toFixed(5))
            .addTo(mapDetail);
           bounds.extend([d.latitude, d.longitude]);
         });

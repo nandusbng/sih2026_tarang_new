@@ -11,7 +11,9 @@ for hf in html_files:
     for idx, sc in enumerate(scripts):
         if 'tailwind.config' in sc or 'window.location' in sc:
             continue
-        test_file = f'_test_{hf}_{idx}.js'
+        # Use an isolated temporary name so existing checked-in test fixtures
+        # are never overwritten or removed during a syntax pass.
+        test_file = f'__syntaxcheck_{hf}_{idx}.js'
         with open(test_file, 'w', encoding='utf-8') as tf:
             tf.write(sc)
         

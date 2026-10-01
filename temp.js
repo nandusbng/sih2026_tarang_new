@@ -4,8 +4,8 @@
       const waypointContainer = document.getElementById('waypointContainer');
       
       // Initialize Supabase Client
-      const supabaseUrl = 'https://cryfgdedvnyczhausidk.supabase.co';
-      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNyeWZnZGVkdm55Y3poYXVzaWRrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4OTQwMDU3MSwiZXhwIjoyMTA0OTc2NTcxfQ.3RRFtT--ublCzZZhfSyM0HodY0Goxtb-HrddJkCBLAU';
+      const supabaseUrl = '' + process.env.SUPABASE_URL + '';
+      const supabaseKey = '' + process.env.SUPABASE_SERVICE_KEY + '';
       const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
       async function fetchLatestDispatch() {

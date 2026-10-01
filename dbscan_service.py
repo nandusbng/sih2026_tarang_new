@@ -107,6 +107,7 @@ def cluster_detections(detections, eps_meters=500.0, min_samples=2):
         dominant_class = Counter(classes).most_common(1)[0][0] if classes else 'unknown'
         
         verified_count = sum(1 for d in c_dets if (d.get('verification_status') or '').lower() == 'verified')
+        cleared_count = sum(1 for d in c_dets if (d.get('clearance_status') or '').lower() == 'cleared' or (d.get('hazard') or '').lower() == 'cleared')
         
         clusters_result.append({
             'cluster_id': f"Cluster {cluster_num:02d}",
@@ -115,6 +116,7 @@ def cluster_detections(detections, eps_meters=500.0, min_samples=2):
             'dominant_class': dominant_class,
             'class_distribution': class_counts,
             'verified_count': verified_count,
+            'cleared_count': cleared_count,
             'center': [round(center_lat, 6), round(center_lon, 6)],
             'centroid': [round(center_lat, 6), round(center_lon, 6)],
             'radius_meters': round(max(max_dist_m, 50.0), 1),

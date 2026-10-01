@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>TARANG // Cleanup Operations</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="js/tarang-map.js"></script>
+  <script src="js/auth.js"></script><script>protectRoute();</script>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-900">
+  <header class="border-b border-slate-200 bg-white"><div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-4"><div><p class="text-xs font-bold uppercase tracking-[.24em] text-teal-700">TARANG</p><h1 class="text-xl font-black">Cleanup Operations Portal</h1><p class="text-xs text-slate-500">Only Marine Analyst-approved targets appear here.</p></div><a href="marine-analyst.html" class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-bold hover:bg-slate-50">Marine Analyst</a></div></header>
+  <main class="mx-auto max-w-7xl space-y-6 px-6 py-8">
+    <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"><div class="flex items-center justify-between gap-3"><div><h2 class="font-bold">Marine review queue</h2><p class="text-xs text-slate-500">Verified offshore targets require an explicit cleanup decision; rejected detections remain preserved in the shared record.</p></div><span id="review-count" class="rounded-full bg-sky-50 px-3 py-1 text-xs font-bold text-sky-700">0 awaiting decision</span></div><div id="review-queue" class="mt-4 grid gap-3 md:grid-cols-2"></div></section>
+    <section class="grid gap-4 sm:grid-cols-4"><div class="rounded-xl bg-white p-5 shadow-sm border border-slate-200"><p class="text-xs text-slate-500">Approved targets</p><strong id="metric-approved" class="mt-2 block text-3xl">0</strong></div><div class="rounded-xl bg-white p-5 shadow-sm border border-slate-200"><p class="text-xs text-slate-500">In progress</p><strong id="metric-progress" class="mt-2 block text-3xl">0</strong></div><div class="rounded-xl bg-white p-5 shadow-sm border border-slate-200"><p class="text-xs text-slate-500">Completed</p><strong id="metric-complete" class="mt-2 block text-3xl">0</strong></div><div class="rounded-xl bg-white p-5 shadow-sm border border-slate-200"><p class="text-xs text-slate-500">Cleanup Route distance</p><strong id="metric-distance" class="mt-2 block text-lg">0.00 NM (0.00 km)</strong></div></section>
+    <section class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"><div class="border-b border-slate-200 px-5 py-4"><h2 class="font-bold">Approved cleanup targets</h2><p id="status-message" class="mt-1 text-xs text-slate-500">Loading shared Supabase workflow state…</p></div><div class="overflow-x-auto"><table class="w-full min-w-[1040px] text-left text-sm"><thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th class="p-4">Target</th><th class="p-4">Hotspot</th><th class="p-4">Coordinates</th><th class="p-4">Priority</th><th class="p-4">Assigned operation</th><th class="p-4">Status</th><th class="p-4">Progress</th><th class="p-4">Actions</th></tr></thead><tbody id="operations-body"><tr><td colspan="8" class="p-8 text-center text-slate-500">Loading…</td></tr></tbody></table></div></section>
+    <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"><div class="flex flex-wrap items-center justify-between gap-3"><div><h2 class="font-bold">TSP / route optimization</h2><p class="text-xs text-slate-500">The route is generated from the approved offshore hotspot coordinates.</p></div><button id="refresh-route" class="rounded-lg bg-teal-700 px-4 py-2 text-xs font-bold text-white hover:bg-teal-800">Generate route</button></div><div id="route-map" class="mt-4 h-72 overflow-hidden rounded-lg border border-slate-200"></div><pre id="route-summary" class="mt-4 overflow-x-auto rounded-lg bg-slate-950 p-4 text-xs text-teal-200">No route generated yet.</pre></section>
+  </main>
+  <script>
+    const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+    let operations = [];
+    let routeMap = null;
+    let routeLayer = null;
+
+    function renderRouteMap(route) {
+      if (!routeMap) {
+        routeMap = L.map('route-map', {zoomControl: true}).setView(MAP_CONFIG.defaultCenter, 10);
+        TarangTiles.attach(routeMap); // tiles + fallback chain from MAP_CONFIG
+      }
+      if (routeLayer) routeLayer.clearLayers();
+      routeLayer = L.layerGroup().addTo(routeMap);
+      const stops = (route && route.target_sequence) || [];
+      const points = stops.map(stop => [Number(stop.latitude), Number(stop.longitude)]).filter(point => Number.isFinite(point[0]) && Number.isFinite(point[1]));
+      points.forEach((point, index) => L.circleMarker(point, {radius: 8, color:'#fff', weight:2, fillColor:'#0f766e', fillOpacity:1}).addTo(routeLayer).bindPopup(`Stop ${index + 1}: ${esc(stops[index].target_id)}<br>${esc(stops[index].status)}`));
+      if (points.length > 1) L.polyline(points, {color:'#0f766e', weight:4, opacity:.9}).addTo(routeLayer);
+      if (points.length) routeMap.fitBounds(points, {padding:[30,30]});
+      setTimeout(() => routeMap.invalidateSize(), 0);
+    }
+
+    async function loadReviewQueue() {
+      const response = await fetch('/api/v1/detections?verification_status=Verified');
+      const detections = response.ok ? await response.json() : [];
+      const awaiting = detections.filter(detection => detection.is_offshore && detection.cleanup_status === 'Awaiting Marine Review');
+      document.getElementById('review-count').textContent = `${awaiting.length} awaiting decision`;
+      document.getElementById('review-queue').innerHTML = awaiting.length ? awaiting.map(detection => `<article class="rounded-lg border border-slate-200 p-4"><div class="flex items-start justify-between gap-3"><div><strong>${esc(detection.title || detection.class_name)}</strong><p class="mt-1 font-mono text-xs text-slate-500">${esc(detection.id)} · Latitude ${Number(detection.latitude).toFixed(5)}, Longitude ${Number(detection.longitude).toFixed(5)}</p><p class="mt-1 text-xs text-slate-600">${Math.round(Number(detection.confidence || 0))}% confidence · verified by sonar analyst</p></div><div class="flex shrink-0 gap-2"><button onclick="decideTarget('${esc(detection.id)}', true)" class="rounded bg-teal-700 px-2 py-1 text-xs font-bold text-white">Approve cleanup</button><button onclick="decideTarget('${esc(detection.id)}', false)" class="rounded border border-slate-300 px-2 py-1 text-xs font-bold text-slate-700">Not recommended</button></div></div></article>`).join('') : '<p class="text-sm text-slate-500">No verified offshore targets await a marine cleanup decision.</p>';
+    }
+
+    async function decideTarget(targetId, cleanupRequired) {
+      const response = await fetch(`/api/v1/detections/${encodeURIComponent(targetId)}/cleanup-decision`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({cleanup_required: cleanupRequired})});
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) return alert(payload.message || 'Cleanup decision could not be saved.');
+      await loadOperations();
+    }
+    async function loadOperations() {
+      const [opsResponse, routeResponse] = await Promise.all([fetch('/api/v1/cleanup/operations'), fetch('/api/v1/routes')]);
+      operations = opsResponse.ok ? await opsResponse.json() : [];
+      const route = routeResponse.ok ? await routeResponse.json() : null;
+      document.getElementById('metric-approved').textContent = operations.filter(op => op.status === 'Cleanup Approved' || op.status === 'Cleanup Scheduled').length;
+      document.getElementById('metric-progress').textContent = operations.filter(op => op.status === 'Cleanup In Progress').length;
+      document.getElementById('metric-complete').textContent = operations.filter(op => op.status === 'Cleanup Completed').length;
+      document.getElementById('metric-distance').textContent = route && route.distance_km ? TarangUnits.formatDistance(TarangUnits.kmToNm(route.distance_km), route.distance_km) : '0.00 NM (0.00 km)';
+      document.getElementById('route-summary').textContent = route && route.route_id
+        ? `${route.route_id} — ${route.status}\n${route.target_count} offshore stop(s) · Cleanup Route ${TarangUnits.formatDistance(TarangUnits.kmToNm(route.distance_km), route.distance_km)} · estimated ${route.estimated_operation_hours} h\n${(route.target_sequence || []).map(stop => `#${stop.sequence} ${stop.target_id} (Latitude ${Number(stop.latitude).toFixed(5)}, Longitude ${Number(stop.longitude).toFixed(5)}) · ${stop.status}`).join('\n')}`
+        : 'No route generated yet. Approve at least one verified offshore target, then generate the route.';
+      renderRouteMap(route && route.route_id ? route : null);
+      document.getElementById('status-message').textContent = `${operations.length} persisted operation record(s) from the shared workflow.`;
+      document.getElementById('operations-body').innerHTML = operations.length ? operations.map(operation => `<tr class="border-t border-slate-100"><td class="p-4"><strong>${esc(operation.target_type)}</strong><br><span class="font-mono text-xs text-slate-500">${esc(operation.target_id)}</span></td><td class="p-4 text-xs">${esc(operation.hotspot_id || 'Pending cluster')}</td><td class="p-4 font-mono text-xs">${Number(operation.latitude || 0).toFixed(5)}, ${Number(operation.longitude || 0).toFixed(5)}</td><td class="p-4"><span class="rounded-full bg-amber-50 px-2 py-1 text-xs font-bold text-amber-700">${esc(operation.priority)}</span></td><td class="p-4 text-xs">${esc(operation.assigned_operation || 'Marine Response Fleet A')}</td><td class="p-4 text-xs font-bold">${esc(operation.status)}</td><td class="p-4 min-w-[160px]"><div class="h-2 rounded bg-slate-100"><div class="h-2 rounded bg-teal-600" style="width:${Math.max(0, Math.min(100, Number(operation.progress_percent || 0)))}%"></div></div><span class="text-xs text-slate-500">${operation.progress_percent || 0}%</span></td><td class="p-4"><select data-target="${esc(operation.target_id)}" class="operation-action rounded border border-slate-300 p-2 text-xs"><option value="">Update…</option><option value="accept_cleanup">Accept Cleanup</option><option value="schedule_cleanup">Schedule Cleanup</option><option value="dispatch_cleanup">Dispatch Cleanup</option><option value="start_operation">Start Operation</option><option value="update_progress">Update Progress</option><option value="complete_cleanup">Complete Cleanup</option></select></td></tr>`).join('') : '<tr><td colspan="8" class="p-8 text-center text-slate-500">No approved cleanup targets yet.</td></tr>';
+      document.querySelectorAll('.operation-action').forEach(select => select.addEventListener('change', async event => { const action = event.target.value; if (!action) return; let progress_percent; if (action === 'update_progress') { const value = prompt('Progress percentage (0–100):', '50'); if (value === null) { event.target.value = ''; return; } progress_percent = Number(value); } const response = await fetch(`/api/v1/cleanup/${encodeURIComponent(event.target.dataset.target)}/action`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action, progress_percent}) }); if (!response.ok) alert((await response.json().catch(() => ({}))).message || 'Operation update failed.'); event.target.value = ''; await loadOperations(); }));
+      await loadReviewQueue();
+    }
+    document.getElementById('refresh-route').addEventListener('click', async () => { const response = await fetch('/api/v1/routes/optimize', {method:'POST', headers:{'Content-Type':'application/json'},body:'{}'}); if (!response.ok) alert((await response.json().catch(() => ({}))).message || 'No approved targets are ready for routing.'); await loadOperations(); });
+    loadOperations().catch(error => { document.getElementById('status-message').textContent = error.message; });
+  </script>
+</body>
+</html>

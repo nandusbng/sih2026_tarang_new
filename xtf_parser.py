@@ -1,9 +1,12 @@
 import os
 import uuid
 import datetime
+import logging
 import numpy as np
 import cv2
 import pyxtf
+
+logger = logging.getLogger("tarang.evidence")
 
 def normalize_samples(samples):
     # Convert arbitrary acoustic intensities to 8-bit grayscale
@@ -174,18 +177,15 @@ def parse_xtf(filepath, output_dir):
                 
                 img_filename = f"xtf_{metadata['Survey ID']}_{i}.jpg"
                 img_path = os.path.join(output_dir, img_filename)
-                cv2.imwrite(img_path, img_color)
-                
-                # Upload to Supabase Storage
-                try:
-                    url = os.environ.get('SUPABASE_URL')
-                    key = os.environ.get('SUPABASE_KEY')
-                    if url and key:
-                        sb = create_client(url, key)
-                        with open(img_path, 'rb') as f:
-                            sb.storage.from_('survey-images').upload(img_filename, f, {"upsert": "true"})
-                except Exception as e:
-                    print("Supabase Storage Upload Error:", e)
+                if not cv2.imwrite(img_path, img_color):
+                    logger.error("XTF sonar raster generation failed: path=%s", img_path)
+                    raise OSError(f'Unable to write reconstructed sonar image: {img_filename}')
+
+                # Storage is intentionally handled once by app.py after the
+                # full survey ID, image ID, sequence, and content hash are
+                # known. Uploading here created a second anonymous object and
+                # left the database unable to associate it with detections.
+                logger.info("XTF sonar raster generated: path=%s ping_start=%s", img_path, i)
                 
                 images.append({
                     "id": f"img_{i}",

@@ -1,0 +1,34 @@
+Loading YOLO model 'best.pt'...
+Model loaded successfully. Classes: {0: 'crab_pot', 1: 'submarine_pipeline', 2: 'shipwreck', 3: 'ghost_net', 4: 'mine_cylinder'}
+ * Serving Flask app 'app'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:3000
+ * Running on http://192.168.1.3:3000
+Press CTRL+C to quit
+127.0.0.1 - - [22/Sep/2026 01:33:59] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [22/Sep/2026 01:34:10] "POST /api/auth/demo-access HTTP/1.1" 200 -
+127.0.0.1 - - [22/Sep/2026 01:34:12] "POST /api/auth/demo-access HTTP/1.1" 200 -
+127.0.0.1 - - [22/Sep/2026 01:36:23] "POST /api/v1/xtf/upload HTTP/1.1" 200 -
+127.0.0.1 - - [22/Sep/2026 01:36:29] "GET /api/v1/surveys/00000000-0000-0000-0000-141d89d204f3/detections HTTP/1.1" 200 -
+127.0.0.1 - - [22/Sep/2026 01:43:04] "POST /api/auth/demo-access HTTP/1.1" 400 -
+127.0.0.1 - - [22/Sep/2026 01:43:15] "POST /api/auth/demo-access HTTP/1.1" 400 -
+127.0.0.1 - - [22/Sep/2026 01:43:17] "POST /api/auth/demo-access HTTP/1.1" 400 -
+127.0.0.1 - - [22/Sep/2026 01:43:19] "POST /api/auth/demo-access HTTP/1.1" 400 -
+127.0.0.1 - - [22/Sep/2026 01:43:21] "POST /api/auth/demo-access HTTP/1.1" 200 -
+127.0.0.1 - - [22/Sep/2026 01:43:32] "POST /api/auth/demo-access HTTP/1.1" 200 -
+127.0.0.1 - - [22/Sep/2026 01:43:35] "GET /api/v1/hotspot-route/latest HTTP/1.1" 200 -
+127.0.0.1 - - [22/Sep/2026 01:43:39] "GET /api/v1/export/cleanup-route.json HTTP/1.1" 200 -
+127.0.0.1 - - [22/Sep/2026 02:13:54] "GET /login.html HTTP/1.1" 304 -
+127.0.0.1 - - [22/Sep/2026 02:13:55] "GET /logoimage.jpg HTTP/1.1" 304 -
+127.0.0.1 - - [22/Sep/2026 02:13:55] "GET /js/auth.js HTTP/1.1" 304 -
+127.0.0.1 - - [22/Sep/2026 02:14:09] "POST /api/auth/demo-access HTTP/1.1" 200 -
+127.0.0.1 - - [22/Sep/2026 02:14:09] "GET /sonar-analyst.html HTTP/1.1" 200 -
+127.0.0.1 - - [22/Sep/2026 02:14:09] "GET /js/tarang-map.js HTTP/1.1" 200 -
+127.0.0.1 - - [22/Sep/2026 02:14:09] "GET /js/auth.js HTTP/1.1" 304 -
+127.0.0.1 - - [22/Sep/2026 02:14:09] "GET /logoimage.jpg HTTP/1.1" 304 -
+127.0.0.1 - - [22/Sep/2026 02:14:13] "GET /api/v1/surveys HTTP/1.1" 200 -
+127.0.0.1 - - [22/Sep/2026 02:17:40] "GET /api/v1/surveys/all/detections HTTP/1.1" 200 -
+127.0.0.1 - - [22/Sep/2026 02:17:41] "GET /api/v1/surveys/00000000-0000-0000-0000-141d89d204f3/images HTTP/1.1" 200 -
+127.0.0.1 - - [22/Sep/2026 02:17:54] "POST /api/v1/detections/DET-5D7309D76411/verify HTTP/1.1" 200 -

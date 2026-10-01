@@ -392,7 +392,7 @@
             <div>
               <h4 class="font-headline font-bold text-base text-slate-900 flex items-center gap-2">
                 <span class="material-symbols-outlined text-teal-400 text-[20px]">mark_email_read</span>
-                Operator &rarr; Marine Analyst Verification Queue
+                Operator &rarr; Marine Portal Verification Queue
               </h4>
               <p class="text-xs text-slate-400 mt-0.5">Real-time sync status for surveys submitted for acoustic audit.</p>
             </div>
@@ -521,8 +521,8 @@
                   <strong class="text-sky-700" id="telemetry-depth">34.6 m</strong>
                 </div>
                 <div class="flex justify-between py-1 border-b border-slate-100">
-                  <span class="text-slate-500">Survey Distance:</span>
-                  <strong class="text-slate-900" id="telemetry-distance">1.82 km</strong>
+                  <span class="text-slate-500">Survey Track Distance:</span>
+                  <strong class="text-slate-900" id="telemetry-distance">0.98 NM (1.82 km)</strong>
                 </div>
                 <div class="flex justify-between py-1">
                   <span class="text-slate-500">Coverage:</span>
@@ -713,7 +713,7 @@
 
         <!-- 17. SURVEY DATA INPUT INTERFACE -->
         <div class="marine-card rounded-2xl p-8 flex flex-col items-center text-center">
-          <input type="file" id="survey-file-input" accept=".png,.jpg,.jpeg,.xtf,.jsf,.mp4" class="hidden" onchange="handleSurveyFileUpload(event)" />
+          <input type="file" id="survey-file-input" accept=".xtf,.png,.jpg,.jpeg,.txt,.mp4,.avi,.mov,.mkv,.webm" class="hidden" onchange="handleSurveyFileUpload(event)" />
           
           <div 
             onclick="document.getElementById('survey-file-input').click()"
@@ -729,8 +729,8 @@
             
             <!-- Supported Formats Indicator (Section 17) -->
             <div class="pt-3 border-t border-slate-200 w-full">
-              <span class="text-[11px] font-mono font-bold text-teal-300 tracking-wider">
-                Supported formats: PNG, JPG, XTF, JSF, MP4
+              <span class="text-[11px] font-mono font-bold text-teal-300 tracking-wider" id="upload-supported-formats">
+                Supported formats: XTF, PNG, JPG, JPEG, TXT, MP4, AVI, MOV, MKV, WEBM
               </span>
             </div>
           </div>
@@ -1342,7 +1342,7 @@
             </div>
             <div class="flex justify-between">
               <span class="text-slate-400">Database Engine:</span>
-              <span class="text-sky-300 font-bold">SQLite 3 (tarang.db) — 7 Tables Verified</span>
+              <span class="text-emerald-400 font-bold">Supabase Cloud Connected (Authoritative PostgreSQL)</span>
             </div>
           </div>
         </div>
@@ -1650,7 +1650,7 @@
         document.getElementById('telemetry-speed').textContent = `${wp.speed.toFixed(1)} knots`;
         document.getElementById('telemetry-altitude').textContent = `${wp.alt.toFixed(1)} m`;
         document.getElementById('telemetry-depth').textContent = `${wp.depth.toFixed(1)} m`;
-        document.getElementById('telemetry-distance').textContent = `${wp.dist.toFixed(2)} km`;
+        document.getElementById('telemetry-distance').textContent = TarangUnits.formatDistance(TarangUnits.kmToNm(wp.dist), wp.dist);
         document.getElementById('telemetry-coverage').textContent = `${(wp.dist * 0.22).toFixed(2)} km²`;
 
         const pct = Math.round(((simStep + 1) / SURVEY_WAYPOINTS.length) * 100);
@@ -1658,9 +1658,19 @@
         document.getElementById('telemetry-progress-bar').style.width = `${pct}%`;
         document.getElementById('sim-waypoint-counter').textContent = `Waypoint: ${simStep + 1} / ${SURVEY_WAYPOINTS.length}`;
 
-        // Synchronize with Leaflet Map
-        if (activeTarangMap) {
-          activeTarangMap.setPlatformPosition(wp.lat, wp.lon, wp.heading);
+        // Animate the drone inside its own 3D simulation viewport. This is a
+        // labelled platform simulation and deliberately does NOT draw on the
+        // real geospatial mission map, which shows persisted survey data only.
+        if (threeDrone) {
+          const lats = SURVEY_WAYPOINTS.map(w => w.lat);
+          const lons = SURVEY_WAYPOINTS.map(w => w.lon);
+          const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+          const minLon = Math.min(...lons), maxLon = Math.max(...lons);
+          const nx = (wp.lon - minLon) / ((maxLon - minLon) || 1);
+          const nz = (wp.lat - minLat) / ((maxLat - minLat) || 1);
+          threeDrone.position.x = (nx - 0.5) * 24;
+          threeDrone.position.z = (0.5 - nz) * 24;
+          threeDrone.rotation.y = -(wp.heading * Math.PI / 180);
         }
 
         if (simStep === SURVEY_WAYPOINTS.length - 1) {
@@ -1692,7 +1702,7 @@
       document.getElementById('telemetry-lon').textContent = `${wp.lon.toFixed(4)}°E`;
       document.getElementById('telemetry-heading').textContent = `${String(wp.heading).padStart(3, '0')}°`;
       document.getElementById('telemetry-speed').textContent = '0.0 knots';
-      document.getElementById('telemetry-distance').textContent = '0.00 km';
+      document.getElementById('telemetry-distance').textContent = '0.00 NM (0.00 km)';
       document.getElementById('telemetry-coverage').textContent = '0.00 km²';
       document.getElementById('telemetry-progress-pct').textContent = '0%';
       document.getElementById('telemetry-progress-bar').style.width = '0%';
@@ -1701,8 +1711,18 @@
       document.getElementById('telemetry-state').textContent = 'STANDBY';
       document.getElementById('sim-waypoint-counter').textContent = 'Waypoint: 0 / 12';
 
-      if (activeTarangMap) {
-        activeTarangMap.setPlatformPosition(wp.lat, wp.lon, wp.heading);
+      // Reset the drone inside its own 3D simulation viewport only; the real
+      // geospatial mission map is never touched by the simulation.
+      if (threeDrone) {
+        const lats = SURVEY_WAYPOINTS.map(w => w.lat);
+        const lons = SURVEY_WAYPOINTS.map(w => w.lon);
+        const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+        const minLon = Math.min(...lons), maxLon = Math.max(...lons);
+        const nx = (wp.lon - minLon) / ((maxLon - minLon) || 1);
+        const nz = (wp.lat - minLat) / ((maxLat - minLat) || 1);
+        threeDrone.position.x = (nx - 0.5) * 24;
+        threeDrone.position.z = (0.5 - nz) * 24;
+        threeDrone.rotation.y = -(wp.heading * Math.PI / 180);
       }
       showToast("Survey reset to waypoint 0.");
     }
@@ -1713,22 +1733,31 @@
     function initActiveMissionMap() {
       if (!activeTarangMap) {
         activeTarangMap = new TarangMap('active-mission-map', {
-          center: [13.0827, 80.2707],
-          zoom: 13
+          center: MAP_CONFIG.defaultCenter,
+          zoom: MAP_CONFIG.defaultZoom
         });
       }
 
-      // Draw survey track
-      const trackCoords = SURVEY_WAYPOINTS.map(wp => [wp.lat, wp.lon]);
-      activeTarangMap.setTrack(trackCoords);
-      activeTarangMap.setPlatformPosition(SURVEY_WAYPOINTS[0].lat, SURVEY_WAYPOINTS[0].lon);
-
-      // Load any recorded detections and clusters from backend
+      // The mission map is a geospatial view of REAL persisted survey data only.
+      // The track is rebuilt from uploaded detections in ping order, so it always
+      // reflects actual generated coordinates - never a hardcoded waypoint list.
+      // The drone.glb viewport is a separate labelled platform simulation and no
+      // longer draws simulated positions onto this real-data map.
       fetch('/api/v1/surveys/all/detections')
         .then(r => r.json())
         .then(dets => {
-          if (dets && dets.length > 0) {
-            activeTarangMap.setDetections(dets);
+          if (!Array.isArray(dets) || dets.length === 0) return;
+          activeTarangMap.setDetections(dets);
+          const geo = dets.filter(d =>
+            d.latitude != null && d.longitude != null &&
+            !isNaN(parseFloat(d.latitude)) && !isNaN(parseFloat(d.longitude)));
+          if (geo.length >= 2) {
+            const track = geo.slice()
+              .sort((a, b) => (a.ping_number || 0) - (b.ping_number || 0))
+              .map(d => [parseFloat(d.latitude), parseFloat(d.longitude)]);
+            activeTarangMap.setTrack(track);   // setTrack() fits bounds to real data
+          } else {
+            activeTarangMap.fitBounds();
           }
         }).catch(() => {});
 
@@ -1772,7 +1801,8 @@
               survey_name: surveyName,
               region: region,
               specific_area: specificArea,
-              platform: platform
+              platform: platform,
+              created_by: sessionStorage.getItem('currentUser')
             })
           });
 
@@ -1785,16 +1815,29 @@
             showToast("Failed to create survey record on server.", "error");
           }
         } catch (err) {
-          showToast("Local survey initialized.", "info");
-          switchView('data-input');
+          showToast("Survey creation failed. No local fallback was created.", "error");
         }
       });
     }
 
-    // Survey File Upload Handler (XTF & TXT & Images)
+    // Survey File Upload Handler. XTF is parsed as side-scan sonar; every other
+    // accepted type goes through the general workflow pipeline. The two lists
+    // below mirror the backend's WORKFLOW_UPLOAD_EXTENSIONS exactly so the UI
+    // never offers a format the server would reject.
+    const XTF_EXTENSIONS = ['.xtf'];
+    const WORKFLOW_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.txt', '.mp4', '.avi', '.mov', '.mkv', '.webm'];
+
     async function handleSurveyFileUpload(event) {
       const file = event.target.files[0];
       if (!file) return;
+      const lowerName = file.name.toLowerCase();
+      const dot = lowerName.lastIndexOf('.');
+      const extension = dot === -1 ? '' : lowerName.slice(dot);
+      if (!XTF_EXTENSIONS.includes(extension) && !WORKFLOW_EXTENSIONS.includes(extension)) {
+        showToast(`Unsupported file type "${extension || file.name}". Accepted: XTF, ${WORKFLOW_EXTENSIONS.map(e => e.slice(1).toUpperCase()).join(', ')}.`, 'error');
+        event.target.value = '';
+        return;
+      }
 
       const progressBox = document.getElementById('upload-progress-box');
       const progressBar = document.getElementById('upload-progress-bar');
@@ -1814,8 +1857,7 @@
         formData.append('survey_id', currentSurvey.survey_id);
       }
 
-      const isTxt = file.name.toLowerCase().endsWith('.txt');
-      const endpoint = isTxt ? '/api/v1/txt/upload' : '/api/v1/xtf/upload';
+      const endpoint = XTF_EXTENSIONS.includes(extension) ? '/api/v1/xtf/upload' : '/api/v1/surveys/upload';
 
       try {
         const res = await fetch(endpoint, {
@@ -1828,15 +1870,24 @@
 
         if (res.ok) {
           const data = await res.json();
-          if (progressStatus) progressStatus.textContent = 'Upload & Parsing Complete!';
-          showToast(isTxt ? "TXT Metadata parsed & archived." : "Sonar survey ingested & inference complete!", "check_circle");
+          // Report only what the server actually returned. A detection count or
+          // image count is never assumed, and targets without navigation are
+          // said to be ungeotagged rather than silently counted as geotagged.
+          const detections = data.detections || [];
+          const images = data.images || (data.image ? [data.image] : []);
+          const geotagged = detections.filter(d => d.latitude != null && d.longitude != null).length;
+          const kindLabel = XTF_EXTENSIONS.includes(extension) ? 'XTF sonar survey' : `${extension.slice(1).toUpperCase()} survey`;
+          if (progressStatus) progressStatus.textContent =
+            `${detections.length} target(s), ${images.length} image record(s), ${geotagged} geotagged`;
+          showToast(`${kindLabel} ingested: ${detections.length} detection(s) from ${images.length} image record(s); ${geotagged} geotagged.`, 'check_circle');
           setTimeout(() => {
             switchView('results');
           }, 1200);
         } else {
           const err = await res.json().catch(() => ({}));
-          if (progressStatus) progressStatus.textContent = `Upload error: ${err.error || 'Server rejected file'}`;
-          showToast(err.error || "File processing error", "error");
+          const reason = err.message || err.error || `Server rejected file (HTTP ${res.status})`;
+          if (progressStatus) progressStatus.textContent = `Upload error: ${reason}`;
+          showToast(reason, "error");
         }
       } catch (e) {
         console.error("Upload error:", e);
@@ -1934,6 +1985,30 @@
     let resultsSurveyDetections = []; // detections for currently selected survey in results
     let resultsActiveTier = 'ALL';
 
+    function evidenceUrlFor(detection) {
+      const url = String(detection.evidence_image_url || detection.crop_url || detection.image_url || '').trim();
+      // A browser must only receive an HTTP(S) or same-origin URL.  In
+      // particular, never turn a Windows filesystem path into an image src.
+      if (!url || /^[A-Za-z]:[\\/]/.test(url) || /^\\\\/.test(url)) {
+        if (url) console.error('TARANG evidence API returned an invalid browser URL.', { detectionId: detection.id, url });
+        return '';
+      }
+      if (/^(https?:\/\/|\/)/i.test(url)) return url;
+      console.error('TARANG evidence API returned a non-browser URL.', { detectionId: detection.id, url });
+      return '';
+    }
+
+    function reportEvidenceImageLoadError(image) {
+      console.error('TARANG evidence image failed to load.', {
+        evidenceId: image.dataset.evidenceId,
+        detectionId: image.dataset.detectionId,
+        url: image.currentSrc || image.src
+      });
+      image.classList.add('hidden');
+      const error = image.parentElement.querySelector('.evidence-load-error');
+      if (error) error.classList.remove('hidden');
+    }
+
     async function loadResults() {
       // Populate survey selector
       const sel = document.getElementById('results-survey-selector');
@@ -1983,11 +2058,38 @@
       if (container) container.innerHTML = '<div class="col-span-3 p-8 text-center text-slate-400 font-mono text-xs animate-pulse">Loading detections from TARANG AI Detection Engine…</div>';
 
       try {
-        const res = await fetch('/api/v1/surveys/all/detections');
-        if (res.ok) {
-          const all = await res.json();
-          resultsSurveyDetections = all.filter(d => d.survey_id === surveyId);
+        const [detectionsRes, imagesRes] = await Promise.all([
+          fetch(`/api/v1/surveys/${encodeURIComponent(surveyId)}/detections`),
+          fetch(`/api/v1/surveys/${encodeURIComponent(surveyId)}/images`)
+        ]);
+        if (detectionsRes.ok) {
+          const detections = await detectionsRes.json();
+          const images = imagesRes.ok ? await imagesRes.json() : [];
+          if (!imagesRes.ok) {
+            console.error('TARANG evidence image API retrieval failed.', { surveyId, status: imagesRes.status });
+          }
+          const byImageId = new Map((images || []).map(image => [image.image_id, image]));
+          resultsSurveyDetections = (detections || []).map(detection => {
+            // Never substitute the survey's first image for a target whose
+            // stable evidence ID is different. That made a multi-image XTF
+            // survey look duplicated and could show the wrong sonar frame.
+            const evidence = byImageId.get(detection.evidence_image_id);
+            const evidenceUrl = detection.evidence_image_url || detection.crop_url || (evidence && evidence.url) || '';
+            if (!evidenceUrl) {
+              console.error('TARANG detection has no resolved evidence image URL.', {
+                surveyId, detectionId: detection.id, evidenceImageId: detection.evidence_image_id
+              });
+            }
+            return {
+              ...detection,
+              evidence_image_id: detection.evidence_image_id || (evidence && evidence.image_id) || '',
+              evidence_sequence: detection.evidence_sequence || (evidence && evidence.sequence) || null,
+              evidence_image_url: evidenceUrl,
+              crop_url: evidenceUrl
+            };
+          });
         } else {
+          console.error('TARANG detection API retrieval failed.', { surveyId, status: detectionsRes.status });
           resultsSurveyDetections = [];
         }
       } catch(e) {
@@ -2097,11 +2199,13 @@
         return;
       }
 
-      // Deduplicate by crop_url: group detections that share the same evidence image
-      const groups = new Map(); // crop_url -> [detections]
+      // Evidence IDs, not transient URLs, are the deduplication key. One
+      // reconstructed sonar image can legitimately contain multiple targets.
+      const groups = new Map(); // evidence_image_id -> [detections]
       const noImageKey = '__no_image__';
       filtered.forEach(d => {
-        const key = d.crop_url || (noImageKey + d.id);
+        const imageUrl = evidenceUrlFor(d);
+        const key = d.evidence_image_id || (imageUrl ? `url:${imageUrl}` : noImageKey + d.id);
         if (!groups.has(key)) groups.set(key, []);
         groups.get(key).push(d);
       });
@@ -2110,7 +2214,8 @@
         const primary = dets[0]; // lead detection for this evidence image
         const tier_ = (primary.classification_tier || '').toUpperCase();
         const conf = primary.confidence ? (primary.confidence > 1 ? Math.round(primary.confidence) : Math.round(primary.confidence * 100)) : 0;
-        const hasImg = imgKey !== noImageKey + primary.id && primary.crop_url;
+        const imageUrl = evidenceUrlFor(primary);
+        const hasImg = imgKey !== noImageKey + primary.id && imageUrl;
 
         const tierLabel = tier_ === 'A' ? 'Class A — Automatically Verified'
           : tier_ === 'B' ? 'Class B — Verification Required'
@@ -2143,7 +2248,7 @@
             <!-- Evidence Image -->
             <div class="w-full h-44 rounded-xl overflow-hidden bg-[#020b15] border border-slate-200 relative">
               ${hasImg
-                ? `<img src="${primary.crop_url}" class="w-full h-full object-cover filter contrast-110" alt="Sonar Evidence" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'flex items-center justify-center w-full h-full text-[10px] font-mono text-slate-400\\'>No image available</div>'" />`
+                ? `<img src="${imageUrl}" data-evidence-id="${primary.evidence_image_id || ''}" data-detection-id="${primary.id || ''}" class="w-full h-full object-cover filter contrast-110" alt="Sonar Evidence" loading="lazy" onerror="reportEvidenceImageLoadError(this)" /><div class="evidence-load-error hidden flex items-center justify-center w-full h-full text-[10px] font-mono text-rose-300">Evidence image could not be loaded.</div>`
                 : `<div class="flex items-center justify-center w-full h-full text-[10px] font-mono text-slate-500">No sonar image available</div>`
               }
               <span class="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-black/70 text-white font-mono text-[10px] font-bold">
@@ -2200,6 +2305,13 @@
         if (s.survey_id === current) opt.selected = true;
         sel.appendChild(opt);
       });
+
+      if (allSurveys.length === 0) {
+        resetQueueCounts();
+        const tbody = document.getElementById('op-queue-tbody');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="8" class="p-8 text-center text-slate-400 font-mono text-xs"><span class="material-symbols-outlined text-[32px] text-slate-300 block mb-2">inbox</span>No surveys awaiting verification.</td></tr>';
+        return;
+      }
 
       if (sel.value) {
         await onQueueSurveyChange(sel.value);
@@ -2493,7 +2605,13 @@
                 <p class="text-slate-500">${verified} Targets Validated • ${rejected} Rejected • ${pending} Review Pending</p>
               </div>
             </div>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 flex-wrap justify-end">
+              <button type="button" onclick="downloadSurveyJson('${targetSurvey.survey_id}')" class="px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white border border-teal-700 font-bold">
+                Download Survey JSON
+              </button>
+              <button type="button" onclick="downloadDetectionJson('${targetSurvey.survey_id}')" class="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-bold">
+                Download Detection JSON
+              </button>
               <a href="/api/v1/export/survey/${targetSurvey.survey_id}/csv" download class="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-bold">
                 Download CSV
               </a>
@@ -2507,6 +2625,23 @@
           </div>
         </div>
       `;
+    }
+
+    // =========================================================================
+    // 8b. JSON EXPORT DOWNLOADS (authenticated fetch + Blob via TarangExport)
+    // =========================================================================
+    async function opDownloadJson(url, filename) {
+      const result = await TarangExport.downloadJson(url, filename);
+      if (result.ok) showToast(`${filename} downloaded from the Supabase-backed export endpoint.`, 'download');
+      else showToast(`Download could not be authenticated: ${result.error}`, 'error');
+    }
+
+    function downloadSurveyJson(surveyId) {
+      opDownloadJson(`/api/v1/export/bundle/${encodeURIComponent(surveyId)}.json`, `tarang_${surveyId}_bundle.json`);
+    }
+
+    function downloadDetectionJson(surveyId) {
+      opDownloadJson(`/api/v1/export/detections.json?survey_id=${encodeURIComponent(surveyId)}`, 'tarang_detections.json');
     }
 
     // =========================================================================
@@ -2598,8 +2733,8 @@
     // 10. INITIALIZATION
     // =========================================================================
     document.addEventListener('DOMContentLoaded', () => {
-      const name = sessionStorage.getItem('currentUserName') || 'Cmdr. Rajesh Verma';
-      const instId = sessionStorage.getItem('currentUser') || 'OP-409';
+      const name = sessionStorage.getItem('currentUserName') || '';
+      const instId = sessionStorage.getItem('currentUser') || '';
 
       const opNameEl = document.getElementById('header-op-name');
       const opIdEl = document.getElementById('header-op-id');

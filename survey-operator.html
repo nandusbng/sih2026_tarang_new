@@ -11,8 +11,6 @@
 <!-- Material Symbols -->
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<!-- Supabase SDK -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://unpkg.com/@dotlottie/player-component@2.7.12/dist/dotlottie-player.mjs" type="module"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js" type="module"></script>
 <!-- Tailwind CSS via CDN -->
@@ -156,9 +154,11 @@
       background: linear-gradient(180deg, rgba(20, 184, 166, 0.2) 0%, rgba(91, 184, 254, 0.7) 50%, rgba(20, 184, 166, 0.2) 100%);
     }
   </style>
+  <script src="js/auth.js"></script>
+  <script>protectRoute();</script>
 </head>
 <body class="bg-canvas-base text-on-surface h-full flex flex-col antialiased selection:bg-secondary selection:text-surface-container-lowest font-body-md overflow-x-hidden">
-<input accept="image/*,video/*,.xtf" class="hidden" id="file-input" type="file"/>
+<input accept=".txt,.png,.jpg,.jpeg,image/png,image/jpeg,video/*,.xtf" class="hidden" id="file-input" type="file"/>
 <!-- TOP NAV BAR (Minimal UI) -->
 <header class="bg-canvas-base border-b border-border-subtle shadow-sm sticky top-0 z-50 flex-none">
 <div class="flex justify-between items-center w-full px-space-lg md:px-gutter-desktop max-w-full mx-auto py-2.5">
@@ -191,7 +191,6 @@
 <main class="flex-1 w-full p-2 md:p-3 lg:p-4 grid grid-cols-1 lg:grid-cols-12 gap-3 md:gap-4 overflow-y-auto min-h-0">
 <!-- LEFT CONTAINER: 12-col lg:col-span-8 xl:col-span-8 clean media player & uploader -->
 <section class="lg:col-span-8 xl:col-span-8 flex flex-col bg-[#020b15] rounded-xl border border-border-subtle shadow-md relative overflow-hidden min-h-[560px] lg:min-h-[700px]">
-<input accept="image/*,video/*,.xtf" class="hidden" id="file-input" type="file"/>
 <!-- Media Viewport -->
 <div class="flex-1 relative flex items-center justify-center bg-[#020b15] overflow-hidden group w-full h-full" id="media-viewport">
 <!-- Clean Centered Upload Dropzone -->
@@ -200,11 +199,11 @@
 <img alt="TARANG Logo" class="h-16 w-16 object-contain rounded-xl" src="logoimage.jpg"/>
 <div class="flex flex-col gap-1">
 <h3 class="font-headline-lg text-2xl text-white font-bold tracking-tight">Upload Sonar Data</h3>
-<p class="text-slate-400 font-label-code text-xs">Drop your sonar image, video, or XTF binary here, or click to browse</p>
+<p class="text-slate-400 font-label-code text-xs">Drop TXT, PNG, JPG, or JPEG sonar data here to start the shared workflow</p>
 </div>
 <button class="mt-2 w-full py-3.5 px-6 rounded-xl bg-seafoam-glow hover:bg-teal-400 text-abyssal-navy font-bold text-sm tracking-wide shadow-lg shadow-teal-500/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98]" id="btn-browse-main" type="button">
 <span class="material-symbols-outlined text-[20px]">add_photo_alternate</span>
-<span>Select Image, Video, or XTF</span>
+<span>Select TXT, PNG, JPG, or JPEG</span>
 </button>
 <!-- Quick Sample Presets -->
 <div class="flex items-center gap-2 w-full pt-2 border-t border-slate-700/50">
@@ -737,7 +736,6 @@ document.addEventListener("DOMContentLoaded", function() {
                         data.detections.forEach(d => {
                             const isDuplicate = currentDetections.slice(0, 4).some(existing => existing.class_name === d.class_name);
                             if (!isDuplicate) {
-                                d.id = d.id + '-' + Math.random().toString(36).substr(2, 6);
                                 currentDetections.unshift(d);
                             }
                         });
@@ -789,6 +787,34 @@ document.addEventListener("DOMContentLoaded", function() {
                 hideLoading();
                 alert('Error processing XTF: ' + err.message);
             });
+            return;
+        }
+
+        const isPersistentWorkflowFile = /\.(txt|png|jpg|jpeg)$/i.test(file.name);
+        if (isPersistentWorkflowFile) {
+            resultVideo.classList.add('hidden');
+            resultImage.classList.add('hidden');
+            showLoading(`Uploading ${file.name} — creating a persistent survey and processing targets...`);
+            const formData = new FormData();
+            formData.append('file', file);
+            if (window.currentSurveyId) formData.append('survey_id', window.currentSurveyId);
+            fetch('/api/v1/surveys/upload', { method: 'POST', body: formData })
+                .then(async (response) => {
+                    const data = await response.json().catch(() => ({}));
+                    if (!response.ok || data.status !== 'success') {
+                        throw new Error(data.message || `Survey upload failed (${response.status})`);
+                    }
+                    return data;
+                })
+                .then((data) => {
+                    hideLoading();
+                    renderWorkflowResults(data);
+                })
+                .catch((error) => {
+                    hideLoading();
+                    uploadZone.classList.remove('hidden');
+                    alert(`Survey upload failed: ${error.message}`);
+                });
             return;
         }
 
@@ -917,20 +943,75 @@ document.addEventListener("DOMContentLoaded", function() {
         container.innerHTML = metadataHtml + imagesHtml;
         document.getElementById('media-viewport').appendChild(container);
         
-        // Fetch and append images
+        // Fetch persisted evidence records. The URL comes from the evidence
+        // API; do not turn a local XTF processing path into a browser source.
         fetch(`/api/v1/xtf/${data.survey_id}/images`)
-            .then(res => res.json())
+            .then(async (res) => {
+                if (!res.ok) throw new Error(`Evidence API HTTP ${res.status}`);
+                return res.json();
+            })
             .then(images => {
                 const wrapper = document.getElementById('xtf-images-wrapper');
                 images.forEach(img => {
+                    const evidenceUrl = String(img.url || '').trim();
+                    if (!/^(https?:\/\/|\/)/i.test(evidenceUrl) || /^[A-Za-z]:[\\/]/.test(evidenceUrl) || /^\\\\/.test(evidenceUrl)) {
+                        console.error('TARANG XTF evidence API returned an unsafe image URL.', { surveyId: data.survey_id, imageId: img.image_id, evidenceUrl });
+                        return;
+                    }
                     const imgEl = document.createElement('img');
-                    imgEl.src = `/api/v1/xtf/${data.survey_id}/images/${img.id}`;
+                    imgEl.src = evidenceUrl;
+                    imgEl.dataset.evidenceId = img.image_id || '';
+                    imgEl.onerror = () => console.error('TARANG XTF evidence image failed to load.', {
+                        surveyId: data.survey_id, imageId: imgEl.dataset.evidenceId, url: imgEl.currentSrc || imgEl.src
+                    });
                     imgEl.className = 'w-full rounded-lg border border-teal-500/20 object-contain';
                     wrapper.appendChild(imgEl);
                 });
-            });
+            })
+            .catch(error => console.error('TARANG XTF evidence API retrieval failed.', { surveyId: data.survey_id, error }));
 
         currentDetections = data.detections || [];
+        updateAnomalyCounts(currentDetections);
+        renderAnomalyCards(currentDetections);
+    }
+
+    function renderWorkflowResults(data) {
+        const old = document.getElementById('workflow-container');
+        if (old) old.remove();
+        const summary = data.summary || {};
+        const image = data.image || (data.images || [])[0];
+        const detections = data.detections || [];
+        const imageUrl = String((image && image.url) || '').trim();
+        const browserSafeImageUrl = /^(https?:\/\/|\/)/i.test(imageUrl)
+          && !/^[A-Za-z]:[\\/]/.test(imageUrl) && !/^\\\\/.test(imageUrl) ? imageUrl : '';
+        if (image && !browserSafeImageUrl) {
+          console.error('TARANG workflow API returned an invalid evidence image URL.', {
+            surveyId: data.survey_id, imageId: image.image_id, imageUrl
+          });
+        }
+        window.currentSurveyId = data.survey_id;
+        sessionStorage.setItem('tarangLastSurveyId', data.survey_id || '');
+        detections.forEach((d) => { if (browserSafeImageUrl) d.image_url = d.evidence_image_url || browserSafeImageUrl; });
+        currentDetections = detections;
+        const container = document.createElement('div');
+        container.id = 'workflow-container';
+        container.className = 'absolute inset-0 z-10 bg-[#020b15] overflow-y-auto p-4 flex flex-col gap-4 text-white';
+        const imageHtml = browserSafeImageUrl
+            ? `<img src="${browserSafeImageUrl}" alt="Persistent sonar preview" class="w-full max-h-72 object-contain rounded-xl border border-teal-500/30 bg-black" onerror="console.error('TARANG workflow evidence image failed to load.', { surveyId: '${data.survey_id || ''}', imageId: '${(image && image.image_id) || ''}', url: this.currentSrc || this.src })" />`
+            : '<div class="rounded-xl border border-amber-500/30 bg-amber-950/20 p-6 text-amber-200">No sonar preview was returned for this survey.</div>';
+        container.innerHTML = `
+          <div class="rounded-xl border border-teal-500/20 bg-[#07192c] p-4">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div><p class="text-[10px] uppercase tracking-widest text-teal-300">Persistent Survey</p><h3 class="text-lg font-bold">${data.filename || data.survey_id}</h3><p class="text-xs text-slate-400 font-mono">${data.survey_id} · ${data.file_type || ''} · ${data.processing_status || 'completed'}</p></div>
+              <span class="rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-bold text-emerald-300">Processing complete</span>
+            </div>
+            <div class="mt-4 grid grid-cols-2 gap-2 text-xs sm:grid-cols-5">
+              <span>Total <b>${summary.total_detected ?? detections.length}</b></span><span>Verified <b>${summary.verified ?? 0}</b></span><span>Rejected <b>${summary.rejected ?? 0}</b></span><span>Pending <b>${summary.pending_review ?? detections.length}</b></span><span>Cleanup Candidates <b>${summary.cleanup_candidates ?? 0}</b></span><span>Hotspots <b>${summary.hotspot_count ?? (data.hotspots || []).length}</b></span>
+            </div>
+          </div>
+          ${imageHtml}
+          <p class="text-xs text-slate-400">Targets are persisted in Supabase and shared with Sonar Analyst, Marine Analyst, Government Authority, and Public Portal. Coordinates are simulated offshore Indian Ocean positions for this demo.</p>`;
+        mediaViewport.appendChild(container);
         updateAnomalyCounts(currentDetections);
         renderAnomalyCards(currentDetections);
     }
@@ -1035,10 +1116,14 @@ document.addEventListener("DOMContentLoaded", function() {
                         ${det.confidence}% CONF
                     </span>
                 </div>
+                <div class="flex items-center justify-between text-[10px] font-label-code">
+                    <span class="text-slate-500">${det.latitude != null && det.longitude != null ? `${Number(det.latitude).toFixed(5)}, ${Number(det.longitude).toFixed(5)}` : 'Offshore coordinates pending'}</span>
+                    <span class="rounded bg-slate-100 px-1.5 py-0.5 text-slate-700">${det.detection_status || 'Pending Review'}</span>
+                </div>
 
                 <!-- Acoustic Screenshot Crop -->
                 <div class="relative h-28 w-full rounded-lg overflow-hidden bg-abyssal-navy border border-slate-200 group/crop">
-                    <img class="w-full h-full object-contain bg-black/50 group-hover/crop:scale-105 transition-transform" src="${det.crop_url}" alt="Crop" />
+                    <img class="w-full h-full object-contain bg-black/50 group-hover/crop:scale-105 transition-transform" src="${det.crop_url || det.image_url || ''}" alt="Sonar target" />
                     <div class="absolute top-1.5 left-1.5 bg-primary/90 text-seafoam-glow font-label-code text-[8px] px-1.5 py-0.5 rounded backdrop-blur-xs flex items-center gap-1">
                         <span class="material-symbols-outlined text-[10px]">crop</span>
                         <span>DETECTION CROP</span>
@@ -1131,37 +1216,43 @@ document.addEventListener("DOMContentLoaded", function() {
                 longitude: d.metadata?.longitude || d.longitude || null
             }));
             
-            // Initialize Supabase Client
-            const supabaseUrl = 'https://cryfgdedvnyczhausidk.supabase.co';
-            const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNyeWZnZGVkdm55Y3poYXVzaWRrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4OTQwMDU3MSwiZXhwIjoyMTA0OTc2NTcxfQ.3RRFtT--ublCzZZhfSyM0HodY0Goxtb-HrddJkCBLAU';
-            const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+            // Dispatch records are written by the backend with server credentials.
+            const dispatchToServer = (payload) => fetch('/api/v1/dispatches', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    survey_id: payload.detections?.[0]?.survey_id,
+                    destination: payload.destination,
+                    tiers: payload.exported_tier
+                })
+            }).then(async (response) => {
+                const data = await response.json();
+                return { data: response.ok ? data : null, error: response.ok ? null : data };
+            });
 
             // Generate JSON for Class A and B
             if (classAB.length > 0) {
                 const jsonObj = {
                     "timestamp": new Date().toISOString(),
                     "system": "TARANG_SURVEY_OPS",
-                    "destination": "MARINE_ANALYST",
+                    "destination": "MARINE_PORTAL",
                     "exported_tier": ["A", "B"],
                     "total_detections": classAB.length,
                     "detections": classAB
                 };
                 
                 // Push payload to Supabase Database
-                supabaseClient.from('dispatches').insert([
-                    { payload: jsonObj }
-                ]).then(({ data, error }) => {
+                dispatchToServer(jsonObj).then(({ data, error }) => {
                     if (error) {
                         console.error('Error dispatching to Supabase:', error);
-                        showToast("Failed to sync to Marine Analyst.", true);
+                        showToast("Failed to sync to Marine Portal.", true);
                     } else {
                         console.log('Dispatch synced to cloud database');
-                        showToast("Data sent successfully to Marine Analyst Portal!");
+                        showToast("Data sent successfully to Marine Portal!");
                     }
                 });
 
-                // Also save locally as a backup
-                localStorage.setItem('marineAnalystData', JSON.stringify(jsonObj));
+                // Client-side export blob for operator audit
 
                 const jsonBlob = new Blob([JSON.stringify(jsonObj, null, 2)], { type: 'application/json' });
                 const jsonUrl = URL.createObjectURL(jsonBlob);
@@ -1185,9 +1276,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     "detections": classC
                 };
                 
-                supabaseClient.from('dispatches').insert([
-                    { payload: jsonObjC }
-                ]).then(({ data, error }) => {
+                dispatchToServer(jsonObjC).then(({ data, error }) => {
                     if (error) {
                         console.error('Error dispatching Class C to Supabase:', error);
                     } else {
@@ -1199,6 +1288,29 @@ document.addEventListener("DOMContentLoaded", function() {
             alert(`Dispatched ${classAB.length} automated targets and queued ${classC.length} manual review targets.`);
         });
     }
+
+    async function restoreWorkflow() {
+        const surveyId = sessionStorage.getItem('tarangLastSurveyId');
+        if (!surveyId) return;
+        try {
+            const response = await fetch(`/api/v1/workflow/state?survey_id=${encodeURIComponent(surveyId)}`);
+            if (!response.ok) return;
+            const state = await response.json();
+            const survey = (state.surveys || [])[0] || {};
+            renderWorkflowResults({
+                survey_id: surveyId,
+                filename: survey.file_name || survey.survey_name || surveyId,
+                file_type: survey.file_type,
+                processing_status: survey.processing_status,
+                summary: state.summary,
+                detections: state.detections,
+                images: state.images
+            });
+        } catch (error) {
+            console.warn('Unable to restore the persisted survey workflow:', error);
+        }
+    }
+    restoreWorkflow();
 });
 </script>
 <!-- SURVEY POP MODAL -->
@@ -1235,7 +1347,7 @@ document.addEventListener("DOMContentLoaded", function() {
 </div>
 </div>
 <script>
-window.currentSurveyId = null;
+window.currentSurveyId = sessionStorage.getItem('tarangLastSurveyId') || null;
 
 document.getElementById('surveyPopForm').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -1245,7 +1357,8 @@ document.getElementById('surveyPopForm').addEventListener('submit', async (e) =>
         survey_date: document.getElementById('survey_date').value,
         survey_time: document.getElementById('survey_time').value,
         sonar_device: 'Standard',
-        sonar_frequency: 'Unknown'
+        sonar_frequency: 'Unknown',
+        created_by: sessionStorage.getItem('currentUser')
     };
     try {
         const response = await fetch('/api/v1/surveys', {
@@ -1258,35 +1371,8 @@ document.getElementById('surveyPopForm').addEventListener('submit', async (e) =>
         if (data.status === 'success') {
             window.currentSurveyId = data.survey_id;
             
-            // Sync to Supabase Database
-            try {
-                const supabaseUrl = 'https://cryfgdedvnyczhausidk.supabase.co';
-                const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNyeWZnZGVkdm55Y3poYXVzaWRrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4OTQwMDU3MSwiZXhwIjoyMTA0OTc2NTcxfQ.3RRFtT--ublCzZZhfSyM0HodY0Goxtb-HrddJkCBLAU';
-                const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
-
-                const dbPayload = {
-                    survey_id: data.survey_id, 
-                    survey_name: payload.survey_name,
-                    survey_date: payload.survey_date,
-                    survey_time: payload.survey_time,
-                    location_name: payload.location_name,
-                    sonar_device: payload.sonar_device,
-                    sonar_frequency: payload.sonar_frequency,
-                    created_by: sessionStorage.getItem('currentUser') || 'Operator',
-                    status: 'PENDING',
-                    navigation_status: 'PENDING',
-                    processing_status: 'NOT_STARTED'
-                };
-                
-                const { error } = await supabaseClient.from('surveys').insert([dbPayload]);
-                if (error) {
-                    console.error('Supabase Sync Error:', error);
-                } else {
-                    console.log('Successfully synced survey to Supabase.');
-                }
-            } catch(e) {
-                console.error('Supabase Sync Exception', e);
-            }
+            // /api/v1/surveys has completed the only database write.
+            console.log('Survey creation confirmed by the TARANG API.');
             
             alert('Survey Created successfully! You can now upload media for Survey: ' + data.survey_id);
 

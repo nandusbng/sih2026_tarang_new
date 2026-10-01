@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-  <title>TARANG — Admin Portal</title>
+  <title>TARANG Ã¢â‚¬â€ Admin Portal</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -43,12 +43,7 @@
   </style>
 
   <script src="js/auth.js"></script>
-  <script>
-    (function() {
-      const user = getCurrentUser();
-      if (!user) { window.location.href = 'login.html'; }
-    })();
-  </script>
+  <script>protectRoute();</script>
 </head>
 <body class="h-full flex flex-col text-slate-900 antialiased font-sans bg-slate-50 overflow-hidden">
 
@@ -157,6 +152,29 @@
             <div class="w-10 h-10 rounded-full bg-teal-50 text-teal-600 flex items-center justify-center"><span class="material-symbols-outlined">account_balance</span></div>
             <span class="font-bold text-sm text-slate-800 text-center">Manage Government Users</span>
           </div>
+        </div>
+      </section>
+
+      <!-- System / Database Status (live diagnostics from GET /api/v1/system/status) -->
+      <section>
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="text-lg font-headline font-bold text-slate-900">System / Database Status</h2>
+            <p class="text-xs font-mono text-slate-500 mt-0.5">Live probe results — statuses, details and latencies are reported by the backend, never assumed.</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <span id="admin-system-overall" class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-100 text-slate-500 border border-slate-200">CHECKING…</span>
+            <button onclick="loadAdminSystemStatus()" class="px-3 py-1.5 rounded-lg bg-white border border-slate-300 hover:bg-slate-50 text-xs font-mono font-bold text-slate-700 flex items-center gap-1">
+              <span class="material-symbols-outlined text-[15px]">refresh</span> Refresh
+            </button>
+          </div>
+        </div>
+        <div class="marine-card-no-hover rounded-xl p-5">
+          <div id="admin-system-rows" class="flex flex-col gap-2 text-xs font-mono">
+            <div class="text-slate-500">Probing live system status…</div>
+          </div>
+          <div id="admin-system-config" class="mt-4 pt-3 border-t border-slate-100 text-xs font-mono text-slate-600"></div>
+          <div id="admin-system-meta" class="mt-2 text-[10px] font-mono text-slate-400"></div>
         </div>
       </section>
     </div>
@@ -279,14 +297,85 @@
       await Promise.allSettled([
         loadSurveyData(),
         loadUsersData(),
-        loadCleanupTeams()
+        loadCleanupTeams(),
+        loadAdminSystemStatus()
       ]);
     });
+
+    // --- System / Database Status (live diagnostics, never hardcoded) ---
+    function escapeAdminStatus(value) {
+      return String(value == null ? '' : value).replace(/[&<>"']/g, c => (
+        { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+      ));
+    }
+
+    function renderAdminStatusRow(label, name, entry) {
+      const badge = entry && entry.status ? entry.status : 'NO DATA';
+      const ok = !!(entry && entry.connected);
+      const badgeClass = entry
+        ? (ok ? 'bg-teal-50 text-teal-700 border-teal-200' : 'bg-rose-50 text-rose-700 border-rose-200')
+        : 'bg-slate-100 text-slate-500 border-slate-200';
+      const detail = entry && entry.detail ? escapeAdminStatus(entry.detail) : 'The server did not return a detail for this check.';
+      const latency = entry && entry.latency_ms != null ? ` · ${Number(entry.latency_ms).toFixed(1)} ms` : '';
+      return `
+        <div class="flex items-start justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+          <div class="min-w-0">
+            <div class="font-bold text-slate-800">${escapeAdminStatus(label)} <span class="text-slate-400 font-medium">→ ${escapeAdminStatus(name)}</span></div>
+            <div class="text-[11px] text-slate-500 mt-0.5 break-words">${detail}<span class="text-slate-400">${latency}</span></div>
+          </div>
+          <span class="shrink-0 px-2 py-0.5 rounded-full border text-[10px] font-bold ${badgeClass}">${escapeAdminStatus(badge)}</span>
+        </div>`;
+    }
+
+    async function loadAdminSystemStatus() {
+      const rows = document.getElementById('admin-system-rows');
+      const overall = document.getElementById('admin-system-overall');
+      const config = document.getElementById('admin-system-config');
+      const meta = document.getElementById('admin-system-meta');
+      rows.innerHTML = '<div class="text-slate-500">Probing live system status…</div>';
+      config.innerHTML = '';
+      meta.innerHTML = '';
+      overall.textContent = 'CHECKING…';
+      overall.className = 'px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-50 text-amber-700 border border-amber-200';
+      try {
+        const response = await fetch('/api/v1/system/status');
+        const data = await response.json().catch(() => null);
+        if (!data || typeof data !== 'object') {
+          throw new Error(`Status service returned an unreadable response (HTTP ${response.status}).`);
+        }
+        const isUp = data.overall === 'CONNECTED' && response.ok;
+        overall.textContent = data.overall || (response.ok ? 'UNKNOWN' : `HTTP ${response.status}`);
+        overall.className = 'px-2 py-0.5 rounded text-[10px] font-mono font-bold border ' +
+          (isUp ? 'bg-teal-50 text-teal-700 border-teal-200' : 'bg-rose-50 text-rose-700 border-rose-200');
+        rows.innerHTML =
+          renderAdminStatusRow('Database', 'Supabase', data.database && data.database.supabase) +
+          renderAdminStatusRow('Authentication', 'Supabase Auth', data.authentication && data.authentication.supabase_auth) +
+          renderAdminStatusRow('Storage', 'Supabase Storage', data.storage && data.storage.supabase_storage) +
+          renderAdminStatusRow('API', 'Backend API', data.api && data.api.backend_api) +
+          (data.error ? `<div class="text-rose-600 text-[11px]">${escapeAdminStatus(data.error)}</div>` : '');
+        const cfg = data.configuration || {};
+        const yesNo = v => v ? '<span class="text-teal-700 font-bold">yes</span>' : '<span class="text-rose-600 font-bold">no</span>';
+        config.innerHTML = `
+          <div class="font-bold text-slate-700 mb-1.5 uppercase text-[10px] tracking-wider">Configuration (redacted by the backend — no key material is exposed)</div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-[11px]">
+            <div>Supabase URL configured: ${yesNo(cfg.supabase_url_configured)}</div>
+            <div>Anon key configured: ${yesNo(cfg.anon_key_configured)}</div>
+            <div>Service key configured (server-side): ${yesNo(cfg.service_key_configured)}</div>
+            <div>Service key exposed to browser: ${cfg.service_key_exposed_to_browser ? '<span class="text-rose-600 font-bold">YES — investigate</span>' : '<span class="text-teal-700 font-bold">no</span>'}</div>
+            <div>Authoritative database: <span class="font-bold">${escapeAdminStatus(data.authoritative_database || 'unknown')}</span></div>
+          </div>`;
+        meta.textContent = `Probe ${data.probe_id || 'n/a'} · generated at ${data.generated_at || 'n/a'}`;
+      } catch (error) {
+        overall.textContent = 'UNREACHABLE';
+        overall.className = 'px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-rose-50 text-rose-700 border border-rose-200';
+        rows.innerHTML = `<div class="text-rose-600 text-[11px]">System status check failed: ${escapeAdminStatus(error.message || error)}</div>`;
+      }
+    }
 
     async function fetchData(url) {
       try {
         const res = await fetch(url);
-        if (!res.ok) throw new Error(\`HTTP error \${res.status}\`);
+        if (!res.ok) throw new Error(`HTTP error ${res.status}`);
         return await res.json();
       } catch (e) {
         console.error('Fetch error for', url, e);
@@ -297,7 +386,7 @@
     // --- View Switching ---
     function switchView(viewId) {
       document.querySelectorAll('.admin-view').forEach(v => v.classList.add('hidden'));
-      const target = document.getElementById(\`view-\${viewId}\`);
+      const target = document.getElementById(`view-${viewId}`);
       if (target) {
         target.classList.remove('hidden');
         target.style.opacity = 0;
@@ -337,7 +426,7 @@
       const container = document.getElementById('survey-summary-cards');
       
       if (globalSurveys === null) {
-        container.innerHTML = \`<div class="col-span-4 p-6 text-center text-rose-500 text-sm font-mono marine-card-no-hover rounded-xl">Unable to load data. Please try again.</div>\`;
+        container.innerHTML = `<div class="col-span-4 p-6 text-center text-rose-500 text-sm font-mono marine-card-no-hover rounded-xl">Unable to load data. Please try again.</div>`;
         return;
       }
       
@@ -346,24 +435,24 @@
       const completed = globalSurveys.filter(s => (s.status || '').toUpperCase() === 'COMPLETED').length;
       const pending = globalSurveys.filter(s => (s.status || '').toUpperCase() === 'PENDING').length;
 
-      container.innerHTML = \`
+      container.innerHTML = `
         <div class="marine-card-no-hover rounded-xl p-5 flex flex-col justify-between">
           <span class="text-xs font-mono uppercase tracking-wider text-slate-500">Total Surveys</span>
-          <span class="text-3xl font-mono font-bold text-slate-900 mt-2">\${total}</span>
+          <span class="text-3xl font-mono font-bold text-slate-900 mt-2">${total}</span>
         </div>
         <div class="marine-card-no-hover rounded-xl p-5 flex flex-col justify-between">
           <span class="text-xs font-mono uppercase tracking-wider text-slate-500">Active Surveys</span>
-          <span class="text-3xl font-mono font-bold text-teal-600 mt-2">\${active}</span>
+          <span class="text-3xl font-mono font-bold text-teal-600 mt-2">${active}</span>
         </div>
         <div class="marine-card-no-hover rounded-xl p-5 flex flex-col justify-between">
           <span class="text-xs font-mono uppercase tracking-wider text-slate-500">Completed Surveys</span>
-          <span class="text-3xl font-mono font-bold text-emerald-600 mt-2">\${completed}</span>
+          <span class="text-3xl font-mono font-bold text-emerald-600 mt-2">${completed}</span>
         </div>
         <div class="marine-card-no-hover rounded-xl p-5 flex flex-col justify-between">
           <span class="text-xs font-mono uppercase tracking-wider text-slate-500">Pending Surveys</span>
-          <span class="text-3xl font-mono font-bold text-amber-600 mt-2">\${pending}</span>
+          <span class="text-3xl font-mono font-bold text-amber-600 mt-2">${pending}</span>
         </div>
-      \`;
+      `;
     }
 
     function loadSurveyTrend() {
@@ -528,23 +617,23 @@
     function buildStatCards(containerId, stats) {
       const c = document.getElementById(containerId);
       if(!c) return;
-      c.innerHTML = stats.map(st => \`
+      c.innerHTML = stats.map(st => `
         <div class="marine-card-no-hover rounded-xl p-4 flex flex-col justify-between">
-          <span class="text-[10px] font-mono uppercase tracking-wider text-slate-500">\${st.label}</span>
-          <span class="text-2xl font-mono font-bold text-slate-900 mt-1">\${st.value}</span>
+          <span class="text-[10px] font-mono uppercase tracking-wider text-slate-500">${st.label}</span>
+          <span class="text-2xl font-mono font-bold text-slate-900 mt-1">${st.value}</span>
         </div>
-      \`).join('');
+      `).join('');
     }
 
     function buildFilters(containerId, filters) {
       const c = document.getElementById(containerId);
       if(!c || filters.length === 0) return;
-      c.innerHTML = '<span class="text-slate-500">Filters:</span>' + filters.map(f => \`
+      c.innerHTML = '<span class="text-slate-500">Filters:</span>' + filters.map(f => `
         <select class="border border-slate-200 rounded-md px-2 py-1 bg-white focus:outline-none">
-          <option value="">\${f.label}</option>
-          \${f.options.map(o => \`<option value="\${o}">\${o}</option>\`).join('')}
+          <option value="">${f.label}</option>
+          ${f.options.map(o => `<option value="${o}">${o}</option>`).join('')}
         </select>
-      \`).join('');
+      `).join('');
     }
 
     function getUnique(arr, key) {
@@ -554,7 +643,7 @@
     function loadOperators() {
       const tbody = document.getElementById('operators-tbody');
       if (globalUsers === null) {
-        tbody.innerHTML = \`<tr><td colspan="6" class="p-6 text-center text-rose-500">Unable to load data. Please try again.</td></tr>\`;
+        tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-rose-500">Unable to load data. Please try again.</td></tr>`;
         return;
       }
 
@@ -568,7 +657,7 @@
       ]);
 
       if (ops.length === 0) {
-        tbody.innerHTML = \`<tr><td colspan="6" class="p-6 text-center text-slate-500">No operators available.</td></tr>\`;
+        tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-500">No operators available.</td></tr>`;
         return;
       }
 
@@ -578,30 +667,30 @@
         {label: 'Region', options: getUnique(ops, 'region')}
       ]);
 
-      tbody.innerHTML = ops.map(u => \`
+      tbody.innerHTML = ops.map(u => `
         <tr class="hover:bg-slate-100 transition-colors">
-          <td class="p-3.5 font-bold text-slate-900">\${u.full_name || '-'}</td>
-          <td class="p-3.5 text-slate-600">\${u.base || '-'}</td>
-          <td class="p-3.5 text-slate-600">\${u.vessel || '-'}</td>
-          <td class="p-3.5 text-slate-600">\${u.surveys || '-'}</td>
-          <td class="p-3.5 text-slate-600">\${u.images || '-'}</td>
+          <td class="p-3.5 font-bold text-slate-900">${u.full_name || '-'}</td>
+          <td class="p-3.5 text-slate-600">${u.base || '-'}</td>
+          <td class="p-3.5 text-slate-600">${u.vessel || '-'}</td>
+          <td class="p-3.5 text-slate-600">${u.surveys || '-'}</td>
+          <td class="p-3.5 text-slate-600">${u.images || '-'}</td>
           <td class="p-3.5">
-            <span class="px-2 py-0.5 rounded text-[10px] font-bold \${u.status === 'active' ? 'bg-teal-50 text-teal-700 border border-teal-200' : 'bg-slate-100 text-slate-600 border border-slate-200'}">
-              \${(u.status || 'UNKNOWN').toUpperCase()}
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${u.status === 'active' ? 'bg-teal-50 text-teal-700 border border-teal-200' : 'bg-slate-100 text-slate-600 border border-slate-200'}">
+              ${(u.status || 'UNKNOWN').toUpperCase()}
             </span>
           </td>
         </tr>
-      \`).join('');
+      `).join('');
     }
 
     function loadAnalysts() {
       const tbody = document.getElementById('analysts-tbody');
       if (globalUsers === null) {
-        tbody.innerHTML = \`<tr><td colspan="6" class="p-6 text-center text-rose-500">Unable to load data. Please try again.</td></tr>\`;
+        tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-rose-500">Unable to load data. Please try again.</td></tr>`;
         return;
       }
 
-      const analysts = globalUsers.filter(u => u.role === 'sonar_analyst' || u.role === 'marine_analyst');
+      const analysts = globalUsers.filter(u => u.role === 'sonar_analyst' || u.role === 'marine_portal');
       const active = analysts.filter(u => (u.status || '').toLowerCase() === 'active').length;
       
       buildStatCards('analysts-stats', [
@@ -611,7 +700,7 @@
       ]);
 
       if (analysts.length === 0) {
-        tbody.innerHTML = \`<tr><td colspan="6" class="p-6 text-center text-slate-500">No expert analysts available.</td></tr>\`;
+        tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-500">No expert analysts available.</td></tr>`;
         return;
       }
 
@@ -621,30 +710,30 @@
         {label: 'Region', options: getUnique(analysts, 'region')}
       ]);
 
-      tbody.innerHTML = analysts.map(u => \`
+      tbody.innerHTML = analysts.map(u => `
         <tr class="hover:bg-slate-100 transition-colors">
-          <td class="p-3.5 font-bold text-slate-900">\${u.full_name || '-'}</td>
-          <td class="p-3.5 text-slate-600">\${u.base || '-'}</td>
-          <td class="p-3.5 text-slate-600">\${u.vessel || '-'}</td>
-          <td class="p-3.5 text-slate-600">\${u.surveys || '-'}</td>
-          <td class="p-3.5 text-slate-600">\${u.images || '-'}</td>
+          <td class="p-3.5 font-bold text-slate-900">${u.full_name || '-'}</td>
+          <td class="p-3.5 text-slate-600">${u.base || '-'}</td>
+          <td class="p-3.5 text-slate-600">${u.vessel || '-'}</td>
+          <td class="p-3.5 text-slate-600">${u.surveys || '-'}</td>
+          <td class="p-3.5 text-slate-600">${u.images || '-'}</td>
           <td class="p-3.5">
-            <span class="px-2 py-0.5 rounded text-[10px] font-bold \${u.status === 'active' ? 'bg-teal-50 text-teal-700 border border-teal-200' : 'bg-slate-100 text-slate-600 border border-slate-200'}">
-              \${(u.status || 'UNKNOWN').toUpperCase()}
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${u.status === 'active' ? 'bg-teal-50 text-teal-700 border border-teal-200' : 'bg-slate-100 text-slate-600 border border-slate-200'}">
+              ${(u.status || 'UNKNOWN').toUpperCase()}
             </span>
           </td>
         </tr>
-      \`).join('');
+      `).join('');
     }
 
     function loadGovernmentUsers() {
       const tbody = document.getElementById('gov-tbody');
       if (globalUsers === null) {
-        tbody.innerHTML = \`<tr><td colspan="5" class="p-6 text-center text-rose-500">Unable to load data. Please try again.</td></tr>\`;
+        tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-rose-500">Unable to load data. Please try again.</td></tr>`;
         return;
       }
 
-      const govUsers = globalUsers.filter(u => u.role === 'gov_authority');
+      const govUsers = globalUsers.filter(u => u.role === 'government_portal');
       const active = govUsers.filter(u => (u.status || '').toLowerCase() === 'active').length;
       
       buildStatCards('gov-stats', [
@@ -654,7 +743,7 @@
       ]);
 
       if (govUsers.length === 0) {
-        tbody.innerHTML = \`<tr><td colspan="5" class="p-6 text-center text-slate-500">No government users available.</td></tr>\`;
+        tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-500">No government users available.</td></tr>`;
         return;
       }
 
@@ -664,19 +753,19 @@
         {label: 'Status', options: getUnique(govUsers, 'status')}
       ]);
 
-      tbody.innerHTML = govUsers.map(u => \`
+      tbody.innerHTML = govUsers.map(u => `
         <tr class="hover:bg-slate-100 transition-colors">
-          <td class="p-3.5 font-bold text-slate-900">\${u.full_name || '-'}</td>
-          <td class="p-3.5 text-slate-600">\${u.department || '-'}</td>
-          <td class="p-3.5 text-slate-600">\${u.region || '-'}</td>
-          <td class="p-3.5 text-slate-600">\${u.access || '-'}</td>
+          <td class="p-3.5 font-bold text-slate-900">${u.full_name || '-'}</td>
+          <td class="p-3.5 text-slate-600">${u.department || '-'}</td>
+          <td class="p-3.5 text-slate-600">${u.region || '-'}</td>
+          <td class="p-3.5 text-slate-600">${u.access || '-'}</td>
           <td class="p-3.5">
-            <span class="px-2 py-0.5 rounded text-[10px] font-bold \${u.status === 'active' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600 border border-slate-200'}">
-              \${(u.status || 'UNKNOWN').toUpperCase()}
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${u.status === 'active' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600 border border-slate-200'}">
+              ${(u.status || 'UNKNOWN').toUpperCase()}
             </span>
           </td>
         </tr>
-      \`).join('');
+      `).join('');
     }
 
     // --- Cleanup Teams Data Flow ---
@@ -685,13 +774,13 @@
       const tbody = document.getElementById('cleanup-tbody');
       
       if (data === null) {
-        tbody.innerHTML = \`<tr><td colspan="6" class="p-6 text-center text-rose-500">Unable to load data. Please try again.</td></tr>\`;
+        tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-rose-500">Unable to load data. Please try again.</td></tr>`;
         return;
       }
 
       if (data.length === 0) {
         buildStatCards('cleanup-stats', [{label: 'Total Teams', value: 0}, {label: 'Active Teams', value: 0}, {label: 'Inactive/Idle Teams', value: 0}]);
-        tbody.innerHTML = \`<tr><td colspan="6" class="p-6 text-center text-slate-500">No cleanup teams available.</td></tr>\`;
+        tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-500">No cleanup teams available.</td></tr>`;
         return;
       }
 
@@ -707,20 +796,20 @@
         {label: 'Status', options: getUnique(data, 'status')}
       ]);
 
-      tbody.innerHTML = data.map(t => \`
+      tbody.innerHTML = data.map(t => `
         <tr class="hover:bg-slate-100 transition-colors">
-          <td class="p-3.5 font-bold text-slate-900">\${t.team_name || '-'}</td>
-          <td class="p-3.5 text-slate-600">\${t.region || '-'}</td>
-          <td class="p-3.5 text-slate-600">\${t.members || '-'}</td>
-          <td class="p-3.5 text-slate-600">\${t.surveys || '-'}</td>
-          <td class="p-3.5 text-slate-600">\${t.completed || '-'}</td>
+          <td class="p-3.5 font-bold text-slate-900">${t.team_name || '-'}</td>
+          <td class="p-3.5 text-slate-600">${t.region || '-'}</td>
+          <td class="p-3.5 text-slate-600">${t.members || '-'}</td>
+          <td class="p-3.5 text-slate-600">${t.surveys || '-'}</td>
+          <td class="p-3.5 text-slate-600">${t.completed || '-'}</td>
           <td class="p-3.5">
-            <span class="px-2 py-0.5 rounded text-[10px] font-bold \${t.status === 'active' ? 'bg-teal-50 text-teal-700 border border-teal-200' : 'bg-slate-100 text-slate-600 border border-slate-200'}">
-              \${(t.status || 'UNKNOWN').toUpperCase()}
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${t.status === 'active' ? 'bg-teal-50 text-teal-700 border border-teal-200' : 'bg-slate-100 text-slate-600 border border-slate-200'}">
+              ${(t.status || 'UNKNOWN').toUpperCase()}
             </span>
           </td>
         </tr>
-      \`).join('');
+      `).join('');
     }
 
   </script>

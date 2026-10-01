@@ -12,6 +12,7 @@
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="js/tarang-map.js"></script>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -49,6 +50,7 @@
       if (!user) { window.location.href = 'login.html'; }
     })();
   </script>
+  <script>protectRoute();</script>
 </head>
 <body class="h-full flex flex-col text-slate-900 antialiased font-sans bg-slate-50 overflow-hidden">
 
@@ -99,6 +101,10 @@
         <button onclick="switchTab('detections')" data-tab="detections"
           class="analyst-nav w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all text-slate-600 hover:bg-slate-50 hover:text-slate-900">
           <span class="material-symbols-outlined text-[20px]">radar</span>AI Detection
+        </button>
+        <button onclick="switchTab('spatial-map')" data-tab="spatial-map"
+          class="analyst-nav w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all text-slate-600 hover:bg-slate-50 hover:text-slate-900">
+          <span class="material-symbols-outlined text-[20px]">map</span>Spatial Map
         </button>
         <button onclick="switchTab('verification')" data-tab="verification"
           class="analyst-nav w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all text-slate-600 hover:bg-slate-50 hover:text-slate-900">
@@ -267,6 +273,22 @@
       <!-- ============================================================ -->
       <!-- VIEW 4 — VERIFICATION                                        -->
       <!-- ============================================================ -->
+      <div id="view-spatial-map" class="analyst-view hidden max-w-7xl mx-auto space-y-6">
+        <div id="spatial-empty" class="py-16 text-center text-slate-500 font-mono text-sm marine-card-no-hover rounded-xl">
+          Please select a survey from the Overview to inspect its spatial detections.
+        </div>
+        <div id="spatial-content" class="hidden space-y-4">
+          <div class="border-b border-slate-200 pb-4">
+            <h2 class="font-headline font-bold text-[24px] text-slate-900">Spatial Detection Map</h2>
+            <p class="text-sm text-slate-500 font-mono mt-1">Georeferenced AI detections and DBSCAN concentration clusters for the active survey.</p>
+          </div>
+          <div id="tab-spatial-map" class="marine-card-no-hover rounded-xl overflow-hidden">
+            <div id="sonar-spatial-map" class="h-[520px] w-full bg-slate-100"></div>
+          </div>
+          <p id="spatial-map-note" class="text-xs text-slate-500 font-mono"></p>
+        </div>
+      </div>
+
       <div id="view-verification" class="analyst-view hidden max-w-7xl mx-auto space-y-6 flex-1 h-full flex flex-col">
         <div id="ver-empty" class="py-16 text-center text-slate-500 font-mono text-sm marine-card-no-hover rounded-xl">
           Please select a survey from the Overview to verify detections.
@@ -298,11 +320,16 @@
               
               <div class="flex-1 flex flex-col" id="ver-detail-pane">
                 <!-- Image Viewer -->
-                <div class="h-64 sm:h-80 bg-[#020b15] relative flex items-center justify-center p-2">
+                <div id="ver-img-wrap" class="h-64 sm:h-80 bg-[#020b15] relative flex items-center justify-center p-2">
                   <div class="absolute top-3 left-3 text-[10px] text-cyan-400 font-mono z-10 bg-black/50 px-2 py-1 rounded border border-cyan-500/30 backdrop-blur-sm">
-                    SONAR EVIDENCE
+                    SONAR EVIDENCE — RECONSTRUCTED WATERFALL
                   </div>
-                  <img id="ver-img" src="" alt="Sonar Evidence" class="max-h-full max-w-full object-contain filter contrast-125" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiMwMjBiMTUiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZm9udC1mYW1pbHk9Im1vbm9zcGFjZSIgZm9udC1zaXplPSIxNHB4IiBmaWxsPSIjMzhibmQ4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5bTk8gSU1BR0UgQVZBSUxBQkxFXTwvdGV4dD48L3N2Zz4='"/>
+                  <div id="ver-bbox-badge" class="absolute top-3 right-3 text-[10px] font-mono z-10 bg-black/50 px-2 py-1 rounded border backdrop-blur-sm hidden"></div>
+                  <img id="ver-img" src="" alt="Sonar Evidence" class="max-h-full max-w-full object-contain filter contrast-125" onerror="reportSonarEvidenceLoadError(this)"/>
+                  <!-- Real YOLO detection box, positioned from persisted bbox pixels -->
+                  <div id="ver-bbox" class="absolute border-2 border-cyan-300 pointer-events-none hidden z-20" style="box-shadow:0 0 0 1px rgba(2,11,21,.85);">
+                    <span id="ver-bbox-label" class="absolute -top-5 left-0 text-[9px] font-mono font-bold text-[#020b15] bg-cyan-300 px-1 rounded whitespace-nowrap"></span>
+                  </div>
                 </div>
 
                 <!-- Info & Decision Panel -->
@@ -325,7 +352,26 @@
                         <div class="flex justify-between"><span class="text-slate-500">Latitude:</span><span class="font-medium text-slate-900" id="ver-info-lat">–</span></div>
                         <div class="flex justify-between"><span class="text-slate-500">Longitude:</span><span class="font-medium text-slate-900" id="ver-info-lon">–</span></div>
                         <div class="flex justify-between"><span class="text-slate-500">Water Depth:</span><span class="font-medium text-slate-900" id="ver-info-depth">–</span></div>
+                        <div class="flex justify-between"><span class="text-slate-500">Altitude:</span><span class="font-medium text-slate-900" id="ver-info-alt">–</span></div>
+                        <div class="flex justify-between"><span class="text-slate-500">Heading:</span><span class="font-medium text-slate-900" id="ver-info-heading">–</span></div>
+                        <div class="flex justify-between"><span class="text-slate-500">Ping #:</span><span class="font-medium text-slate-900" id="ver-info-ping">–</span></div>
                       </div>
+                    </div>
+                  </div>
+
+                  <!-- Target provenance / lifecycle (all from persisted Supabase rows) -->
+                  <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                    <div class="text-[10px] font-bold text-slate-400 uppercase font-mono mb-2 border-b border-slate-200 pb-1">Target Information</div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-xs font-mono">
+                      <div class="flex justify-between"><span class="text-slate-500">Category:</span><span class="font-medium text-slate-900" id="ver-info-category">–</span></div>
+                      <div class="flex justify-between"><span class="text-slate-500">Material:</span><span class="font-medium text-slate-900" id="ver-info-material">–</span></div>
+                      <div class="flex justify-between"><span class="text-slate-500">Hazard:</span><span class="font-medium text-slate-900" id="ver-info-hazard">–</span></div>
+                      <div class="flex justify-between"><span class="text-slate-500">Verification:</span><span class="font-medium text-slate-900" id="ver-info-status">–</span></div>
+                      <div class="flex justify-between"><span class="text-slate-500">Requires Review:</span><span class="font-medium text-slate-900" id="ver-info-review">–</span></div>
+                      <div class="flex justify-between"><span class="text-slate-500">Offshore:</span><span class="font-medium text-slate-900" id="ver-info-offshore">–</span></div>
+                      <div class="flex justify-between col-span-1 sm:col-span-2"><span class="text-slate-500">Detection ID:</span><span class="font-medium text-slate-900 truncate" id="ver-info-detid">–</span></div>
+                      <div class="flex justify-between col-span-1 sm:col-span-2"><span class="text-slate-500">Survey ID:</span><span class="font-medium text-slate-900 truncate" id="ver-info-survey">–</span></div>
+                      <div class="flex justify-between col-span-1 sm:col-span-2"><span class="text-slate-500">Evidence Image:</span><span class="font-medium text-slate-900 truncate" id="ver-info-evidence">–</span></div>
                     </div>
                   </div>
 
@@ -338,6 +384,15 @@
                         <option value="Rejected">Rejected</option>
                         <option value="Requires Review">Requires Review</option>
                         <option value="Unknown">Unknown</option>
+                      </select>
+                      <select id="ver-reclassify" class="w-full sm:w-56 bg-white border border-slate-300 rounded text-sm font-mono p-2 focus:outline-none focus:border-sky-500" aria-label="Reclassify target">
+                        <option value="">Keep AI classification</option>
+                        <option value="ghost_net">Reclassify: Ghost net</option>
+                        <option value="shipwreck">Reclassify: Shipwreck</option>
+                        <option value="crab_pot">Reclassify: Crab pot</option>
+                        <option value="submarine_pipeline">Reclassify: Submarine pipeline</option>
+                        <option value="mine_cylinder">Reclassify: Mine / cylinder</option>
+                        <option value="unknown">Reclassify: Unknown</option>
                       </select>
                       <button id="ver-btn-submit" class="w-full sm:w-auto px-6 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold font-mono rounded transition-colors whitespace-nowrap">
                         Submit Verification
@@ -450,6 +505,7 @@
     let gDetections = null; // Detections for current survey
     let currentSurveyId = null;
     let currentDetectionId = null;
+    let sonarSpatialMap = null;
 
     const API = {
       surveys: '/api/v1/surveys',
@@ -458,6 +514,19 @@
 
     function dlRow(label, value) {
       return '<div class="dl-row"><span class="dl-label">' + label + '</span><span class="dl-value">' + (value || 'Not available') + '</span></div>';
+    }
+
+    function confidencePercent(detection) {
+      const confidence = Number(detection && detection.confidence);
+      if (!Number.isFinite(confidence)) return 0;
+      return confidence > 1 ? confidence : confidence * 100;
+    }
+
+    function detectionTier(detection) {
+      const suppliedTier = String((detection && detection.classification_tier) || '').toUpperCase();
+      if (['A', 'B', 'C'].includes(suppliedTier)) return `Class ${suppliedTier}`;
+      const confidence = confidencePercent(detection);
+      return confidence >= 85 ? 'Class A' : (confidence >= 60 ? 'Class B' : 'Class C');
     }
 
     function switchTab(id) {
@@ -470,6 +539,7 @@
       });
       document.querySelectorAll('.analyst-view').forEach(v => v.classList.add('hidden'));
       document.getElementById('view-' + id).classList.remove('hidden');
+      if (id === 'spatial-map') renderSpatialMap();
       
       // Context banner
       const banner = document.getElementById('survey-context-banner');
@@ -481,6 +551,8 @@
     }
 
     document.addEventListener('DOMContentLoaded', async () => {
+      // Keep the real detection overlay aligned when the viewport/image resizes.
+      window.addEventListener('resize', positionBboxOverlay);
       const user = getCurrentUser();
       if (user) {
         document.getElementById('analyst-user-name').textContent = user.full_name || 'Sonar Analyst';
@@ -488,6 +560,11 @@
         document.getElementById('set-dept').textContent = user.department || '–';
       }
       await loadSurveys();
+
+      // The Sonar Analyst portal opens this focused verification view.
+      if (new URLSearchParams(window.location.search).get('view') === 'verification') {
+        switchTab('verification');
+      }
     });
 
     async function fetchJSON(url) {
@@ -518,7 +595,7 @@
         <tr class="hover:bg-slate-50 transition-colors">
           <td class="p-4 font-bold text-slate-900">${s.survey_name || s.survey_id}</td>
           <td class="p-4 text-slate-500">${s.survey_id}</td>
-          <td class="p-4 text-slate-600">${s.survey_type || '–'}</td>
+          <td class="p-4 text-slate-600">${s.file_type || s.survey_type || '–'}</td>
           <td class="p-4"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">${(s.status || 'PENDING').toUpperCase()}</span></td>
           <td class="p-4">
             <button onclick="selectSurvey('${s.survey_id}')" class="px-3 py-1.5 bg-sky-50 hover:bg-sky-100 text-sky-700 text-xs font-bold rounded transition-colors border border-sky-200">Analyze</button>
@@ -541,8 +618,26 @@
       
       // Load detections for this specific survey
       const allDets = await fetchJSON(API.detsBase);
+      const images = await fetchJSON(`/api/v1/surveys/${encodeURIComponent(id)}/images`);
       if (allDets) {
-        gDetections = allDets.filter(d => d.survey_id === id);
+        const byImageId = new Map((images || []).map(image => [image.image_id, image]));
+        gDetections = allDets.filter(d => d.survey_id === id).map(d => {
+          // An evidence image belongs to its stable image ID. Falling back to
+          // the first image in a survey can show the wrong XTF sequence.
+          const evidence = byImageId.get(d.evidence_image_id);
+          const evidenceUrl = d.evidence_image_url || d.crop_url || (evidence && evidence.url) || '';
+          if (!evidenceUrl) {
+            console.error('TARANG Sonar Analyst received a detection without an evidence URL.', {
+              surveyId: id, detectionId: d.id, evidenceImageId: d.evidence_image_id
+            });
+          }
+          return {
+            ...d,
+            evidence_image_id: d.evidence_image_id || (evidence && evidence.image_id) || '',
+            evidence_image_url: evidenceUrl,
+            image_url: evidenceUrl
+          };
+        });
       } else {
         gDetections = null;
       }
@@ -629,6 +724,15 @@
       const content = document.getElementById('det-content');
       
       if (!currentSurveyId) {
+        empty.textContent = 'Please select a survey from the Overview.';
+        empty.classList.remove('hidden');
+        content.classList.add('hidden');
+        return;
+      }
+
+      const dets = gDetections || [];
+      if (dets.length === 0) {
+        empty.textContent = 'No AI detections available for this survey.';
         empty.classList.remove('hidden');
         content.classList.add('hidden');
         return;
@@ -636,14 +740,15 @@
       empty.classList.add('hidden');
       content.classList.remove('hidden');
 
-      const dets = gDetections || [];
       const total = dets.length;
       let verified = 0;
+      let rejected = 0;
       let pending = 0;
       
       dets.forEach(d => {
         const s = (d.verification_status || '').toLowerCase();
-        if (s === 'verified' || s === 'rejected') verified++;
+        if (s === 'verified') verified++;
+        else if (s === 'rejected') rejected++;
         else pending++;
       });
 
@@ -653,8 +758,12 @@
           <div class="text-3xl font-bold font-mono text-slate-900 mt-2">${total}</div>
         </div>
         <div class="bg-white border border-slate-200 rounded-xl p-5 text-center shadow-sm">
-          <div class="text-xs font-mono text-slate-500 uppercase">Verified / Rejected</div>
+          <div class="text-xs font-mono text-slate-500 uppercase">Verified</div>
           <div class="text-3xl font-bold font-mono text-emerald-600 mt-2">${verified}</div>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-xl p-5 text-center shadow-sm">
+          <div class="text-xs font-mono text-slate-500 uppercase">Rejected</div>
+          <div class="text-3xl font-bold font-mono text-rose-600 mt-2">${rejected}</div>
         </div>
         <div class="bg-white border border-slate-200 rounded-xl p-5 text-center shadow-sm border-b-4 border-b-amber-400">
           <div class="text-xs font-mono text-slate-500 uppercase">Pending Review</div>
@@ -664,6 +773,37 @@
     }
 
     // ── VERIFICATION ──
+    async function renderSpatialMap() {
+      const empty = document.getElementById('spatial-empty');
+      const content = document.getElementById('spatial-content');
+      const note = document.getElementById('spatial-map-note');
+      if (!currentSurveyId) {
+        empty.classList.remove('hidden');
+        content.classList.add('hidden');
+        return;
+      }
+
+      empty.classList.add('hidden');
+      content.classList.remove('hidden');
+      if (!sonarSpatialMap) {
+        sonarSpatialMap = new TarangMap('sonar-spatial-map', { center: [12.905, 80.495], zoom: 11 });
+      }
+      if (!sonarSpatialMap || !sonarSpatialMap.map) return;
+
+      const detections = (gDetections || []).filter(d => d.latitude != null && d.longitude != null && d.is_offshore !== false);
+      sonarSpatialMap.clear();
+      sonarSpatialMap.setDetections(detections, selectDetection);
+      if (detections.length === 0) {
+        note.textContent = 'No georeferenced detections are available for this survey.';
+      } else {
+        note.textContent = `${detections.length} georeferenced detection${detections.length === 1 ? '' : 's'} displayed.`;
+        const clusters = await fetchJSON(`/api/v1/surveys/${encodeURIComponent(currentSurveyId)}/clusters`);
+        if (clusters) sonarSpatialMap.setClusters(clusters);
+        sonarSpatialMap.fitBounds();
+      }
+      setTimeout(() => sonarSpatialMap.map.invalidateSize(), 100);
+    }
+
     function renderVerification() {
       const empty = document.getElementById('ver-empty');
       const content = document.getElementById('ver-content');
@@ -692,8 +832,8 @@
       }
 
       listEl.innerHTML = pendingDets.map(d => {
-        const conf = parseFloat(d.confidence || 0);
-        const tier = conf > 0.85 ? 'Class A' : (conf > 0.6 ? 'Class B' : 'Class C');
+        const confidence = confidencePercent(d);
+        const tier = detectionTier(d);
         const isSelected = currentDetectionId === d.id;
         const bg = isSelected ? 'bg-sky-50 border-sky-200' : 'bg-white hover:bg-slate-50 border-slate-200';
         
@@ -701,7 +841,7 @@
           <div onclick="selectDetection('${d.id}')" class="p-3 rounded border ${bg} cursor-pointer transition-colors">
             <div class="flex justify-between items-center mb-1">
               <span class="font-bold text-slate-900 text-xs truncate mr-2">${d.class_name || 'Anomaly'}</span>
-              <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-mono">${(conf*100).toFixed(0)}%</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-mono">${confidence.toFixed(0)}%</span>
             </div>
             <div class="flex justify-between items-center text-[10px] font-mono text-slate-500">
               <span>${d.id.substring(0,8)}...</span>
@@ -722,6 +862,58 @@
       currentDetectionId = null;
     }
 
+    // Real YOLO box (natural-image pixels) for the currently selected detection.
+    let currentBbox = null;
+
+    function fmtCoord(v, suffix) {
+      const n = parseFloat(v);
+      if (v === null || v === undefined || v === '' || isNaN(n)) return 'Not geotagged';
+      return n.toFixed(5) + (suffix ? ' ' + suffix : '');
+    }
+
+    function fmtOrDash(v, suffix) {
+      if (v === null || v === undefined || v === '') return '–';
+      const n = parseFloat(v);
+      if (!isNaN(n) && suffix) return n.toFixed(1) + ' ' + suffix;
+      return String(v);
+    }
+
+    function positionBboxOverlay() {
+      const wrap = document.getElementById('ver-img-wrap');
+      const img = document.getElementById('ver-img');
+      const box = document.getElementById('ver-bbox');
+      const badge = document.getElementById('ver-bbox-badge');
+      if (!wrap || !img || !box) return;
+
+      const valid = Array.isArray(currentBbox) && currentBbox.length === 4 &&
+        currentBbox.every(v => typeof v === 'number' && !isNaN(v));
+      if (!valid || !img.naturalWidth || img.classList.contains('hidden')) {
+        box.classList.add('hidden');
+        if (badge) {
+          badge.classList.remove('hidden');
+          badge.className = 'absolute top-3 right-3 text-[10px] font-mono z-10 bg-black/50 px-2 py-1 rounded border backdrop-blur-sm border-amber-500/40 text-amber-300';
+          badge.textContent = 'NO BBOX ON RECORD';
+        }
+        return;
+      }
+
+      const wrapRect = wrap.getBoundingClientRect();
+      const imgRect = img.getBoundingClientRect();
+      const scale = imgRect.width / img.naturalWidth;
+      const [x1, y1, x2, y2] = currentBbox;
+      box.style.left = ((imgRect.left - wrapRect.left) + x1 * scale) + 'px';
+      box.style.top = ((imgRect.top - wrapRect.top) + y1 * scale) + 'px';
+      box.style.width = ((x2 - x1) * scale) + 'px';
+      box.style.height = ((y2 - y1) * scale) + 'px';
+      box.classList.remove('hidden');
+
+      if (badge) {
+        badge.classList.remove('hidden');
+        badge.className = 'absolute top-3 right-3 text-[10px] font-mono z-10 bg-black/50 px-2 py-1 rounded border backdrop-blur-sm border-cyan-500/40 text-cyan-300';
+        badge.textContent = 'DETECTION OVERLAY: REAL YOLO BOX';
+      }
+    }
+
     function selectDetection(id) {
       currentDetectionId = id;
       document.getElementById('ver-detail-empty').classList.add('hidden');
@@ -740,29 +932,71 @@
       const det = (gDetections || []).find(d => d.id === id);
       if (!det) return;
 
-      const conf = parseFloat(det.confidence || 0);
-      const tier = conf > 0.85 ? 'Class A' : (conf > 0.6 ? 'Class B' : 'Class C');
+      document.getElementById('ver-reclassify').value = '';
+      const confidence = confidencePercent(det);
+      const tier = detectionTier(det);
 
       document.getElementById('ver-info-class').textContent = det.class_name || 'Anomaly';
-      document.getElementById('ver-info-conf').textContent = (conf * 100).toFixed(1) + '%';
+      document.getElementById('ver-info-conf').textContent = confidence.toFixed(1) + '%';
       document.getElementById('ver-info-tier').textContent = tier;
-      document.getElementById('ver-info-lat').textContent = det.latitude || '–';
-      document.getElementById('ver-info-lon').textContent = det.longitude || '–';
+      document.getElementById('ver-info-lat').textContent = fmtCoord(det.latitude, 'N');
+      document.getElementById('ver-info-lon').textContent = fmtCoord(det.longitude, 'E');
       document.getElementById('ver-info-depth').textContent = det.depth || '–';
+      document.getElementById('ver-info-alt').textContent = det.altitude || '–';
+      document.getElementById('ver-info-heading').textContent = fmtOrDash(det.heading, '°');
+      document.getElementById('ver-info-ping').textContent = (det.ping_number === null || det.ping_number === undefined) ? '–' : String(det.ping_number);
+
+      // Target Information (all from the persisted detection row / link event)
+      document.getElementById('ver-info-category').textContent = det.category || '–';
+      document.getElementById('ver-info-material').textContent = det.material || '–';
+      document.getElementById('ver-info-hazard').textContent = det.hazard || '–';
+      document.getElementById('ver-info-status').textContent = det.verification_status || det.review_status || '–';
+      document.getElementById('ver-info-review').textContent = (det.requires_review === undefined) ? '–' : (det.requires_review ? 'Yes' : 'No');
+      document.getElementById('ver-info-offshore').textContent = (det.is_offshore === undefined) ? '–' : (det.is_offshore ? 'Yes' : 'No');
+      document.getElementById('ver-info-detid').textContent = det.id || '–';
+      document.getElementById('ver-info-survey').textContent = det.survey_id || '–';
+      const evSeq = (det.evidence_sequence === null || det.evidence_sequence === undefined) ? '' : ` (seq ${det.evidence_sequence})`;
+      document.getElementById('ver-info-evidence').textContent = (det.evidence_image_id ? det.evidence_image_id + evSeq : '–');
+
+      // Real YOLO box for the overlay; null for legacy rows persisted before bbox existed.
+      currentBbox = Array.isArray(det.bbox) ? det.bbox : null;
+      const label = document.getElementById('ver-bbox-label');
+      if (label) label.textContent = `${(det.class_name || 'target')} ${confidence.toFixed(0)}%`;
 
       const imgEl = document.getElementById('ver-img');
-      if (det.image_url) {
-        imgEl.src = det.image_url;
+      const evidenceUrl = String(det.evidence_image_url || det.crop_url || det.image_url || '').trim();
+      if (/^(https?:\/\/|\/)/i.test(evidenceUrl) && !/^[A-Za-z]:[\\/]/.test(evidenceUrl) && !/^\\\\/.test(evidenceUrl)) {
+        imgEl.dataset.evidenceId = det.evidence_image_id || '';
+        imgEl.dataset.detectionId = det.id || '';
+        imgEl.classList.remove('hidden');
+        imgEl.onload = positionBboxOverlay;
+        imgEl.src = evidenceUrl;
+        // If the image is already cached, onload may not fire again.
+        if (imgEl.complete && imgEl.naturalWidth) positionBboxOverlay();
       } else {
-        imgEl.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiMwMjBiMTUiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZm9udC1mYW1pbHk9Im1vbm9zcGFjZSIgZm9udC1zaXplPSIxNHB4IiBmaWxsPSIjMzhibmQ4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5bTk8gSU1BR0UgQVZBSUxBQkxFXTwvdGV4dD48L3N2Zz4=';
+        console.error('TARANG evidence URL is missing or not browser-safe.', { detectionId: det.id, evidenceUrl });
+        imgEl.removeAttribute('src');
+        imgEl.classList.add('hidden');
+        currentBbox = null;
+        positionBboxOverlay();
       }
 
       const btn = document.getElementById('ver-btn-submit');
       btn.onclick = () => submitVerification(det.id);
     }
 
+    function reportSonarEvidenceLoadError(image) {
+      console.error('TARANG Sonar Analyst evidence image failed to load.', {
+        evidenceId: image.dataset.evidenceId,
+        detectionId: image.dataset.detectionId,
+        url: image.currentSrc || image.src
+      });
+      image.classList.add('hidden');
+    }
+
     async function submitVerification(id) {
       const status = document.getElementById('ver-decision-status').value;
+      const className = document.getElementById('ver-reclassify').value;
       const btn = document.getElementById('ver-btn-submit');
       btn.disabled = true;
       btn.textContent = 'Saving...';
@@ -771,12 +1005,17 @@
         const res = await fetch(`/api/v1/detections/${id}/verify`, {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({ status: status })
+          body: JSON.stringify({ status: status, class_name: className || null })
         });
         if (res.ok) {
           // Update local state
           const det = gDetections.find(d => d.id === id);
-          if (det) det.verification_status = status;
+          if (det) {
+            det.verification_status = status;
+            det.review_status = status;
+            det.detection_status = status === 'Rejected' ? 'Rejected' : (status === 'Verified' ? 'Verified' : 'Pending Review');
+            if (className) det.class_name = className;
+          }
           currentDetectionId = null;
           updateViews();
         } else {

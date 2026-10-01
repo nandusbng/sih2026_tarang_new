@@ -16,6 +16,7 @@
   <!-- Leaflet CSS & JS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="js/tarang-map.js"></script>
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -242,6 +243,7 @@
           <select id="hotspot-survey-selector" onchange="loadHotspotMapForSurvey(this.value)" class="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm font-mono focus:outline-none focus:border-teal-500 shadow-sm text-slate-700 font-bold">
             <option value="">— Select a survey to view spatial data —</option>
           </select>
+          <button type="button" onclick="downloadHotspotJson()" class="rounded-xl bg-white border border-slate-300 px-4 py-2 text-xs font-mono font-bold text-slate-700 transition-colors hover:bg-slate-50 shrink-0">Download Hotspot JSON</button>
       </div>
 
       <div class="marine-card rounded-2xl overflow-hidden flex flex-col h-[600px] relative border border-slate-200">
@@ -249,7 +251,7 @@
          <div id="hotspot-map-overlay" class="absolute inset-0 bg-white/90 z-20 flex flex-col items-center justify-center p-8 text-center backdrop-blur-sm transition-opacity duration-300">
              <span class="material-symbols-outlined text-[48px] text-slate-300 mb-4">map</span>
              <h3 class="text-lg font-bold text-slate-700 mb-2 font-headline">No Geospatial Data Selected</h3>
-             <p class="text-sm text-slate-500 font-mono">Please select a survey above to load detection coordinates and calculated TSP routes.</p>
+             <p class="text-sm text-slate-500 font-mono">No verified hotspots available. Select a survey above to load detection coordinates and calculated TSP routes.</p>
          </div>
       </div>
     </div>
@@ -277,6 +279,7 @@
           <select id="cleanup-survey-selector" onchange="loadCleanupMissionForSurvey(this.value)" class="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm font-mono focus:outline-none focus:border-sky-500 shadow-sm text-slate-700 font-bold">
             <option value="">— Select a survey to view operations —</option>
           </select>
+          <button type="button" onclick="generateCleanupRoute()" class="rounded-xl bg-sky-700 px-4 py-2 text-xs font-mono font-bold text-white transition-colors hover:bg-sky-800">Generate TSP Route</button>
       </div>
       
       <!-- Mission Details & Live Ops -->
@@ -315,7 +318,37 @@
                  </tbody>
              </table>
           </div>
-          
+
+          <div class="marine-card rounded-2xl overflow-hidden">
+              <div class="p-4 bg-slate-50 border-b border-slate-200 flex items-center gap-2">
+                  <span class="material-symbols-outlined text-sky-600">map</span>
+                  <h3 class="font-headline font-bold text-sm text-slate-900">Cleanup Target Map</h3>
+              </div>
+              <div id="marineMap" class="h-[360px] w-full bg-slate-100"></div>
+          </div>
+
+          <div class="marine-card rounded-2xl overflow-hidden">
+              <div class="p-4 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+                  <div class="flex items-center gap-2">
+                      <span class="material-symbols-outlined text-teal-600">route</span>
+                      <h3 class="font-headline font-bold text-sm text-slate-900">Optimized Cleanup Route (Hotspot Sequence)</h3>
+                  </div>
+                  <div class="flex flex-wrap items-center gap-2">
+                      <button type="button" onclick="generateOptimizedCleanupRoute()" class="rounded-lg bg-teal-700 px-3 py-1.5 text-xs font-mono font-bold text-white transition-colors hover:bg-teal-800">Optimize Cleanup Route</button>
+                      <button type="button" onclick="downloadCleanupRouteJson()" class="rounded-lg bg-white border border-slate-300 px-3 py-1.5 text-xs font-mono font-bold text-slate-700 transition-colors hover:bg-slate-50">Download Cleanup Route JSON</button>
+                  </div>
+              </div>
+              <div id="marine-route-status" class="px-4 pt-3 text-xs font-mono text-slate-500">No optimized cleanup route loaded yet.</div>
+              <div class="grid grid-cols-1 lg:grid-cols-5 gap-4 p-4">
+                  <div class="lg:col-span-3 h-[320px] rounded-xl border border-slate-200 overflow-hidden bg-slate-100">
+                      <div id="cleanupRouteMap" class="h-full w-full"></div>
+                  </div>
+                  <div class="lg:col-span-2 rounded-xl bg-slate-950 p-4 text-xs font-mono text-teal-200 overflow-auto" style="max-height:320px">
+                      <div id="cleanup-route-sequence">No cleanup route generated yet.</div>
+                  </div>
+              </div>
+          </div>
+
           <div class="marine-card rounded-2xl p-8 bg-slate-50 text-center border border-slate-200 flex flex-col items-center justify-center">
               <span class="material-symbols-outlined text-slate-300 text-[48px] mb-3">satellite_alt</span>
               <p class="text-sm font-bold text-slate-700">Live operation telemetry is not currently available.</p>
@@ -489,7 +522,7 @@
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
         <div>
           <h2 class="font-headline font-extrabold text-[28px] sm:text-[30px] text-slate-900 tracking-tight leading-tight">
-            Marine Analyst Preferences
+            Marine Portal Preferences
           </h2>
           <p class="font-body text-xs text-slate-400 mt-1">
             Configure map display, intelligence visibility, and report formats.
@@ -525,7 +558,7 @@
               <h3 class="font-headline font-bold text-sm text-slate-900 border-b border-slate-100 pb-2">System Information</h3>
               <div class="flex flex-col gap-3 font-mono text-xs">
                   <div class="flex justify-between border-b border-slate-100 pb-1"><span class="text-slate-500">Backend API</span><span class="text-teal-600 font-bold">Connected</span></div>
-                  <div class="flex justify-between border-b border-slate-100 pb-1"><span class="text-slate-500">Database Engine</span><span class="text-teal-600 font-bold">SQLite / Active</span></div>
+                  <div class="flex justify-between border-b border-slate-100 pb-1"><span class="text-slate-500">Database Engine</span><span class="text-emerald-600 font-bold">Supabase Cloud / PostgreSQL</span></div>
                   <div class="flex justify-between border-b border-slate-100 pb-1"><span class="text-slate-500">TARANG Model</span><span class="text-teal-600 font-bold">Online</span></div>
               </div>
           </div>
@@ -560,6 +593,8 @@
     let currentSurveyId = null;
     let mapInstance = null;
     let mapMarkers = [];
+    let cleanupTarangMap = null;
+    let latestRoute = null;
 
     // --- Tab Switching ---
     function switchTab(tabId) {
@@ -581,6 +616,12 @@
       
       if (tabId === 'hotspots' && mapInstance) {
         setTimeout(() => mapInstance.invalidateSize(), 200);
+      }
+      if (tabId === 'cleanup-missions') {
+        setTimeout(() => {
+          if (cleanupTarangMap && cleanupTarangMap.map) cleanupTarangMap.map.invalidateSize();
+          if (optimizedRouteMap && optimizedRouteMap.map) { optimizedRouteMap.map.invalidateSize(); optimizedRouteMap.fitBounds(); }
+        }, 200);
       }
     }
 
@@ -645,7 +686,7 @@
         selects.forEach(id => {
             const sel = document.getElementById(id);
             if(!sel) return;
-            sel.innerHTML = `<option value="">— Select a survey —</option>` + allSurveys.map(s => `<option value="${s.id}">${s.survey_name} (${s.id})</option>`).join('');
+            sel.innerHTML = `<option value="">— Select a survey —</option>` + allSurveys.map(s => `<option value="${s.survey_id}">${s.survey_name} (${s.survey_id})</option>`).join('');
         });
     }
 
@@ -660,7 +701,7 @@
       }
 
       tbody.innerHTML = allSurveys.map(survey => {
-        const sDets = globalDetections.filter(d => d.survey_id === survey.id);
+        const sDets = globalDetections.filter(d => d.survey_id === survey.survey_id);
         const verifiedCount = sDets.filter(d => (d.verification_status||'').toLowerCase() === 'verified').length;
         const cleanupReq = sDets.filter(d => (d.clearance_status||'').toLowerCase() !== 'no_cleanup_required' && (d.verification_status||'').toLowerCase() === 'verified');
         const cleared = cleanupReq.filter(d => (d.clearance_status||'').toLowerCase() === 'cleared');
@@ -672,14 +713,14 @@
         return `
           <tr class="hover:bg-slate-50 transition-colors">
             <td class="py-3 px-4 font-bold text-slate-900">${survey.survey_name}</td>
-            <td class="py-3 px-4 text-slate-500">${survey.id}</td>
+            <td class="py-3 px-4 text-slate-500">${survey.survey_id}</td>
             <td class="py-3 px-4">
                 <span class="px-2 py-1 rounded bg-teal-50 text-teal-700 text-xs font-bold border border-teal-200">${verifiedCount} Verified</span>
             </td>
             <td class="py-3 px-4 font-bold text-slate-700">${cleanupReq.length}</td>
             <td class="py-3 px-4">${cleanupStatus}</td>
             <td class="py-3 px-4 text-right">
-                <button onclick="setGlobalSurvey('${survey.id}', 'hotspots')" class="text-teal-600 hover:text-teal-800 font-bold text-xs underline">Analyze Spatial Data</button>
+                <button onclick="setGlobalSurvey('${survey.survey_id}', 'hotspots')" class="text-teal-600 hover:text-teal-800 font-bold text-xs underline">Analyze Spatial Data</button>
             </td>
           </tr>
         `;
@@ -700,9 +741,7 @@
         
         if(!mapInstance) {
             mapInstance = L.map('hotspot-map').setView([15.2, 73.0], 5);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
-            }).addTo(mapInstance);
+            TarangTiles.attach(mapInstance); // tiles + fallback chain from MAP_CONFIG (js/tarang-map.js)
         }
         
         // Clear old markers
@@ -713,13 +752,13 @@
             window.tspPolyline = null;
         }
         
-        const sDets = globalDetections.filter(d => d.survey_id === surveyId && d.latitude && d.longitude && (d.verification_status||'').toLowerCase() === 'verified');
+        const sDets = globalDetections.filter(d => d.survey_id === surveyId && d.latitude && d.longitude && d.is_offshore && (d.verification_status||'').toLowerCase() === 'verified');
         if(sDets.length === 0) {
             showToast('No verified coordinates found for this survey', true);
             return;
         }
         
-        const cleanupTargets = sDets.filter(d => (d.clearance_status||'').toLowerCase() !== 'no_cleanup_required' && (d.clearance_status||'').toLowerCase() !== 'cleared');
+        const cleanupTargets = sDets.filter(d => ['cleanup approved','cleanup scheduled','cleanup dispatched','cleanup in progress','cleanup completed'].includes((d.cleanup_status || d.clearance_status || '').toLowerCase()));
         
         const bounds = [];
         
@@ -744,11 +783,7 @@
             mapInstance.fitBounds(bounds, { padding: [50, 50] });
         }
         
-        if(cleanupTargets.length > 1) {
-            const sorted = nearestNeighborTSP(cleanupTargets);
-            const latlngs = sorted.map(d => [d.latitude, d.longitude]);
-            window.tspPolyline = L.polyline(latlngs, {color: '#ef4444', weight: 3, dashArray: '5, 10'}).addTo(mapInstance);
-        }
+        // Route geometry is rendered only from the persisted server-side TSP result.
     }
     
     // Basic TSP heuristic
@@ -787,8 +822,21 @@
         details.classList.remove('hidden');
         
         const sDets = globalDetections.filter(d => d.survey_id === surveyId && (d.verification_status||'').toLowerCase() === 'verified');
-        const cleanupTargets = sDets.filter(d => (d.clearance_status||'').toLowerCase() !== 'no_cleanup_required');
+        const cleanupTargets = sDets.filter(d => ['cleanup approved','cleanup scheduled','cleanup dispatched','cleanup in progress','cleanup completed'].includes((d.cleanup_status || d.clearance_status || '').toLowerCase()));
         const pendingTargets = cleanupTargets.filter(d => (d.clearance_status||'').toLowerCase() !== 'cleared');
+        renderCleanupMap(cleanupTargets);
+        latestRoute = null;
+        fetch('/api/v1/routes/optimize', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ survey_id: surveyId })
+        }).then(async response => response.ok ? response.json() : null).then(data => {
+            latestRoute = data && data.route;
+            const routeLabel = document.getElementById('cleanup-route-text');
+            if (routeLabel) routeLabel.textContent = latestRoute ? `${latestRoute.target_count} stops · ${TarangUnits.formatDistance(TarangUnits.kmToNm(latestRoute.distance_km), latestRoute.distance_km)}` : 'Awaiting approved targets';
+            if (latestRoute && cleanupTarangMap && cleanupTarangMap.map) {
+                cleanupTarangMap.setTrack((latestRoute.target_sequence || []).map(point => [point.latitude, point.longitude]));
+            }
+        }).catch(() => {});
         
         document.getElementById('cleanup-targets-text').textContent = pendingTargets.length;
         
@@ -830,6 +878,177 @@
         }).join('');
     }
 
+    function renderCleanupMap(targets) {
+        if (!cleanupTarangMap) {
+            cleanupTarangMap = new TarangMap('marineMap', { center: [12.905, 80.495], zoom: 11 });
+        }
+        if (!cleanupTarangMap || !cleanupTarangMap.map) return;
+
+        cleanupTarangMap.clear();
+        const mappedTargets = (targets || []).filter(d => d.latitude != null && d.longitude != null);
+        cleanupTarangMap.setDetections(mappedTargets);
+        if (mappedTargets.length > 1) {
+            const route = nearestNeighborTSP(mappedTargets).map(d => [Number(d.latitude), Number(d.longitude)]);
+            cleanupTarangMap.setTrack(route);
+        }
+        cleanupTarangMap.fitBounds();
+        setTimeout(() => cleanupTarangMap.map.invalidateSize(), 100);
+    }
+
+    // The persisted operation projection is the only source for the cleanup
+    // table and route.  This override deliberately replaces the legacy
+    // client-side mock/TSP preview above.
+    async function loadCleanupMissionForSurvey(surveyId) {
+        currentSurveyId = surveyId;
+        const details = document.getElementById('cleanup-mission-details');
+        if (!surveyId) { details.classList.add('hidden'); return; }
+        details.classList.remove('hidden');
+        const [operationsResponse, routeResponse] = await Promise.all([
+            fetch(`/api/v1/cleanup/operations?survey_id=${encodeURIComponent(surveyId)}`),
+            fetch('/api/v1/routes')
+        ]);
+        const cleanupTargets = operationsResponse.ok ? await operationsResponse.json() : [];
+        const candidateRoute = routeResponse.ok ? await routeResponse.json() : null;
+        latestRoute = candidateRoute && candidateRoute.survey_id === surveyId && candidateRoute.route_id ? candidateRoute : null;
+        const pendingTargets = cleanupTargets.filter(target => target.status !== 'Cleanup Completed');
+        document.getElementById('cleanup-targets-text').textContent = pendingTargets.length;
+        const routeLabel = document.getElementById('cleanup-route-text');
+        if (routeLabel) routeLabel.textContent = latestRoute
+            ? `${latestRoute.status} · ${latestRoute.target_count} stops · Cleanup Route ${TarangUnits.formatDistance(TarangUnits.kmToNm(latestRoute.distance_km), latestRoute.distance_km)} · ~${latestRoute.estimated_operation_hours} h`
+            : 'No route generated';
+        const statusEl = document.getElementById('cleanup-status-text');
+        if (!cleanupTargets.length) {
+            statusEl.textContent = 'Awaiting Decision';
+            statusEl.className = 'text-xl font-bold font-mono text-slate-500 mt-1';
+        } else if (!pendingTargets.length) {
+            statusEl.textContent = 'Mission Accomplished';
+            statusEl.className = 'text-xl font-bold font-mono text-emerald-600 mt-1';
+        } else {
+            statusEl.textContent = 'Active / Pending';
+            statusEl.className = 'text-xl font-bold font-mono text-teal-700 mt-1';
+        }
+        const tbody = document.getElementById('cleanup-locations-tbody');
+        if (!cleanupTargets.length) {
+            tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-slate-500">No approved cleanup targets for this survey.</td></tr>';
+            renderCleanupMap([], null);
+            return;
+        }
+        const stopNumbers = new Map((latestRoute?.target_sequence || []).map(stop => [stop.target_id, stop.sequence]));
+        const orderedTargets = [...cleanupTargets].sort((a, b) => (stopNumbers.get(a.target_id) || 9999) - (stopNumbers.get(b.target_id) || 9999));
+        tbody.innerHTML = orderedTargets.map(target => {
+            const stop = stopNumbers.get(target.target_id);
+            const completed = target.status === 'Cleanup Completed';
+            return `<tr class="hover:bg-slate-50"><td class="p-3 font-bold text-slate-700">${target.target_id.substring(0, 8)}</td><td class="p-3">${target.target_type || 'Unknown'}</td><td class="p-3 text-slate-500">${Number(target.latitude).toFixed(4)}, ${Number(target.longitude).toFixed(4)}</td><td class="p-3">${stop ? `<span class="font-bold text-sky-600">Stop #${stop}</span>` : '<span class="text-slate-400">Generate route</span>'}</td><td class="p-3"><span class="px-2 py-1 rounded text-xs font-bold ${completed ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">${target.status}</span></td></tr>`;
+        }).join('');
+        renderCleanupMap(cleanupTargets, latestRoute);
+        loadLatestOptimizedRoute(surveyId);
+    }
+
+    // --- Optimized Cleanup Route (POST /api/v1/hotspot-route, NM primary) ---
+    let optimizedRouteMap = null;
+
+    async function loadLatestOptimizedRoute(surveyId) {
+        try {
+            const response = await fetch('/api/v1/hotspot-route/latest');
+            if (!response.ok) return;
+            const payload = await response.json().catch(() => ({}));
+            if (payload.status !== 'success' || !payload.route) return;
+            const route = payload.route;
+            if (route.survey_id && surveyId && route.survey_id !== surveyId) return;
+            renderOptimizedCleanupRoute(route);
+        } catch (error) { /* latest route is optional context */ }
+    }
+
+    function renderOptimizedCleanupRoute(route) {
+        const status = document.getElementById('marine-route-status');
+        if (!route) {
+            if (status) status.textContent = 'No cleanup route generated yet.';
+            return;
+        }
+        status.className = 'px-4 pt-3 text-xs font-mono text-slate-500';
+        status.textContent = `Cleanup Route ${route.route_id} · ${route.hotspot_count} hotspot(s) · TOTAL: ${TarangUnits.formatDistance(route.total_distance_nm, route.total_distance_km)}`;
+        document.getElementById('cleanup-route-sequence').innerHTML = TarangRouteUI.sequenceHtml(route);
+        if (!optimizedRouteMap) {
+            optimizedRouteMap = new TarangMap('cleanupRouteMap', { center: MAP_CONFIG.defaultCenter.slice(), zoom: 6 });
+        }
+        optimizedRouteMap.setCleanupRoute(route);
+        setTimeout(() => { if (optimizedRouteMap && optimizedRouteMap.map) optimizedRouteMap.map.invalidateSize(); }, 150);
+    }
+
+    async function generateOptimizedCleanupRoute() {
+        const surveyId = document.getElementById('cleanup-survey-selector').value;
+        const status = document.getElementById('marine-route-status');
+        status.className = 'px-4 pt-3 text-xs font-mono text-slate-500';
+        status.textContent = surveyId
+            ? `Optimizing cleanup route for survey ${surveyId}…`
+            : 'Optimizing cleanup route from all persisted hotspots…';
+        try {
+            const response = await fetch('/api/v1/hotspot-route', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(surveyId ? { survey_id: surveyId } : {})
+            });
+            const payload = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                // Real server error (e.g. HTTP 409) — never a fake success.
+                status.className = 'px-4 pt-3 text-xs font-mono text-rose-600';
+                status.textContent = payload.message || `Cleanup route request failed (HTTP ${response.status}).`;
+                showToast(payload.message || 'Cleanup route could not be generated.', true);
+                return;
+            }
+            renderOptimizedCleanupRoute(payload.route);
+            showToast(`Optimized cleanup route ${payload.route.route_id} generated — ${payload.route.hotspot_count} hotspot(s), ${TarangUnits.formatDistance(payload.route.total_distance_nm, payload.route.total_distance_km)}.`);
+        } catch (error) {
+            status.className = 'px-4 pt-3 text-xs font-mono text-rose-600';
+            status.textContent = `Cleanup route request failed: ${error.message || error}`;
+            showToast('Network error while optimizing the cleanup route.', true);
+        }
+    }
+
+    // --- JSON downloads (authenticated fetch + Blob via TarangExport) ---
+    async function marineDownloadJson(url, filename) {
+        const result = await TarangExport.downloadJson(url, filename);
+        if (result.ok) showToast(`Downloaded ${filename} from the Supabase-backed export endpoint.`);
+        else showToast(`Download could not be authenticated: ${result.error}`, true);
+    }
+
+    function downloadHotspotJson() {
+        const surveyId = document.getElementById('hotspot-survey-selector').value;
+        const url = surveyId ? `/api/v1/export/hotspots.json?survey_id=${encodeURIComponent(surveyId)}` : '/api/v1/export/hotspots.json';
+        marineDownloadJson(url, 'tarang_hotspots.json');
+    }
+
+    function downloadCleanupRouteJson() {
+        const surveyId = document.getElementById('cleanup-survey-selector').value;
+        const url = surveyId ? `/api/v1/export/cleanup-route.json?survey_id=${encodeURIComponent(surveyId)}` : '/api/v1/export/cleanup-route.json';
+        marineDownloadJson(url, 'tarang_cleanup_route.json');
+    }
+
+    async function generateCleanupRoute() {
+        const surveyId = document.getElementById('cleanup-survey-selector').value;
+        if (!surveyId) return showToast('Select a survey before generating a route.', true);
+        const response = await fetch('/api/v1/routes/optimize', {
+            method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({survey_id: surveyId})
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) return showToast(payload.message || 'No approved offshore cleanup targets are ready for routing.', true);
+        showToast(`TSP route ${payload.route.route_id} generated from persisted offshore targets.`);
+        await loadCleanupMissionForSurvey(surveyId);
+    }
+
+    function renderCleanupMap(targets, route) {
+        if (!cleanupTarangMap) cleanupTarangMap = new TarangMap('marineMap', { center: [12.905, 80.495], zoom: 11 });
+        if (!cleanupTarangMap || !cleanupTarangMap.map) return;
+        cleanupTarangMap.clear();
+        const mappedTargets = (targets || []).filter(target => target.latitude != null && target.longitude != null)
+            .map(target => ({...target, id: target.target_id, title: target.target_type, class_name: target.target_type, verification_status: 'Verified'}));
+        cleanupTarangMap.setDetections(mappedTargets);
+        if (route && (route.target_sequence || []).length) {
+            cleanupTarangMap.setTrack(route.target_sequence.map(stop => [Number(stop.latitude), Number(stop.longitude)]));
+        }
+        cleanupTarangMap.fitBounds();
+        setTimeout(() => cleanupTarangMap.map.invalidateSize(), 100);
+    }
+
     // --- Clearance Updates Tab ---
     function loadClearanceForSurvey(surveyId) {
         currentSurveyId = surveyId;
@@ -840,8 +1059,10 @@
             return;
         }
         
-        const sDets = globalDetections.filter(d => d.survey_id === surveyId && (d.verification_status||'').toLowerCase() === 'verified');
-        const cleanupTargets = sDets.filter(d => (d.clearance_status||'').toLowerCase() !== 'no_cleanup_required');
+        const sDets = globalDetections.filter(d => d.survey_id === surveyId && (d.verification_status||'').toLowerCase() === 'verified' && (d.detection_status || '') !== 'Rejected');
+        // Verified targets remain here until the Marine Analyst explicitly
+        // approves or declines cleanup.
+        const cleanupTargets = sDets;
         
         if(cleanupTargets.length === 0) {
             container.innerHTML = `<div class="text-center p-8 text-slate-500 font-mono text-xs">No cleanup targets exist for this survey.</div>`;
@@ -863,8 +1084,11 @@
                 <div>
                   <label class="block text-slate-500 mb-1">Clearance Status *</label>
                   <select id="clearance-status" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-slate-900 focus:border-emerald-500 focus:outline-none">
-                    <option value="Cleared">Cleared (Full Retrieval)</option>
-                    <option value="In Progress">In Progress (Sortie Active)</option>
+                    <option value="Cleanup Approved">Accept Cleanup (Marine decision)</option>
+                    <option value="Cleanup Not Recommended">Do Not Recommend Cleanup</option>
+                    <option value="Cleanup Scheduled">Schedule Cleanup</option>
+                    <option value="Cleanup In Progress">Start / Update Operation</option>
+                    <option value="Cleanup Completed">Complete Cleanup</option>
                   </select>
                 </div>
                 <div>
@@ -943,7 +1167,7 @@
 
       const payload = {
         target_id: targetId,
-        hotspot_id: 1, 
+        hotspot_id: '',
         team: document.getElementById('clearance-team').value,
         status: document.getElementById('clearance-status').value,
         notes: document.getElementById('clearance-notes').value,
@@ -951,16 +1175,26 @@
       };
 
       try {
-        const res = await fetch('/api/v1/clearance', {
+        const status = payload.status;
+        let endpoint = `/api/v1/cleanup/${encodeURIComponent(targetId)}/action`;
+        let action = status === 'Cleanup Approved' ? 'accept_cleanup'
+          : status === 'Cleanup Scheduled' ? 'schedule_cleanup'
+          : status === 'Cleanup In Progress' ? 'start_operation'
+          : status === 'Cleanup Completed' ? 'complete_cleanup' : null;
+        let requestBody = action ? { ...payload, action } : { cleanup_required: false, notes: payload.notes };
+        if (!action && status === 'Cleanup Approved') requestBody = { cleanup_required: true, notes: payload.notes };
+        if (!action && status !== 'Cleanup Not Recommended') requestBody = { ...payload, action: 'update_progress' };
+        if (!action && status === 'Cleanup Not Recommended') endpoint = `/api/v1/detections/${encodeURIComponent(targetId)}/cleanup-decision`;
+        const res = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+          body: JSON.stringify(requestBody)
         });
         
         if (res.ok) {
           showToast('Clearance record submitted successfully');
           const d = globalDetections.find(x => x.id === targetId);
-          if(d) d.clearance_status = payload.status;
+          if(d) { d.clearance_status = status; d.cleanup_status = status; }
           
           document.getElementById('clearance-notes').value = '';
           
@@ -988,7 +1222,7 @@
         }
         
         tbody.innerHTML = allSurveys.map(survey => {
-            const sDets = globalDetections.filter(d => d.survey_id === survey.id);
+            const sDets = globalDetections.filter(d => d.survey_id === survey.survey_id);
             const withCoords = sDets.filter(d => d.latitude && d.longitude);
             let centroid = "N/A";
             if(withCoords.length > 0) {
@@ -1003,21 +1237,35 @@
             return `
                 <tr class="hover:bg-slate-50">
                     <td class="p-3 font-bold text-slate-900">${survey.survey_name}</td>
-                    <td class="p-3 text-slate-500">${survey.id}</td>
+                    <td class="p-3 text-slate-500">${survey.survey_id}</td>
                     <td class="p-3 font-mono text-slate-500">${centroid}</td>
                     <td class="p-3 font-bold">${sDets.length}</td>
                     <td class="p-3 text-slate-600">${cleared.length} / ${cleanupReq.length} Cleared</td>
                     <td class="p-3 text-right">
-                        <button onclick="downloadReport('${survey.id}')" class="text-white bg-slate-800 hover:bg-slate-900 px-3 py-1 rounded text-xs font-bold transition-colors">Download PDF</button>
+                        <button onclick="downloadReport('${survey.survey_id}')" class="text-white bg-slate-800 hover:bg-slate-900 px-3 py-1 rounded text-xs font-bold transition-colors">Download PDF</button>
                     </td>
                 </tr>
             `;
         }).join('');
     }
     
-    function downloadReport(surveyId) {
-        window.open(`/api/v1/surveys/${surveyId}/report`, '_blank');
-        showToast('Initiating report download...');
+    async function downloadReport(surveyId) {
+        try {
+            const response = await fetch(`/api/v1/surveys/${encodeURIComponent(surveyId)}/report`);
+            if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message || 'Report generation failed.');
+            const report = await response.blob();
+            if (!report.size) throw new Error('Report generation returned no data.');
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(report);
+            link.download = `tarang_report_${surveyId}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(link.href);
+            showToast('Report download started.');
+        } catch (error) {
+            showToast(error.message || 'Unable to download the selected report.', true);
+        }
     }
 
   </script>
