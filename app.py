@@ -845,7 +845,7 @@ def auth_login():
         from supabase import create_client
         sb = create_client(os.environ.get('SUPABASE_URL'), os.environ.get('SUPABASE_KEY'))
         
-        email = f"{inst_id}@tarang.local" if "@" not in inst_id else inst_id
+        email = f"{inst_id}@tarang.com" if "@" not in inst_id else inst_id
         res = sb.auth.sign_in_with_password({"email": email, "password": password})
         
         user_res = sb.table('tarang_users').select('*').eq('institution_id', inst_id).execute()
@@ -874,7 +874,7 @@ def auth_register():
         from supabase import create_client
         sb = create_client(os.environ.get('SUPABASE_URL'), os.environ.get('SUPABASE_KEY'))
         
-        email = f"{inst_id}@tarang.local" if "@" not in inst_id else inst_id
+        email = f"{inst_id}@tarang.com" if "@" not in inst_id else inst_id
         res = sb.auth.sign_up({"email": email, "password": password})
         
         user_data = {
